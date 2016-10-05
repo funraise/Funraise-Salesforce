@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+	<types>
+		<members>frDonation</members>
+		<members>frDonationTest</members>
+		<members>frDonor</members>
+		<members>frDonorTest</members>
+		<members>frWSDonationController</members>
+		<members>frWSDonationControllerTest</members>
+		<members>frWSDonorController</members>
+		<members>frWSDonorControllerTest</members>
+		<name>ApexClass</name>
+	</types>
+	<types>
+		<members>Contact.fr_Funraise_ID__c</members>
+		<members>Opportunity.fr_Funraise_Donor__c</members>
+		<members>Opportunity.fr_Funraise_ID__c</members>
+		<name>CustomField</name>
+	</types>
+	<version>36.0</version>
+</Package>

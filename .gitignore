@@ -1,0 +1,10 @@
+local.properties
+**log.txt
+config
+*.log
+*.swp
+.DS_Store
+*.sublime-project
+*.sublime-settings
+*.sublime-workspace
+/build.properties
