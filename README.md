@@ -10,7 +10,7 @@ To install the package, you can either deploy the contents of this repository or
 1. In your Salesforce organization, navigate to Setup -> Build -> Create -> Apps and select "New" under **Connected Apps**
 2. Fill out the new Connected App form and check the box for *Enable OAuth Settings*
 3. Set the *Callback URL* field to **https://platform.funraise.io/salesforce/access/token** 
-4. Add the OAuth Scope **Access and manage your data (api)** and **Save** the record
+4. Add the OAuth Scopes **Access and manage your data (api)** and **Perform requests on your behalf at any time (refresh_token, offline_access)** and **Save** the record
 5. When viewing the Connected App record under Setup -> Build -> Create -> Apps, the **Consumer Key** and **Consumer Secret** should be visible, these values will be used to integrate with Funraise
 
 ### Setup the Integration in the Funraise Platform
