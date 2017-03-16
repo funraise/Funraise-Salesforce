@@ -1,12 +1,13 @@
 # Funraise-Salesforce
 Salesforce unmanaged package used to integrate with the Funraise platform
 
-## Installation
+## Installation 
 
 To install the package, you can either deploy the contents of this repository or use the latest unmanaged package install link [found here](https://login.salesforce.com/packaging/installPackage.apexp?p0=04t36000000rj4a)
 
 ## Setup
-### Create a Connected App in Salesforce to setup OAuth 
+### Create a Connected App in Salesforce to setup OAuth
+Note: Before doing the steps below, be sure you have installed the unmanaged packge in the link provided above in the [Installation section](#Installation)
 1. In your Salesforce organization, navigate to Setup -> Build -> Create -> Apps and select "New" under **Connected Apps**
 2. Fill out the new Connected App form and check the box for *Enable OAuth Settings*
 3. Set the *Callback URL* field to **https://platform.funraise.io/salesforce/access/token** 
