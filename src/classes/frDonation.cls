@@ -38,25 +38,65 @@
  * AUTHOR: Jason M. Swenski
  */
 
-public with sharing class frDonation {
-
-    public Opportunity toOpportunity() {
-        return new Opportunity(
-            Amount=this.amount,
-            Name=this.name,
-            CloseDate=DateTime.newInstance(cretime).date(),
-            IsPrivate=anonymous,
-            StageName=(status == 'Failed') ? 'Closed Lost' : 'Closed Won',
-            Probability=(status == 'Failed') ? 0 : 100,
-            fr_Funraise_Donor__c = sfDonorId,
-            fr_Funraise_ID__c = id
-        );
+public class frDonation extends frModel {
+    public static List<frMapping__c> mappings {
+        get {
+            if(mappings == null) {
+                mappings = [SELECT fr_Name__c, sf_Name__c FROM frMapping__c WHERE Type__c = :TYPE];
+            }
+            return mappings;
+        }
+        set;
     }
 
-    public void save() {
-        Opportunity o = this.toOpportunity();
-        Database.upsert(o,Opportunity.Fields.fr_Funraise_ID__c,true);
-        this.setOpportunityId(o.Id);
+    public override List<frMapping__c> getMappings() {
+        return mappings;
+    }
+    public static final String TYPE = 'Donation';
+    protected override SObject getObject() {
+        return o;
+    }
+
+    private String opportunityId;
+    private String donorId;
+    private String sfDonorId;
+    private Opportunity o;
+
+    public frDonation() {
+        this.o = new Opportunity();
+    }
+
+    public Opportunity getOpportunity() {
+        o.fr_Donor__c = getSfDonorId();
+        return o;
+    }
+
+    public override void populateFromRequest(Map<String, Object> request) {
+        super.populateFromRequest(request);
+        this.setDonorId(String.valueOf(request.get('donorId')));
+        String status = String.valueOf(request.get('status'));
+        o.StageName = (status == 'Failed') ? 'Closed Lost' : 'Closed Won';
+    }
+
+    public static frDonation create(Map<String, Object> request) {
+        frDonation donation = new frDonation();
+        donation.populateFromRequest(request);
+        return donation;
+    }
+
+    public Boolean save() {
+        Boolean isSuccess = false;
+        try {
+            Opportunity opp = getOpportunity();
+            Database.upsert(opp,Opportunity.Fields.fr_Id__c,true);
+            setOpportunityId(opp.Id);
+            isSuccess = true;
+        } catch (Exception ex) {
+            handleException(ex);
+            isSuccess = false;
+        }
+        flushLogs();
+        return isSuccess;
     }
 
     public String getDonorId() {
@@ -65,54 +105,6 @@ public with sharing class frDonation {
 
     public void setDonorId(String donorId) {
         this.donorId = donorId;
-    }
-
-    public Decimal getAmount() {
-        return amount;
-    }
-
-    public void setAmount(Decimal amount) {
-        this.amount = amount;
-    }
-
-    public Long getCretime() {
-        return cretime;
-    }
-
-    public void setCretime(Long cretime) {
-        this.cretime = cretime;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Boolean getAnonymous() {
-        return anonymous;
-    }
-
-    public void setAnonymous(Boolean anonymous) {
-        this.anonymous = anonymous;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     public String getOpportunityId() {
@@ -130,15 +122,4 @@ public with sharing class frDonation {
     public void setSfDonorId(String sfDonorId) {
         this.sfDonorId = sfDonorId;
     }
-
-
-    public String opportunityId;
-    public Decimal amount;
-    public Long cretime;
-    public String name;
-    public Boolean anonymous;
-    public String status;
-    public String donorId;
-    public String sfDonorId;
-    public String id;
 }

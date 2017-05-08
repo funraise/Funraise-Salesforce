@@ -38,107 +38,124 @@
  * AUTHOR: Jason M. Swenski
  */
 
-public with sharing class frDonor {
+public class frDonor extends frModel {
+    public static final String TYPE = 'Donor';
 
-    public frDonor() {}
+    public static List<frMapping__c> mappings {
+        get {
+            if(mappings == null) {
+                mappings = [SELECT fr_Name__c, sf_Name__c FROM frMapping__c WHERE Type__c = :TYPE];
+            }
+            return mappings;
+        }
+        set;
+    }
+
+    public override List<frMapping__c> getMappings() {
+        return mappings;
+    }
+    protected override SObject getObject() {
+        return c;
+    }
+
+    private String contactId;
+    private String id;
+    private Contact c;
 
     public frDonor(Contact c) {
         this.contactId = c.Id;
-        this.id = c.fr_Funraise_ID__c;
-        this.email = c.Email;
-        this.firstName = c.FirstName;
-        this.lastName = c.LastName;
-        this.address1 = c.MailingStreet;
-        this.city = c.MailingCity;
-        this.state = c.MailingState;
-        this.postalCode = c.MailingPostalCode;
-        this.country = c.MailingCountry;
+        this.id = c.fr_ID__c;
+        this.c = c;
     }
 
-    public Contact toContact() {
-        return new Contact(Id=this.contactId,
-                           Email=this.email,
-                           FirstName=this.firstName,
-                           LastName=this.lastName,
-                           MailingStreet=this.address1,
-                           MailingCity = this.city,
-                           MailingState = this.state,
-                           MailingPostalCode = this.postalCode,
-                           MailingCountry = this.country,
-                           fr_Funraise_ID__c = this.id);
+    public frDonor(String frId) {
+        this.id = frId;
+        this.c = new Contact(fr_ID__c = frId);
     }
-
-    private static final List<String> fields = new List<String>{'Id','Email','FirstName','LastName',
-                                                               'MailingStreet','MailingCity','MailingState',
-                                                               'MailingPostalCode','MailingCountry','fr_Funraise_ID__c'};
-
 
     public static frDonor findByFunraiseId(String frId) {
-        List<Contact> contacts = (List<Contact>)Database.query('select ' +String.join(fields, ',')+ ' from Contact where fr_Funraise_ID__c = :frId');
+        List<Contact> contacts = (List<Contact>)Database.query('select Id, fr_ID__c from Contact where fr_ID__c = :frId');
         if(contacts.size() > 0) {
             return new frDonor(contacts[0]);
         }
         return null;
     }
 
-    public static frDonor findExisting(frDonor donor) {
-
-        String frId = donor.getId();
+    public static frDonor create(Map<String, Object> request) {
+        Contact existingContact = null;
+        String frId = String.valueOf(request.get('id'));
         //try to find a donor that's already been integrated, use their funraise ID
-        List<Contact> contacts = (List<Contact>)Database.query('select Id from Contact where fr_Funraise_ID__c = :frId');
-
+        List<Contact> contacts = (List<Contact>)Database.query('select Id, fr_ID__c from Contact where fr_ID__c = :frId');
         if(contacts.size() > 0) {
-            donor.setContactId(contacts[0].Id);
-            return donor;
+            existingContact = contacts.get(0);
         }
 
-        String email = donor.getEmail();
-        //next try email, dont try to match on blank emails
-        if(!String.isBlank(email)) {
-            contacts = (List<Contact>)Database.query('select Id from Contact where Email = :email order by CreatedDate desc limit 1');
-            if(contacts.size() > 0) {
-                donor.setContactId(contacts[0].Id);
-                return donor;
+        if(existingContact == null) {
+            String email = String.valueOf(request.get('email'));
+            //next try email, dont try to match on blank emails
+            if(!String.isBlank(email)) {
+                contacts = (List<Contact>)Database.query('select Id, fr_ID__c from Contact where Email = :email order by CreatedDate desc limit 1');
+                if(contacts.size() > 0) {
+                    existingContact = contacts.get(0);
+                }
             }
         }
 
-        String address1 = donor.getAddress1();
-        String city = donor.getCity();
-        String state = donor.getState();
-        String postalCode = donor.getPostalCode();
-        String country = donor.getCountry();
-        String firstName = donor.getFirstName();
-        String lastName = donor.getLastName();
+        if(existingContact == null) {
+            String address1 = String.valueOf(request.get('address1'));
+            String city = String.valueOf(request.get('city'));
+            String state = String.valueOf(request.get('state'));
+            String postalCode = String.valueOf(request.get('postalCode'));
+            String country = String.valueOf(request.get('country'));
+            String firstName = String.valueOf(request.get('firstName'));
+            String lastName = String.valueOf(request.get('lastName'));
 
-        //try to match by address, in case we sync an offline donation over with no email.
-        String byAddress = 'select Id from Contact where MailingStreet = :address1' +
-                           ' and MailingCity = :city' +
-                           ' and MailingState = :state' +
-                           ' and MailingPostalCode = :postalCode' +
-                           ' and MailingCountry = :country' +
-                           ' and FirstName = :firstName' +
-                           ' and LastName = :lastName' +
-                           ' order by CreatedDate desc limit 1';
+            //try to match by address, in case we sync an offline donation over with no email.
+            String byAddress = 'select Id, fr_ID__c from Contact where MailingStreet = :address1' +
+                               ' and MailingCity = :city' +
+                               ' and MailingState = :state' +
+                               ' and MailingPostalCode = :postalCode' +
+                               ' and MailingCountry = :country' +
+                               ' and FirstName = :firstName' +
+                               ' and LastName = :lastName' +
+                               ' order by CreatedDate desc limit 1';
 
-        contacts = (List<Contact>)Database.query(byAddress);
-        if(contacts.size() > 0) {
-            donor.setContactId(contacts[0].Id);
-            return donor;
+            contacts = (List<Contact>)Database.query(byAddress);
+            if(contacts.size() > 0) {
+                existingContact = contacts.get(0);
+            }
         }
 
-        //give back the original if we found no existing ones.
+        frDonor donor;
+        if(existingContact == null) {
+            donor = new frDonor(frId);
+        } else {
+            existingContact.fr_ID__c = frId;
+            donor = new frDonor(existingContact);
+        }
+        donor.populateFromRequest(request);
+
         return donor;
     }
 
-    public void save() {
-        Contact c = toContact();
-        if(String.isBlank(contactId)) {
-            Database.upsert(c,Contact.Fields.fr_Funraise_ID__c,true);
+    public Boolean save() {
+        Boolean isSuccess = false;
+        try {
+            Contact c = getContact();
+            if(String.isBlank(c.Id) && String.isNotBlank(c.fr_ID__c)) {
+                Database.upsert(c,Contact.Fields.fr_ID__c,true);
+            }
+            else {
+                upsert c;
+            }
+            this.setContactId(c.Id);
+            isSuccess = true;
+        } catch (Exception ex) {
+            handleException(ex);
+            isSuccess = false;
         }
-        else {
-            upsert c;
-        }
-        this.setContactId(c.Id);
+        flushLogs();
+        return isSuccess;
     }
 
     public String getContactId() {
@@ -146,99 +163,16 @@ public with sharing class frDonor {
     }
 
     public void setContactId(String contactId) {
+        if(this.c == null) {
+            this.c = new Contact(Id = contactId);
+        }
         this.contactId = contactId;
     }
 
-    public String getId() {
-        return this.id;
+    public Contact getContact() {
+        if(String.isNotBlank(getContactId())) {
+            c.Id = getContactId();
+        }
+        return c;
     }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getEmail() {
-        return this.email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getFirstName() {
-        return this.firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return this.lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public String getAddress1() {
-        return this.address1;
-    }
-
-    public void setAddress1(String address1) {
-        this.address1 = address1;
-    }
-
-    public String getAddress2() {
-        return this.address2;
-    }
-
-    public void setAddress2(String address2) {
-        this.address2 = address2;
-    }
-
-    public String getCity() {
-        return this.city;
-    }
-
-    public void setCity(String city) {
-        this.city = city;
-    }
-
-    public String getState() {
-        return this.state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
-    }
-
-    public String getPostalCode() {
-        return this.postalCode;
-    }
-
-    public void setPostalCode(String postalCode) {
-        this.postalCode = postalCode;
-    }
-
-    public String getCountry() {
-        return this.country;
-    }
-
-    public void setCountry(String country) {
-        this.country = country;
-    }
-
-
-    private String contactId;
-    private String id;
-    private String email;
-    private String firstName;
-    private String lastName;
-    private String address1;
-    private String address2;
-    private String city;
-    private String state;
-    private String postalCode;
-    private String country;
 }
