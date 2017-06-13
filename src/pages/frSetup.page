@@ -1,24 +1,48 @@
 <apex:page showHeader="true" sidebar="false" controller="frSetupController">
 	<apex:pageMessages />
 	<apex:form >
-	<apex:pageBlock title="Donation --> Opportunity">
+	<apex:pageBlock title="Instructions">
 		<apex:pageBlockButtons location="top">
 			<apex:commandButton action="{!save}" value="Save Mappings" />
 			<apex:commandButton action="{!cancel}" value="Discard Changes" />
+			<apex:commandButton action="{!defaults}" value="Use Default Mappings" onclick="return confirm('This will delete ALL of your current mappings and replace them with the defaults.  Are you sure you want to continue?');" />
+		</apex:pageBlockButtons>
+		<h2>
+		Use this page to define what fields should be populated when a new donation (opportunity) or donor (contact) is sent from the 
+		Funraise platform
+		</h2>
+		<br/> <br/>
+		<h2>
+		If you would prefer to hardcode a value for an opportunity or contact, check the "Constant?" box and enter the hardcoded value.  
+		If not, you can select a field value that comes from Funraise
+		</h2>
+	</apex:pageBlock>
+	<apex:pageBlock title="Donation --> Opportunity">
+		<apex:pageBlockButtons location="top">
+			<apex:commandButton action="{!donationDefaults}" value="Use Default Mappings" onclick="return confirm('This will delete your current mappings for donation and replace them with the defaults.  Are you sure you want to continue?');" />
 		</apex:pageBlockButtons>
 		<apex:pageBlockSection columns="1">
 			<apex:pageBlockTable value="{!donationMappings}" var="mapping" id="donationTable" >
 				<apex:column >
 					<apex:facet name="header">
-						Funraise Field
+						Constant?
 					</apex:facet>
-					<apex:selectList value="{!mapping.fr_Name__c}" size="1">
+					<apex:inputField value="{!mapping.Is_Constant__c}" >
+						<apex:actionSupport event="onchange" reRender="fr-field-column" />
+					</apex:inputField>
+				</apex:column>
+				<apex:column id="fr-field-column">
+					<apex:facet name="header">
+						Value
+					</apex:facet>
+					<apex:inputField value="{!mapping.Constant_Value__c}" rendered="{!mapping.Is_Constant__c}" />
+					<apex:selectList value="{!mapping.fr_Name__c}" size="1" rendered="{!!mapping.Is_Constant__c}">
 						<apex:selectOptions value="{!donationFROptions}" />
 					</apex:selectList> 
 				</apex:column>
 				<apex:column >
 					<apex:facet name="header">
-						Salesforce Field
+						Opportunity Field
 					</apex:facet>
 					<apex:selectList value="{!mapping.sf_Name__c}" size="1">
 						<apex:selectOptions value="{!donationSFOptions}" />
@@ -40,23 +64,31 @@
 		</apex:pageBlockSection>
 	</apex:pageBlock>
 	<apex:pageBlock title="Donor --> Contact">
-		<apex:pageBlockButtons location="bottom">
-			<apex:commandButton action="{!save}" value="Save Mappings" />
-			<apex:commandButton action="{!cancel}" value="Discard Changes" />
+		<apex:pageBlockButtons location="top">
+			<apex:commandButton action="{!donorDefaults}" value="Use Default Mappings" onclick="return confirm('This will delete your current mappings for donor and replace them with the defaults.  Are you sure you want to continue?');" />
 		</apex:pageBlockButtons>
 		<apex:pageBlockSection columns="1">
 			<apex:pageBlockTable value="{!donorMappings}" var="mapping" id="donorTable">
 				<apex:column >
 					<apex:facet name="header">
-						Funraise Field
+						Constant?
 					</apex:facet>
-					<apex:selectList value="{!mapping.fr_Name__c}" size="1">
+					<apex:inputField value="{!mapping.Is_Constant__c}" >
+						<apex:actionSupport event="onchange" reRender="fr-field-column" />
+					</apex:inputField>
+				</apex:column>
+				<apex:column id="fr-field-column">
+					<apex:facet name="header">
+						Value
+					</apex:facet>
+					<apex:inputField value="{!mapping.Constant_Value__c}" rendered="{!mapping.Is_Constant__c}" />
+					<apex:selectList value="{!mapping.fr_Name__c}" size="1" rendered="{!!mapping.Is_Constant__c}">
 						<apex:selectOptions value="{!donorFROptions}" />
 					</apex:selectList> 
 				</apex:column>
 				<apex:column >
 					<apex:facet name="header">
-						Salesforce Field
+						Contact Field
 					</apex:facet>
 					<apex:selectList value="{!mapping.sf_Name__c}" size="1">
 						<apex:selectOptions value="{!donorSFOptions}" />
@@ -66,10 +98,10 @@
 					<apex:facet name="header">
 						Remove
 					</apex:facet>
-					<apex:commandButton action="{!removeMapping}" value="Remove" rendered="{!mapping.id != null}">
+					<apex:commandLink action="{!removeMapping}" value="Remove" rendered="{!mapping.id != null}">
 						<apex:param name="id" value="{!mapping.Id}" />
 						<apex:param name="type" value="{!DONOR_TYPE}" />
-					</apex:commandButton>
+					</apex:commandLink>
 				</apex:column>
 			</apex:pageBlockTable>
 			<apex:commandLink action="{!addMapping}" value="Add Donor Mapping" reRender="donorTable">

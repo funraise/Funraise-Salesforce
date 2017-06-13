@@ -55,6 +55,8 @@ public class frWSDonationControllerTest {
 
         createMapping('name', 'Name');
         createMapping('donation_cretime', 'CloseDate');
+        insert new frMapping__c(Name = 'Test Constant1', Is_Constant__c = true, Constant_Value__c = 'Closed Won', sf_Name__c = 'StageName', Type__c = frDonation.TYPE);
+        insert new frMapping__c(Name = 'Test Constant2', Is_Constant__c = true, Constant_Value__c = '100', sf_Name__c = 'Probability', Type__c = frDonation.TYPE);
 
         Test.startTest();
 
@@ -73,7 +75,9 @@ public class frWSDonationControllerTest {
         Id oppId = response.id;
         System.assert(String.isNotBlank(oppId), 
             'There was not an opportunity Id in the response as expected');
-        Opportunity newOpportunity = [SELECT Id, fr_ID__c FROM Opportunity WHERE Id = :oppId];
+        Opportunity newOpportunity = [SELECT Id, fr_ID__c, StageName, Probability FROM Opportunity WHERE Id = :oppId];
+        System.assertEquals('Closed Won', newOpportunity.StageName, 'The constant mapping for StageName was not used');
+        System.assertEquals(100, newOpportunity.Probability, 'The constant mapping for Probability was not used');
     }
 
     static testMethod void syncEntity_existingDonor() { 

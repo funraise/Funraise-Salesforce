@@ -44,7 +44,6 @@ public class frSetupController {
 		}
 
 
-
 		Map<String, Schema.SObjectField> contactFields = Contact.sObjectType.getDescribe().fields.getMap();
 		for(String fieldName : contactFields.keySet()) {
 			Schema.DescribeFieldResult describe = contactFields.get(fieldName).getDescribe();
@@ -81,9 +80,12 @@ public class frSetupController {
 		}
 
 		List<frMapping__c> mappings = DONATION_TYPE.equals(type) ? donationMappings : donorMappings;
-		for(frMapping__c mapping : mappings) {
+		for(Integer i = 0; i < mappings.size(); i++) {
+			frMapping__c mapping = mappings.get(i);
 			if(recordId.equals(mapping.id)) {
+				mappings.remove(i);
 				delete mapping;
+				addConfirm('Mapping removed');
 				return;
 			}
 		}
@@ -94,12 +96,20 @@ public class frSetupController {
 		List<frMapping__c> allMappings = new List<frMapping__c>(donationMappings);
 		allMappings.addAll(donorMappings);
 		for(frMapping__c mapping : allMappings) {
-			if(String.isNotBlank(mapping.fr_Name__c) && String.isNotBlank(mapping.sf_Name__c)) {
-				mapping.Name = mapping.fr_Name__c + ' -> ' + mapping.sf_Name__c;
+			if(String.isNotBlank(mapping.sf_Name__c)) {
+				if(mapping.Is_Constant__c) {
+					mapping.Name = mapping.Constant_Value__c;
+				} else {
+					mapping.Name = mapping.fr_Name__c;
+				}
+				mapping.Name += ' -> ' + mapping.sf_Name__c;
 				upsertList.add(mapping);
 			}
 		}
-		upsert upsertList;
+		if(upsertList.size() > 0) {
+			upsert upsertList;
+			addConfirm('Mappings saved successfully');
+		}
 	}
 
 	public PageReference cancel() {
@@ -115,6 +125,61 @@ public class frSetupController {
 			redirect.setRedirect(true);
 		}
 		return redirect;
+	}
+
+	private void addConfirm(String message) {
+		ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.CONFIRM, message));
+	}
+
+	public void defaults() {
+		delete [SELECT Id FROM frMapping__c];
+		List<frMapping__c> defaults = getDonorDefaults();
+		defaults.addAll(getDonationDefaults());
+		insert defaults;
+		addConfirm('All Defaults Applied');
+		donationMappings = frDonation.mappings;
+		donorMappings = frDonor.mappings;
+	}
+
+	public void donorDefaults() {
+		delete [SELECT Id FROM frMapping__c WHERE Type__c = :DONOR_TYPE];
+		List<frMapping__c> defaults = getDonorDefaults();
+		insert defaults;
+		addConfirm('Donor Defaults Applied');
+		donorMappings = frDonor.mappings;
+	}
+
+	public void donationDefaults() {
+		delete [SELECT Id FROM frMapping__c WHERE Type__c = :DONATION_TYPE];
+		List<frMapping__c> defaults = getDonationDefaults();
+		insert defaults;
+		addConfirm('Donation Defaults Applied');
+		donationMappings = frDonation.mappings;
+	}
+
+	@testVisible
+	private static List<frMapping__c> getDonorDefaults() {
+		return new List<frMapping__c>{
+			new frMapping__c(Name = 'Email Default', fr_Name__c = 'email', sf_Name__c = 'email', Type__c = DONOR_TYPE),
+			new frMapping__c(Name = 'First Name Default', fr_Name__c = 'firstName', sf_Name__c = 'firstname', Type__c = DONOR_TYPE),
+			new frMapping__c(Name = 'Last Name Default', fr_Name__c = 'lastName', sf_Name__c = 'lastname', Type__c = DONOR_TYPE),
+			new frMapping__c(Name = 'Address Default', fr_Name__c = 'address1', sf_Name__c = 'mailingstreet', Type__c = DONOR_TYPE),
+			new frMapping__c(Name = 'City Default', fr_Name__c = 'city', sf_Name__c = 'mailingcity', Type__c = DONOR_TYPE),
+			new frMapping__c(Name = 'State Default', fr_Name__c = 'state', sf_Name__c = 'mailingstate', Type__c = DONOR_TYPE),
+			new frMapping__c(Name = 'Postal Code Default', fr_Name__c = 'postalCode', sf_Name__c = 'mailingpostalcode', Type__c = DONOR_TYPE),
+			new frMapping__c(Name = 'Country Default', fr_Name__c = 'country', sf_Name__c = 'mailingcountry', Type__c = DONOR_TYPE)
+		};
+	}
+
+	@testVisible
+	private static List<frMapping__c> getDonationDefaults() {
+		return new List<frMapping__c>{
+			new frMapping__c(Name = 'Amount Default', fr_Name__c = 'amount', sf_Name__c = 'amount', Type__c = DONATION_TYPE),
+			new frMapping__c(Name = 'Donation Name Default', fr_Name__c = 'name', sf_Name__c = 'name', Type__c = DONATION_TYPE),
+			new frMapping__c(Name = 'Created Date Default', fr_Name__c = 'donation_cretime', sf_Name__c = 'closedate', Type__c = DONATION_TYPE),
+			new frMapping__c(Name = 'Stage Default', Is_Constant__c = true, Constant_Value__c = 'Closed Won', sf_Name__c = 'stagename', Type__c = DONATION_TYPE),
+			new frMapping__c(Name = 'Probability Default', Is_Constant__c = true, Constant_Value__c = '100', sf_Name__c = 'probability', Type__c = DONATION_TYPE)
+		};
 	}
 
 }

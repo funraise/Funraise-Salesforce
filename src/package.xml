@@ -33,6 +33,11 @@
         <name>CustomMetadata</name>
     </types>
     <types>
+        <members>frField__mdt</members>
+        <members>frMapping__c</members>
+        <name>CustomObject</name>
+    </types>
+    <types>
         <members>Error__c</members>
         <members>Funraise_Setup</members>
         <name>CustomTab</name>

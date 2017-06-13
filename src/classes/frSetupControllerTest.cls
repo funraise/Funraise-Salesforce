@@ -47,6 +47,23 @@ public class frSetupControllerTest {
 		System.assertEquals(frSetupController.DONOR_TYPE, donorMapping.Type__c, 'The mapping added second should have a donor type');
 	}
 
+	static testMethod void test_addMapping_constant() {
+		Test.startTest();
+		frSetupController controller = new frSetupController();
+		ApexPages.currentPage().getParameters().put('type', frSetupController.DONATION_TYPE);
+		controller.addMapping();
+		Integer actualDonationMappingCountAfterAdd = controller.donationMappings.size();
+		frMapping__c donationMapping = controller.donationMappings.get(0);
+		donationMapping.sf_Name__c = 'TestSFDonation';
+		donationMapping.Is_Constant__c = true;
+		donationMapping.Constant_Value__c = 'Test Constant';
+		controller.save();
+		Test.stopTest();
+
+		System.assertEquals(1, actualDonationMappingCountAfterAdd, 'Only one mapping was added, so only one mapping should exist');
+		System.assertEquals(1, [SELECT COUNT() FROM frMapping__c WHERE Is_Constant__c = true AND Constant_Value__c = :donationMapping.Constant_Value__c], 'Only one mapping was added, so only one mapping should exist');
+	}
+
 	static testMethod void test_removeMapping() {
 		Test.startTest();
 		frSetupController controller = new frSetupController();
@@ -98,6 +115,68 @@ public class frSetupControllerTest {
 
 		PageReference expectedCancel = Page.frSetup;
 		System.assertEquals(expectedCancel.getUrl(), actualCancelWithNoRetUrl.getUrl(), 'Cancel did not redirect as expected');
+	}
+
+	static testMethod void test_defaults() {
+		insert new frMapping__c(Type__c = frDonation.TYPE, fr_Name__c = 'testfr', sf_Name__c = 'testsf', Name = 'Test Mapping');
+		Integer beforeTestMappingCount = [SELECT COUNT() FROM frMapping__c];
+
+		frSetupController controller = new frSetupController();
+		Test.startTest();
+		controller.defaults();
+		Integer afterDefaultMappingCount = [SELECT COUNT() FROM frMapping__c WHERE fr_Name__c = 'testfr'];
+		List<frMapping__c> actualDonorMappings = [SELECT Name FROM frMapping__c WHERE Type__c = :frDonor.TYPE];
+		List<frMapping__c> actualDonationMappings = [SELECT Name FROM frMapping__c WHERE Type__c = :frDonation.TYPE];
+		Test.stopTest();
+
+		System.assertEquals(1, beforeTestMappingCount, 'There should have been 1 mapping record before the test started');
+		System.assertEquals(0, afterDefaultMappingCount, 'There should have not been any mappings that had the test data value when using the defaults');
+		assertMappingsEqual(frSetupController.getDonorDefaults(), actualDonorMappings);
+		assertMappingsEqual(frSetupController.getDonationDefaults(), actualDonationMappings);
+	}
+
+	static testMethod void test_defaults_donorOnly() {
+		insert new frMapping__c(Type__c = frDonor.TYPE, fr_Name__c = 'testfr', sf_Name__c = 'testsf', Name = 'Test Mapping');
+		Integer beforeTestMappingCount = [SELECT COUNT() FROM frMapping__c];
+
+		frSetupController controller = new frSetupController();
+		Test.startTest();
+		controller.donorDefaults();
+		Integer afterDefaultMappingCount = [SELECT COUNT() FROM frMapping__c WHERE fr_Name__c = 'testfr'];
+		List<frMapping__c> actualDonorMappings = [SELECT Name FROM frMapping__c WHERE Type__c = :frDonor.TYPE];
+		Test.stopTest();
+
+		System.assertEquals(1, beforeTestMappingCount, 'There should have been 1 mapping record before the test started');
+		System.assertEquals(0, afterDefaultMappingCount, 'There should have not been any mappings that had the test data value when using the defaults');
+		assertMappingsEqual(frSetupController.getDonorDefaults(), actualDonorMappings);
+	}
+
+	static testMethod void test_defaults_donationOnly() {
+		insert new frMapping__c(Type__c = frDonation.TYPE, fr_Name__c = 'testfr', sf_Name__c = 'testsf', Name = 'Test Mapping');
+		Integer beforeTestMappingCount = [SELECT COUNT() FROM frMapping__c];
+
+		frSetupController controller = new frSetupController();
+		Test.startTest();
+		controller.donationDefaults();
+		Integer afterDefaultMappingCount = [SELECT COUNT() FROM frMapping__c WHERE fr_Name__c = 'testfr'];
+		List<frMapping__c> actualDonationMappings = [SELECT Name FROM frMapping__c WHERE Type__c = :frDonation.TYPE];
+		Test.stopTest();
+
+		System.assertEquals(1, beforeTestMappingCount, 'There should have been 1 mapping record before the test started');
+		System.assertEquals(0, afterDefaultMappingCount, 'There should have not been any mappings that had the test data value when using the defaults');
+		assertMappingsEqual(frSetupController.getDonationDefaults(), actualDonationMappings);
+	}
+
+	private static void assertMappingsEqual(List<frMapping__c> expected, List<frMapping__c> actual) {
+		Set<String> expectedMappingNames = new Set<String>();
+		for(frMapping__c mapping : expected) {
+			expectedMappingNames.add(mapping.Name);
+		}
+		Set<String> actualMappingNames = new Set<String>();
+		for(frMapping__c mapping : actual) {
+			actualMappingNames.add(mapping.Name);
+		}
+		System.assertEquals(expectedMappingNames, actualMappingNames, 'The mappings did not match their expected values');
 	}
 
 	private static void assertValuesInList(Set<String> expectedValues, List<SelectOption> options) {

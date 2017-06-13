@@ -5,14 +5,16 @@ public abstract class frModel {
     public virtual void populateFromRequest(Map<String, Object> request) {
     	Map<String, Schema.SObjectField> fields = frSchemaUtil.getFields(getObject().getSObjectType().getDescribe().getName());
 
-        Map<String, String> frNameToSfName = new Map<String, String>();
+        Map<String, frMapping__c> frNameToSfName = new Map<String, frMapping__c>();
         for(frMapping__c mapping : getMappings()) {
-            frNameToSfName.put(mapping.fr_Name__c, mapping.sf_Name__c);
+            frNameToSfName.put(mapping.fr_Name__c, mapping);
         }
 
         for(String fieldName : request.keySet()) {
-            if(frNameToSfName.containsKey(fieldName)) {                
-                write(getObject(), fields, frNameToSfName.get(fieldName), request.get(fieldName));
+            if(frNameToSfName.containsKey(fieldName)) {
+                frMapping__c mapping = frNameToSfName.get(fieldName);
+                Object value = mapping.Is_Constant__c ? mapping.Constant_Value__c : request.get(fieldName);
+                write(getObject(), fields, mapping.sf_Name__c, value);
             }
         }
         getObject().put('fr_ID__c', String.valueOf(request.get('id')));
