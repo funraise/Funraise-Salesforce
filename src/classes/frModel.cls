@@ -6,17 +6,25 @@ public abstract class frModel {
     	Map<String, Schema.SObjectField> fields = frSchemaUtil.getFields(getObject().getSObjectType().getDescribe().getName());
 
         Map<String, frMapping__c> frNameToSfName = new Map<String, frMapping__c>();
+        List<frMapping__c> constantMappings = new List<frMapping__c>();
         for(frMapping__c mapping : getMappings()) {
-            frNameToSfName.put(mapping.fr_Name__c, mapping);
-        }
-
-        for(String fieldName : request.keySet()) {
-            if(frNameToSfName.containsKey(fieldName)) {
-                frMapping__c mapping = frNameToSfName.get(fieldName);
-                Object value = mapping.Is_Constant__c ? mapping.Constant_Value__c : request.get(fieldName);
-                write(getObject(), fields, mapping.sf_Name__c, value);
+            if(mapping.Is_Constant__c) {
+                constantMappings.add(mapping);
+            } else {
+                frNameToSfName.put(mapping.fr_Name__c, mapping);
             }
         }
+
+        for(String fieldName : frNameToSfName.keySet()) {
+            if(request.containsKey(fieldName)) {
+                frMapping__c mapping = frNameToSfName.get(fieldName);
+                write(getObject(), fields, mapping.sf_Name__c, request.get(fieldName));
+            }
+        }
+        for(frMapping__c constantMapping : constantMappings) {
+            write(getObject(), fields, constantMapping.sf_Name__c, constantMapping.Constant_Value__c);
+        }
+
         getObject().put('fr_ID__c', String.valueOf(request.get('id')));
     }
 

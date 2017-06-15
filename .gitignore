@@ -9,3 +9,4 @@ config
 *.sublime-workspace
 /build.properties
 /build.xml
+/.project

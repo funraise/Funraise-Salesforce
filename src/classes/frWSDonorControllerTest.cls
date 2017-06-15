@@ -266,7 +266,7 @@ public class frWSDonorControllerTest {
 
     public class MockResponse {
         String id;
-        Boolean result;
+        Boolean success;
     }
 
     private static String getTestPayload() {

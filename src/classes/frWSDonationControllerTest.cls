@@ -114,7 +114,7 @@ public class frWSDonationControllerTest {
             errorsStr += error.Error__c + '\n';
         }
         System.assertEquals(0, errors.size(), 'There were unexpected errors. Errors:' + errorsStr);
-        System.assert(response.result, 'There were no errors expected, result should be successful save');
+        System.assert(response.success, 'There were no errors expected, result should be successful save');
         
         Id oppId = response.id;
         System.assert(String.isNotBlank(oppId), 
@@ -127,7 +127,7 @@ public class frWSDonationControllerTest {
     public class MockResponse {
         String id;
         List<String> errors;
-        Boolean result;
+        Boolean success;
     }
 
     private static String getTestPayload() {

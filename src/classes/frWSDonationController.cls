@@ -57,11 +57,11 @@ global with sharing class frWSDonationController {
             errors.add('Donor not found: ' + donation.getDonorId());
         }
 
-        Boolean result = donation.save();
+        Boolean isSuccess = donation.save();
 
         resp.put('id',donation.getOpportunityId());
         resp.put('errors',errors);
-        resp.put('result',result);
+        resp.put('success',isSuccess);
 
         RestContext.response.addHeader('Content-Type', 'application/json');
         RestContext.response.responseBody = Blob.valueOf(JSON.serialize(resp));
