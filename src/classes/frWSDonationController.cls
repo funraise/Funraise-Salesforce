@@ -38,29 +38,30 @@
  * AUTHOR: Jason M. Swenski
  */
 
-@RestResource(urlMapping='/funraise/v1/donation')
+@RestResource(urlMapping='/v1/donation')
 global with sharing class frWSDonationController {
 
     @HttpPost
     global static void syncEntity() {
-
         Map<String,Object> resp = new Map<String,Object>();
         List<String> errors = new List<String>();
 
-        String payload = RestContext.request.requestBody.toString();
-
-        frDonation donation = (frDonation) JSON.deserialize(payload, frDonation.class);
+        System.debug(RestContext.request.requestBody.toString());
+        Map<String, Object> request = (Map<String, Object>)JSON.deserializeUntyped(RestContext.request.requestBody.toString());
+        frDonation donation = frDonation.create(request);
 
         frDonor donor = frDonor.findByFunraiseId(donation.getDonorId());
-        if(donor != null)
+        if(donor != null) {
             donation.setSfDonorId(donor.getContactId());
-        else
+        } else {
             errors.add('Donor not found: ' + donation.getDonorId());
+        }
 
-        donation.save();
+        Boolean isSuccess = donation.save();
 
         resp.put('id',donation.getOpportunityId());
         resp.put('errors',errors);
+        resp.put('success',isSuccess);
 
         RestContext.response.addHeader('Content-Type', 'application/json');
         RestContext.response.responseBody = Blob.valueOf(JSON.serialize(resp));

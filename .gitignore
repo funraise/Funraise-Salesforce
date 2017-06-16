@@ -8,3 +8,5 @@ config
 *.sublime-settings
 *.sublime-workspace
 /build.properties
+/build.xml
+/.project
