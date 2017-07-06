@@ -3,11 +3,12 @@ Salesforce unmanaged package used to integrate with the Funraise platform
 
 ## Installation 
 
-To install the package, you can either deploy the contents of this repository or use the latest unmanaged package install link [found here](https://login.salesforce.com/packaging/installPackage.apexp?p0=04t36000000rj4a)
+To install the package, you can either deploy the contents of this repository or use the managed package (coming soon!) to recieve updates automatically.
+
 
 ## Setup
 ### Create a Connected App in Salesforce to setup OAuth
-Note: Before doing the steps below, be sure you have installed the unmanaged packge in the link provided above in the [Installation section](#Installation)
+Note: Before doing the steps below, be sure you have installed the package in the link provided above in the [Installation section](#Installation)
 1. In your Salesforce organization, navigate to Setup -> Build -> Create -> Apps and select "New" under **Connected Apps**
 2. Fill out the new Connected App form and check the box for *Enable OAuth Settings*
 3. Set the *Callback URL* field to **https://platform.funraise.io/salesforce/access/token** 
@@ -23,3 +24,8 @@ Note: Before doing the steps below, be sure you have installed the unmanaged pac
 6. A pop-up Salesforce OAuth window will appear asking if you want to give Funraise access to manage your data, click **Allow**
 7. You should get a message saying *Salesforce Successfully Connected** at which point you can safely close the pop-up window
 8. All Done!  New donations will be sync'd to salesforce and you can manually sync donations by selecting the *Actions* dropdown in the Transaction log and selecting **Send to Salesforce**
+
+## Usage
+The package will let you customize how data flows from Funraise into Salesforce.  Once the package is installed, there will be a Funraise app in Salesforce with tabs for Setup and Errors.  
+
+The setup page is where the mappings can be changed.  Any changes will only apply to future incoming Funraise data.  

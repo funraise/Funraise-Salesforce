@@ -48,6 +48,27 @@ public abstract class frModel {
             catch (Exception e) {
                 write(record, field, value);
             }
+        } else if(field.getDescribe().getType() == Schema.DisplayType.Double) {
+            try {
+                record.put(field, Double.valueOf(value));
+            }
+            catch (Exception e) {
+                write(record, field, value);
+            }
+        } else if(field.getDescribe().getType() == Schema.DisplayType.Integer) {
+            try {
+                record.put(field, Integer.valueOf(value));
+            }
+            catch (Exception e) {
+                write(record, field, value);
+            }
+        } else if(field.getDescribe().getType() == Schema.DisplayType.Percent) {
+            try {
+                record.put(field, Decimal.valueOf(String.valueOf(value)));
+            }
+            catch (Exception e) {
+                write(record, field, value);
+            }
         } else {
             write(record, field, value);
         }
@@ -56,7 +77,10 @@ public abstract class frModel {
         try {
             record.put(field, value);
         } catch (Exception ex) {
-            insert new Error__c(Error__c = 'Field mapping exception. Object type: '+ record.getSObjectType().getDescribe().getName()+' Record Id: '+record.Id+' - Field: '+field.getDescribe().getName()+' - Value: '+value);
+            insert new Error__c(Error__c = 'Field mapping exception. Object type: '+ record.getSObjectType().getDescribe().getName()
+                +' Record Id: '+record.Id+' - Field: '+field.getDescribe().getName()+' - Value: '+value
+                +' Exception: '+ex
+            );
         }
     }
 

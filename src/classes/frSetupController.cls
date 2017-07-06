@@ -1,4 +1,4 @@
-public class frSetupController {
+public with sharing class frSetupController {
 	public static String DONATION_TYPE {
 		get {
 			return frDonation.TYPE;
@@ -73,6 +73,10 @@ public class frSetupController {
 	}
 
 	public void removeMapping() {
+		if(!frMapping__c.sObjectType.getDescribe().isDeletable()) {
+			addError('You do not have permission to delete mappings');
+		}
+
 		String type = ApexPages.currentPage().getParameters().get('type');
 		String recordId = ApexPages.currentPage().getParameters().get('id');
 		if(String.isBlank(type) || String.isBlank(recordId)) {
@@ -106,7 +110,9 @@ public class frSetupController {
 				upsertList.add(mapping);
 			}
 		}
-		if(upsertList.size() > 0) {
+
+		Schema.DescribeSObjectResult describe = frMapping__c.sObjectType.getDescribe();
+		if(upsertList.size() > 0 && describe.isCreateable() && describe.isUpdateable()) {
 			upsert upsertList;
 			addConfirm('Mappings saved successfully');
 		}
@@ -131,7 +137,14 @@ public class frSetupController {
 		ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.CONFIRM, message));
 	}
 
+	private void addError(String message) {
+		ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.ERROR, message));	
+	}
+
 	public void defaults() {
+		if(!checkCD()) {
+			return;
+		}
 		delete [SELECT Id FROM frMapping__c];
 		List<frMapping__c> defaults = getDonorDefaults();
 		defaults.addAll(getDonationDefaults());
@@ -142,6 +155,9 @@ public class frSetupController {
 	}
 
 	public void donorDefaults() {
+		if(!checkCD()) {
+			return;
+		}
 		delete [SELECT Id FROM frMapping__c WHERE Type__c = :DONOR_TYPE];
 		List<frMapping__c> defaults = getDonorDefaults();
 		insert defaults;
@@ -150,11 +166,24 @@ public class frSetupController {
 	}
 
 	public void donationDefaults() {
+		if(!checkCD()) {
+			return;
+		}
 		delete [SELECT Id FROM frMapping__c WHERE Type__c = :DONATION_TYPE];
 		List<frMapping__c> defaults = getDonationDefaults();
 		insert defaults;
 		addConfirm('Donation Defaults Applied');
 		donationMappings = frDonation.mappings;
+	}
+
+	private Boolean checkCD() {
+		Schema.DescribeSObjectResult mappingDescribe = frMapping__c.sObjectType.getDescribe();
+		if(mappingDescribe.isCreateable() && mappingDescribe.isDeletable()) {
+			return true;
+		} else {
+			addError('Mappings not saved.  You must have at least one mapping and permissions to use the mapping object');
+			return false;
+		}
 	}
 
 	@testVisible
