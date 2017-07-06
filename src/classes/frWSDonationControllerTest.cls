@@ -54,9 +54,12 @@ public class frWSDonationControllerTest {
         RestContext.response = res;
 
         createMapping('name', 'Name');
+        createMapping('amount', 'amount');
         createMapping('donation_cretime', 'CloseDate');
-        insert new frMapping__c(Name = 'Test Constant1', Is_Constant__c = true, Constant_Value__c = 'Closed Won', sf_Name__c = 'StageName', Type__c = frDonation.TYPE);
-        insert new frMapping__c(Name = 'Test Constant2', Is_Constant__c = true, Constant_Value__c = '100', sf_Name__c = 'Probability', Type__c = frDonation.TYPE);
+        insert new frMapping__c(Name = 'Test String', Is_Constant__c = true, Constant_Value__c = 'Closed Won', sf_Name__c = 'StageName', Type__c = frDonation.TYPE);
+        insert new frMapping__c(Name = 'Test Percent', Is_Constant__c = true, Constant_Value__c = '95', sf_Name__c = 'Probability', Type__c = frDonation.TYPE);
+        insert new frMapping__c(Name = 'Test Integer', Is_Constant__c = true, Constant_Value__c = String.valueOf(Date.today().year()), sf_Name__c = 'fiscalyear', Type__c = frDonation.TYPE);
+        insert new frMapping__c(Name = 'Test Double', Is_Constant__c = true, Constant_Value__c = '1.5', sf_Name__c = 'totalopportunityquantity', Type__c = frDonation.TYPE);
 
         Test.startTest();
 
@@ -75,9 +78,11 @@ public class frWSDonationControllerTest {
         Id oppId = response.id;
         System.assert(String.isNotBlank(oppId), 
             'There was not an opportunity Id in the response as expected');
-        Opportunity newOpportunity = [SELECT Id, fr_ID__c, StageName, Probability FROM Opportunity WHERE Id = :oppId];
+        Opportunity newOpportunity = [SELECT Id, fr_ID__c, StageName, Probability, FiscalYear, TotalOpportunityQuantity FROM Opportunity WHERE Id = :oppId];
         System.assertEquals('Closed Won', newOpportunity.StageName, 'The constant mapping for StageName was not used');
-        System.assertEquals(100, newOpportunity.Probability, 'The constant mapping for Probability was not used');
+        System.assertEquals(95, newOpportunity.Probability, 'The constant mapping for Probability was not used');
+        System.assertEquals(Date.today().year(), newOpportunity.FiscalYear, 'The constant mapping for Fiscal Year was not used');
+        System.assertEquals(1.5, newOpportunity.TotalOpportunityQuantity, 'The constant mapping for Total Opportunity Quantity was not used');
     }
 
     static testMethod void syncEntity_existingDonor() { 
