@@ -15,6 +15,10 @@
                 <fullName>Donation</fullName>
                 <default>false</default>
             </picklistValues>
+            <picklistValues>
+                <fullName>Deprecated</fullName>
+                <default>false</default>
+            </picklistValues>
             <restrictedPicklist>true</restrictedPicklist>
             <sorted>false</sorted>
         </picklist>

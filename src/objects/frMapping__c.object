@@ -4,6 +4,7 @@
     <enableFeeds>false</enableFeeds>
     <fields>
         <fullName>Constant_Value__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Constant Value</label>
         <length>255</length>
@@ -15,6 +16,7 @@
     <fields>
         <fullName>Is_Constant__c</fullName>
         <defaultValue>false</defaultValue>
+        <deprecated>false</deprecated>
         <description>Defines whether or not this mapping should use a value from the Funraise platform (false) or a constant value (true)</description>
         <externalId>false</externalId>
         <label>Is Constant</label>
