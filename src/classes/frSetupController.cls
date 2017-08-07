@@ -33,6 +33,7 @@ public with sharing class frSetupController {
 
 		Map<String, Schema.SObjectField> oppFields = Opportunity.sObjectType.getDescribe().fields.getMap();
 		for(String fieldName : oppFields.keySet()) {
+			if(fieldName.startsWith('funraise__')) continue; //skip any fields that are part of the managed package
 			Schema.DescribeFieldResult describe = oppFields.get(fieldName).getDescribe();
 			if(describe.isUpdateable()) {
 				donationSFOptions.add(new SelectOption(fieldName, describe.getLabel()));
@@ -46,6 +47,7 @@ public with sharing class frSetupController {
 
 		Map<String, Schema.SObjectField> contactFields = Contact.sObjectType.getDescribe().fields.getMap();
 		for(String fieldName : contactFields.keySet()) {
+			if(fieldName.startsWith('funraise__')) continue; //skip any fields that are part of the managed package
 			Schema.DescribeFieldResult describe = contactFields.get(fieldName).getDescribe();
 			if(describe.isUpdateable()) {
 				donorSFOptions.add(new SelectOption(fieldName, describe.getLabel()));
