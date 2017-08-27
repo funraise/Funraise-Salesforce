@@ -98,6 +98,7 @@ public with sharing class frSetupController {
 	}
 
 	public void save() {
+		Integer customSettingNameLength = frMapping__c.Name.getDescribe().getLength();
 		List<frMapping__c> upsertList = new List<frMapping__c>();
 		List<frMapping__c> allMappings = new List<frMapping__c>(donationMappings);
 		allMappings.addAll(donorMappings);
@@ -109,6 +110,9 @@ public with sharing class frSetupController {
 					mapping.Name = mapping.fr_Name__c;
 				}
 				mapping.Name += ' -> ' + mapping.sf_Name__c;
+				if(mapping.Name.length() > customSettingNameLength) {
+					mapping.Name = mapping.Name.subString(0, customSettingNameLength);
+				}
 				upsertList.add(mapping);
 			}
 		}
