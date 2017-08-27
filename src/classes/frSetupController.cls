@@ -111,7 +111,7 @@ public with sharing class frSetupController {
 				}
 				mapping.Name += ' -> ' + mapping.sf_Name__c;
 				if(mapping.Name.length() > customSettingNameLength) {
-					mapping.Name = mapping.Name.subString(0, customSettingNameLength);
+					mapping.Name = mapping.Name.subString(0, customSettingNameLength-1);
 				}
 				upsertList.add(mapping);
 			}
