@@ -104,12 +104,7 @@ public with sharing class frSetupController {
 		allMappings.addAll(donorMappings);
 		for(frMapping__c mapping : allMappings) {
 			if(String.isNotBlank(mapping.sf_Name__c)) {
-				if(mapping.Is_Constant__c) {
-					mapping.Name = mapping.Constant_Value__c;
-				} else {
-					mapping.Name = mapping.fr_Name__c;
-				}
-				mapping.Name += ' -> ' + mapping.sf_Name__c;
+				mapping.Name = (mapping.Type__c == DONATION_TYPE ? 'o.' : 'c.') + mapping.sf_Name__c;
 				if(mapping.Name.length() > customSettingNameLength) {
 					mapping.Name = mapping.Name.subString(0, customSettingNameLength);
 				}
