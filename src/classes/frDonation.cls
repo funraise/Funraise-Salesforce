@@ -42,7 +42,7 @@ public class frDonation extends frModel {
     public static List<frMapping__c> mappings {
         get {
             if(mappings == null) {
-                mappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c FROM frMapping__c WHERE Type__c = :TYPE ORDER BY CreatedDate];
+                mappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Type__c FROM frMapping__c WHERE Type__c = :TYPE ORDER BY CreatedDate];
             }
             return mappings;
         }
