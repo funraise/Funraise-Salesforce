@@ -43,7 +43,7 @@ public abstract class frModel {
             }
         } else if (field.getDescribe().getType() == Schema.DisplayType.Date) {
             try {
-                record.put(field, DateTime.newInstance((Long)value).date());
+                record.put(field, DateTime.newInstance((Long)value).dateGMT());
             }
             catch (Exception e) {
                 write(record, field, value);
@@ -88,7 +88,7 @@ public abstract class frModel {
         insert new Error__c(Error__c = ex.getMessage());
     }
 
-    
+
     public static void flushLogs() {
         if([SELECT COUNT() FROM Error__c] > 100) {
             deleteLogs();
