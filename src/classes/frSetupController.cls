@@ -11,6 +11,31 @@ public with sharing class frSetupController {
 		}
 		private set;
 	}
+    
+    public static Set<String> RESTRICTED_DONOR_FIELDS {
+        get {
+            if(RESTRICTED_DONOR_FIELDS == null) {
+                RESTRICTED_DONOR_FIELDS = new Set<String>{
+                    'funraise__fr_ID__c'
+                };
+            }
+            return RESTRICTED_DONOR_FIELDS;
+        }
+        private set;
+    }
+    
+    public static Set<String> RESTRICTED_DONATION_FIELDS {
+        get {
+            if(RESTRICTED_DONATION_FIELDS == null) {
+                RESTRICTED_DONATION_FIELDS = new Set<String>{
+                    'funraise__fr_ID__c', 
+                    'funraise__fr_Donor__c'
+                };
+            }
+            return RESTRICTED_DONATION_FIELDS;
+        }
+        private set;
+    }
 
 	public List<SelectOption> donationSFOptions {get; set;}
 	public List<SelectOption> donationFROptions {get; set;}
@@ -33,7 +58,7 @@ public with sharing class frSetupController {
 
 		Map<String, Schema.SObjectField> oppFields = Opportunity.sObjectType.getDescribe().fields.getMap();
 		for(String fieldName : oppFields.keySet()) {
-			if(fieldName.startsWith('funraise__')) continue; //skip any fields that are part of the managed package
+			if(RESTRICTED_DONATION_FIELDS.contains(fieldName)) continue; //skip any fields that are part of the managed package
 			Schema.DescribeFieldResult describe = oppFields.get(fieldName).getDescribe();
 			if(describe.isUpdateable()) {
 				donationSFOptions.add(new SelectOption(fieldName, describe.getLabel()));
@@ -47,7 +72,7 @@ public with sharing class frSetupController {
 
 		Map<String, Schema.SObjectField> contactFields = Contact.sObjectType.getDescribe().fields.getMap();
 		for(String fieldName : contactFields.keySet()) {
-			if(fieldName.startsWith('funraise__')) continue; //skip any fields that are part of the managed package
+			if(RESTRICTED_DONOR_FIELDS.contains(fieldName)) continue; //skip any fields that are part of the managed package
 			Schema.DescribeFieldResult describe = contactFields.get(fieldName).getDescribe();
 			if(describe.isUpdateable()) {
 				donorSFOptions.add(new SelectOption(fieldName, describe.getLabel()));

@@ -46,7 +46,6 @@ global with sharing class frWSDonationController {
         Map<String,Object> resp = new Map<String,Object>();
         List<String> errors = new List<String>();
 
-        System.debug(RestContext.request.requestBody.toString());
         Map<String, Object> request = (Map<String, Object>)JSON.deserializeUntyped(RestContext.request.requestBody.toString());
         frDonation donation = frDonation.create(request);
 
