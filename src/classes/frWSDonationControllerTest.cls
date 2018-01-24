@@ -81,7 +81,7 @@ public class frWSDonationControllerTest {
         Opportunity newOpportunity = [SELECT Id, fr_ID__c, StageName, Probability, FiscalYear, TotalOpportunityQuantity FROM Opportunity WHERE Id = :oppId];
         System.assertEquals('Closed Won', newOpportunity.StageName, 'The constant mapping for StageName was not used');
         System.assertEquals(95, newOpportunity.Probability, 'The constant mapping for Probability was not used');
-        System.assertEquals(Date.today().year(), newOpportunity.FiscalYear, 'The constant mapping for Fiscal Year was not used');
+        System.assertEquals(2017, newOpportunity.FiscalYear, 'The constant mapping for Fiscal Year was not used');
         System.assertEquals(1.5, newOpportunity.TotalOpportunityQuantity, 'The constant mapping for Total Opportunity Quantity was not used');
     }
 
