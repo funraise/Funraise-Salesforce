@@ -29,78 +29,6 @@
         <name>CustomField</name>
     </types>
     <types>
-        <members>frField.address1</members>
-        <members>frField.address2</members>
-        <members>frField.age</members>
-        <members>frField.allocation</members>
-        <members>frField.allocations</members>
-        <members>frField.amount</members>
-        <members>frField.annualDonations</members>
-        <members>frField.anonymous</members>
-        <members>frField.campaignGoalId</members>
-        <members>frField.city</members>
-        <members>frField.country</members>
-        <members>frField.dedication</members>
-        <members>frField.dedicationEmail</members>
-        <members>frField.dedicationMessage</members>
-        <members>frField.dedicationName</members>
-        <members>frField.dedicationType</members>
-        <members>frField.donation_cretime</members>
-        <members>frField.donor_cretime</members>
-        <members>frField.donor_name</members>
-        <members>frField.donorId</members>
-        <members>frField.donorType</members>
-        <members>frField.education</members>
-        <members>frField.email</members>
-        <members>frField.employerName</members>
-        <members>frField.facebookUrl</members>
-        <members>frField.firstDonationDate</members>
-        <members>frField.firstName</members>
-        <members>frField.formName</members>
-        <members>frField.fundraiser</members>
-        <members>frField.fundraiserDonationAmount</members>
-        <members>frField.fundraiserDonationCount</members>
-        <members>frField.gender</members>
-        <members>frField.giftCapacity</members>
-        <members>frField.homeowner</members>
-        <members>frField.income</members>
-        <members>frField.influencerScore</members>
-        <members>frField.institutionCategory</members>
-        <members>frField.institutionName</members>
-        <members>frField.isFundraiser</members>
-        <members>frField.jobTitle</members>
-        <members>frField.lastDonationDate</members>
-        <members>frField.lastName</members>
-        <members>frField.linkedinUrl</members>
-        <members>frField.maritalStatus</members>
-        <members>frField.memo</members>
-        <members>frField.name</members>
-        <members>frField.netWorth</members>
-        <members>frField.note</members>
-        <members>frField.notes</members>
-        <members>frField.offline</members>
-        <members>frField.operationsTip</members>
-        <members>frField.operationsTipAmount</members>
-        <members>frField.p2gScore</members>
-        <members>frField.phone</members>
-        <members>frField.photoUrl</members>
-        <members>frField.pledge</members>
-        <members>frField.postalCode</members>
-        <members>frField.realEstate</members>
-        <members>frField.recurring</members>
-        <members>frField.recurringSequence</members>
-        <members>frField.state</members>
-        <members>frField.status</members>
-        <members>frField.tags</members>
-        <members>frField.totalDonationAmount</members>
-        <members>frField.totalDonationCount</members>
-        <members>frField.totalSoftCreditAmount</members>
-        <members>frField.totalSoftCreditCount</members>
-        <members>frField.twitterUrl</members>
-        <members>frField.url</members>
-        <name>CustomMetadata</name>
-    </types>
-    <types>
         <members>frField__mdt</members>
         <members>frMapping__c</members>
         <name>CustomObject</name>
@@ -109,6 +37,10 @@
         <members>Error__c</members>
         <members>Funraise_Setup</members>
         <name>CustomTab</name>
+    </types>
+    <types>
+        <members>*</members>
+        <name>CustomMetadata</name>
     </types>
     <version>36.0</version>
 </Package>
