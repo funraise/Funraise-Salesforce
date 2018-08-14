@@ -10,3 +10,4 @@ config
 /build.properties
 /build.xml
 /.project
+/salesforce.schema
