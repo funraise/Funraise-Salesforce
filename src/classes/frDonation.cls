@@ -84,8 +84,12 @@ public class frDonation extends frModel {
         	List<Contact> contacts = Database.query('select AccountId from Contact where fr_ID__c = :donorId');
         	if(contacts.size() > 0){
         		Contact primaryContact = contacts.get(0);
-				o.put('npsp__Primary_Contact__c', primaryContact.Id);
-    			o.AccountId=primaryContact.AccountId;
+        		if(o.get('npsp__Primary_Contact__c') == null){
+					o.put('npsp__Primary_Contact__c', primaryContact.Id);
+        		}
+        		if(o.AccountId == null){
+    				o.AccountId=primaryContact.AccountId;
+        		}
         	}
         }
     }
