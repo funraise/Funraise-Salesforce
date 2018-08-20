@@ -81,15 +81,15 @@ public class frDonation extends frModel {
         }
         
         if(hasNonProfitSuccessPackage()){
-        	List<Contact> contacts = Database.query('select AccountId from Contact where fr_ID__c = :donorId');
-        	if(contacts.size() > 0){
-        		Contact primaryContact = contacts.get(0);
-        		if(o.get('npsp__Primary_Contact__c') == null){
-					o.put('npsp__Primary_Contact__c', primaryContact.Id);
-        		}
-        		if(o.AccountId == null){
-    				o.AccountId=primaryContact.AccountId;
-        		}
+            List<Contact> contacts = Database.query('select AccountId from Contact where fr_ID__c = :donorId');
+            if(contacts.size() > 0){
+                Contact primaryContact = contacts.get(0);
+                if(o.get('npsp__Primary_Contact__c') == null){
+                    o.put('npsp__Primary_Contact__c', primaryContact.Id);
+                }
+                if(o.AccountId == null){
+                    o.AccountId=primaryContact.AccountId;
+                }
         	}
         }
     }
