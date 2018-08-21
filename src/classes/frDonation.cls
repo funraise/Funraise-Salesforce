@@ -39,6 +39,7 @@
  */
 
 public class frDonation extends frModel {
+	
     public static List<frMapping__c> mappings {
         get {
             if(mappings == null) {
@@ -78,8 +79,29 @@ public class frDonation extends frModel {
         if(String.isBlank(o.StageName)) {
             o.StageName = (status == 'Failed') ? 'Closed Lost' : 'Closed Won';    
         }
+        
+        if(hasNonProfitSuccessPackage()){
+            List<Contact> contacts = Database.query('select AccountId from Contact where fr_ID__c = :donorId');
+            if(contacts.size() > 0){
+                Contact primaryContact = contacts.get(0);
+                if(o.get('npsp__Primary_Contact__c') == null){
+                    o.put('npsp__Primary_Contact__c', primaryContact.Id);
+                }
+                if(o.AccountId == null){
+                    o.AccountId=primaryContact.AccountId;
+                }
+        	}
+        }
     }
 
+	private Boolean hasNonProfitSuccessPackage(){
+		try {
+			return UserInfo.isCurrentUserLicensed('npsp');
+		} catch (TypeException te) {
+			return false;
+		}
+	}
+	
     public static frDonation create(Map<String, Object> request) {
         frDonation donation = new frDonation();
         donation.populateFromRequest(request);
