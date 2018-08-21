@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
         <members>frDonation</members>
@@ -29,10 +29,6 @@
         <name>CustomField</name>
     </types>
     <types>
-        <members>*</members>
-        <name>CustomMetadata</name>
-    </types>
-    <types>
         <members>frField__mdt</members>
         <members>frMapping__c</members>
         <name>CustomObject</name>
@@ -41,6 +37,10 @@
         <members>Error__c</members>
         <members>Funraise_Setup</members>
         <name>CustomTab</name>
+    </types>
+    <types>
+        <members>*</members>
+        <name>CustomMetadata</name>
     </types>
     <version>36.0</version>
 </Package>
