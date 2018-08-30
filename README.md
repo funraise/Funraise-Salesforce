@@ -1,5 +1,5 @@
 # Funraise-Salesforce
-Salesforce unmanaged package used to integrate with the Funraise platform
+A collection of salesforce metadata used to integrate with the Funraise platform
 
 ## Installation 
 
