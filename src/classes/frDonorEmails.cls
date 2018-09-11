@@ -19,15 +19,13 @@ public class frDonorEmails extends frModel {
         return mappings;
     }
 
-    private String contactId;
     private frDonor d;
 
     public frDonorEmails(frDonor d) {
-        this.contactId = d.getContactId();
         this.d = d;
     }
 
-    public void parseEmails(Map<String, Object> request) {
+    public void parseEmails(Map<String, Object> request, String contactId) {
         Map<String, Object> emails = (Map<String, Object>)request.get('emails');
         try {
             List<Event> eventList = new List<Event>();
@@ -47,7 +45,7 @@ public class frDonorEmails extends frModel {
         }
     }
 
-    public static frDonorEmails create(Map<String, Object> request) {
+    public static String create(Map<String, Object> request) {
         String frId = String.valueOf(request.get('id'));
 
         // Try to find a donor that's already been integrated, use their funraise ID
@@ -56,14 +54,10 @@ public class frDonorEmails extends frModel {
         // If we don't a donor we will not add the emails
         if (donor != null) {
             frDonorEmails donorEmails = new frDonorEmails(donor);
-            donorEmails.parseEmails(request);
+            donorEmails.parseEmails(request, donor.getContactId());
 
-            return donorEmails;
+            return donor.getContactId();
         }
-        return null;
-    }
-
-    public String getContactId() {
-        return this.contactId;
+        return '-1';
     }
 }

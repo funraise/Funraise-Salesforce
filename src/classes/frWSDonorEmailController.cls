@@ -43,14 +43,10 @@ global with sharing class frWSDonorEmailController {
     @HttpPost
     global static void syncEntity() {
         Map<String, Object> request = (Map<String, Object>)JSON.deserializeUntyped(RestContext.request.requestBody.toString());
-        frDonorEmails donorEmails = frDonorEmails.create(request);
+        String contactId = frDonorEmails.create(request);
 
         Map<String,Object> resp = new Map<String,Object>();
-        if (donorEmails == null) {
-            resp.put('id', -1);
-        } else {
-        	resp.put('id', donorEmails.getContactId());
-        }
+        resp.put('id', contactId);
 
         RestContext.response.addHeader('Content-Type', 'application/json');
         RestContext.response.responseBody = Blob.valueOf(JSON.serialize(resp));
