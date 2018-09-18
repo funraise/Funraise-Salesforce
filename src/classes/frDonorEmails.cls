@@ -1,24 +1,4 @@
-public class frDonorEmails extends frModel {
-    public static final String TYPE = 'DonorEmails';
-
-    public static List<frMapping__c> mappings {
-        get {
-            if(mappings == null) {
-                mappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Type__c FROM frMapping__c WHERE Type__c = :TYPE ORDER BY CreatedDate];
-            }
-            return mappings;
-        }
-        set;
-    }
-
-    protected override SObject getObject() {
-        return d.getContact();
-    }
-
-    public override List<frMapping__c> getMappings() {
-        return mappings;
-    }
-
+public class frDonorEmails {
     private frDonor d;
 
     public frDonorEmails(frDonor d) {
@@ -41,7 +21,7 @@ public class frDonorEmails extends frModel {
             }
             Database.upsert(eventList, Event.Fields.fr_Email_ID__c, true);
         } catch (DMLException e) {
-            handleException(e);
+        	insert new Error__c(Error__c = e.getMessage());
         }
     }
 
@@ -58,6 +38,6 @@ public class frDonorEmails extends frModel {
 
             return donor.getContactId();
         }
-        return '-1';
+        return null;
     }
 }

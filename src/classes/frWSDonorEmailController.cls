@@ -37,7 +37,7 @@
  * CREATED: 2016 Funraise Inc - https://funraise.io
  * AUTHOR: Jason M. Swenski
  */
-@RestResource(urlMapping='/v1/donoremail')
+@RestResource(urlMapping='/v1/email')
 global with sharing class frWSDonorEmailController {
 
     @HttpPost

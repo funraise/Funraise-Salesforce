@@ -62,7 +62,7 @@ public class frDonorEmailsTest {
         request.put('emails', emailMap);
 
         Test.startTest();
-        frDonorEmails donorEmails = frDonorEmails.create(request);
+        String donorEmailsResponse = frDonorEmails.create(request);
         Test.stopTest();
 
         Contact[] newContact = [SELECT Id, fr_ID__c FROM Contact WHERE fr_ID__c = :funraiseId];
@@ -100,12 +100,12 @@ public class frDonorEmailsTest {
         request.put('emails', emailMap);
 
         Test.startTest();
-        frDonorEmails donorEmails = frDonorEmails.create(request);
+        String donorEmailsResponse = frDonorEmails.create(request);
         Test.stopTest();
 
         Contact[] newContact = [SELECT Id, fr_ID__c FROM Contact WHERE fr_ID__c = :funraiseId];
         Event newEvent = [SELECT fr_Email_ID__c FROM Event WHERE WhoId = :newContact[0].Id];
-        System.assertEquals('4', newEvent.fr_Email_ID__C, 'The funraise email id was not correct');
+        System.assertEquals('2', newEvent.fr_Email_ID__C, 'The funraise email id was not correct');
     }
 
     static testMethod void createNoExistingContact_test() {
@@ -125,9 +125,9 @@ public class frDonorEmailsTest {
         request.put('emails', emailMap);
 
         Test.startTest();
-        frDonorEmails donorEmails = frDonorEmails.create(request);
+        String donorEmailsResponse = frDonorEmails.create(request);
         Test.stopTest();
 
-        System.assertEquals(null, donorEmails, 'The donor emails is not null');
+        System.assertEquals(null, donorEmailsResponse, 'The donor was not null');
     }
 }
