@@ -74,43 +74,6 @@ public class frWSDonorEmailControllerTest {
         System.assertEquals('4', newEvent.fr_Email_ID__C, 'The funraise email id was not correct');
     }
 
-    static testMethod void syncEntity_multipleEmails() {
-        Contact testContact = new Contact(
-            FirstName = 'Bruce', LastName = 'Wayne', Email = 'bruce@wayne.example.com',
-            MailingStreet = '1007 Mountain Drive', MailingCity = 'Gotham', MailingState = 'NJ',
-            MailingPostalCode = '12345', MailingCountry = 'United States', fr_ID__c = '856'
-        );
-        insert testContact;
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donoremail';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(getMultipleTestPayload());
-        RestContext.request = req;
-        RestContext.response = res;
-
-        Test.startTest();
-
-        frWSDonorEmailController.syncEntity();
-
-        Test.stopTest();
-
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-
-        Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId),
-            'There was not an contact Id in the response as expected');
-        Contact newContact = [SELECT Id, fr_ID__c FROM Contact WHERE Id = :contactId];
-        System.assertEquals('856', newContact.fr_ID__c, 'The funraise donor id was not populated to the contact field');
-        Integer eventCount = [SELECT COUNT() FROM Event WHERE WhoId = :contactId];
-        System.assertEquals(2, eventCount, 'The funraise email count was not correct');
-    }
-
-    private static void createMapping(String frField, String sfField) {
-        insert new frMapping__c(Name = frField+sfField, fr_Name__c = frField, sf_Name__c = sfField, Type__c = frDonor.TYPE);
-    }
-
     public class MockResponse {
         String id;
         Boolean success;
@@ -119,36 +82,23 @@ public class frWSDonorEmailControllerTest {
     private static String getTestPayload() {
         return '{'+
             '"id":856,'+
-            '"emails": {'+
-            	'"db92570b-766b-46b9-8b7a-a0c7efa92053": {'+
-                    '"emailId": 4,'+
-                    '"messageId": "db92570b-766b-46b9-8b7a-a0c7efa92053",'+
-                    '"correlationId": "4aeeCRcARIamde0uiZAr6Q",'+
-                    '"statusCode": 202,'+
-                    '"sentDate": ' + 1536184380L + ','+
-                    '"subject": "Hello there"}'+
-            	'}'+
+            '"emailId": 4,'+
+            '"messageId": "db92570b-766b-46b9-8b7a-a0c7efa92053",'+
+            '"correlationId": "4aeeCRcARIamde0uiZAr6Q",'+
+            '"statusCode": 202,'+
+            '"sentDate": ' + 1536184380L + ','+
+            '"subject": "Hello there"'+
         	'}';
     }
         private static String getMultipleTestPayload() {
             return '{'+
                 '"id":856,'+
-                '"emails": {'+
-                	'"db92570b-766b-46b9-8b7a-a0c7efa92053": {'+
-                        '"emailId": 4,'+
-                        '"messageId": "db92570b-766b-46b9-8b7a-a0c7efa92053",'+
-                        '"correlationId": "4aeeCRcARIamde0uiZAr6Q",'+
-                        '"statusCode": 202,'+
-                    	'"sentDate": ' + 1536184380L + ','+
-                        '"subject": "Hello there"},'+
-                	'"ab6c2dc6-3156-484c-b8f7-c203070259b9": {'+
-                        '"emailId": 2,'+
-                        '"messageId": "ab6c2dc6-3156-484c-b8f7-c203070259b9",'+
-                        '"correlationId": "zrtusKL1QWK_yddRylVQ0A",'+
-                        '"statusCode": 202,'+
-                    	'"sentDate": ' + 1536184380L + ','+
-                        '"subject": "Hello again"}'+
-                	'}'+
+                '"emailId": 4,'+
+                '"messageId": "db92570b-766b-46b9-8b7a-a0c7efa92053",'+
+                '"correlationId": "4aeeCRcARIamde0uiZAr6Q",'+
+                '"statusCode": 202,'+
+                '"sentDate": ' + 1536184380L + ','+
+                '"subject": "Hello there"'+
             '}';
         }
 }

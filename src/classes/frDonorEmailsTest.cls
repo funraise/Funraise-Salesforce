@@ -50,16 +50,12 @@ public class frDonorEmailsTest {
 
         Map<String, Object> request = new Map<String, Object>();
         request.put('id', funraiseId);
-        Map<String, Object> email = new Map<String, Object>();
-        email.put('emailId', 4);
-        email.put('messageId', 'db92570b-766b-46b9-8b7a-a0c7efa92053');
-        email.put('correlationId', '4aeeCRcARIamde0uiZAr6Q');
-        email.put('statusCode', 202);
-        email.put('sentDate', 1536184380L);
-        email.put('subject', 'Hello there!');
-        Map<String, Object> emailMap = new Map<String, Object>();
-        emailMap.put('db92570b-766b-46b9-8b7a-a0c7efa92053', email);
-        request.put('emails', emailMap);
+        request.put('emailId', 4);
+        request.put('messageId', 'db92570b-766b-46b9-8b7a-a0c7efa92053');
+        request.put('correlationId', '4aeeCRcARIamde0uiZAr6Q');
+        request.put('statusCode', 202);
+        request.put('sentDate', 1536184380L);
+        request.put('subject', 'Hello there!');
 
         Test.startTest();
         String donorEmailsResponse = frDonorEmails.create(request);
@@ -81,23 +77,12 @@ public class frDonorEmailsTest {
 
         Map<String, Object> request = new Map<String, Object>();
         request.put('id', funraiseId);
-        Map<String, Object> email1 = new Map<String, Object>();
-        email1.put('emailId', 4);
-        email1.put('messageId', 'db92570b-766b-46b9-8b7a-a0c7efa92053');
-        email1.put('correlationId', '4aeeCRcARIamde0uiZAr6Q');
-        email1.put('statusCode', 202);
-        email1.put('sentDate', 1536184380L);
-        email1.put('subject', 'Hello there!');
-        Map<String, Object> email2 = new Map<String, Object>();
-        email2.put('emailId', 2);
-        email2.put('messageId', '761aef79-ca2f-48aa-bdef-4580eca7aaf6');
-        email2.put('correlationId', '9VbkmOG1Q9KLI_rleHPoDg');
-        email2.put('statusCode', 202);
-        email2.put('sentDate', 1536184380L);
-        email2.put('subject', 'Hello AGAIN!!');
-        Map<String, Object> emailMap = new Map<String, Object>();
-        emailMap.put('761aef79-ca2f-48aa-bdef-4580eca7aaf6', email2);
-        request.put('emails', emailMap);
+        request.put('emailId', 4);
+        request.put('messageId', 'db92570b-766b-46b9-8b7a-a0c7efa92053');
+        request.put('correlationId', '4aeeCRcARIamde0uiZAr6Q');
+        request.put('statusCode', 202);
+        request.put('sentDate', 1536184380L);
+        request.put('subject', 'Hello there!');
 
         Test.startTest();
         String donorEmailsResponse = frDonorEmails.create(request);
@@ -105,7 +90,7 @@ public class frDonorEmailsTest {
 
         Contact[] newContact = [SELECT Id, fr_ID__c FROM Contact WHERE fr_ID__c = :funraiseId];
         Event newEvent = [SELECT fr_Email_ID__c FROM Event WHERE WhoId = :newContact[0].Id];
-        System.assertEquals('2', newEvent.fr_Email_ID__C, 'The funraise email id was not correct');
+        System.assertEquals('4', newEvent.fr_Email_ID__C, 'The funraise email id was not correct');
     }
 
     static testMethod void createNoExistingContact_test() {
@@ -113,16 +98,12 @@ public class frDonorEmailsTest {
 
         Map<String, Object> request = new Map<String, Object>();
         request.put('id', 2314);
-        Map<String, Object> email = new Map<String, Object>();
-        email.put('emailId', 4);
-        email.put('messageId', 'db92570b-766b-46b9-8b7a-a0c7efa92053');
-        email.put('correlationId', '4aeeCRcARIamde0uiZAr6Q');
-        email.put('statusCode', 202);
-        email.put('sentDate', 1536184380L);
-        email.put('subject', 'Hello there!');
-        Map<String, Object> emailMap = new Map<String, Object>();
-        emailMap.put('db92570b-766b-46b9-8b7a-a0c7efa92053', email);
-        request.put('emails', emailMap);
+        request.put('emailId', 4);
+        request.put('messageId', 'db92570b-766b-46b9-8b7a-a0c7efa92053');
+        request.put('correlationId', '4aeeCRcARIamde0uiZAr6Q');
+        request.put('statusCode', 202);
+        request.put('sentDate', 1536184380L);
+        request.put('subject', 'Hello there!');
 
         Test.startTest();
         String donorEmailsResponse = frDonorEmails.create(request);
