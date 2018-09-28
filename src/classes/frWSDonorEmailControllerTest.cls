@@ -70,8 +70,8 @@ public class frWSDonorEmailControllerTest {
             'There was not an contact Id in the response as expected');
         Contact newContact = [SELECT Id, fr_ID__c FROM Contact WHERE Id = :contactId];
         System.assertEquals('856', newContact.fr_ID__c, 'The funraise donor id was not populated to the contact field');
-        Event newEvent = [SELECT fr_Email_ID__c FROM Event WHERE WhoId = :contactId];
-        System.assertEquals('4', newEvent.fr_Email_ID__C, 'The funraise email id was not correct');
+        EmailMessage newEmail = [SELECT fromAddress FROM EmailMessage WHERE fr_Email_ID__c = '4'];
+        System.assertEquals('email@funraise.io', newEmail.fromAddress, 'The funraise email address was not correct');
     }
 
     public class MockResponse {
@@ -85,20 +85,12 @@ public class frWSDonorEmailControllerTest {
             '"emailId": 4,'+
             '"messageId": "db92570b-766b-46b9-8b7a-a0c7efa92053",'+
             '"correlationId": "4aeeCRcARIamde0uiZAr6Q",'+
+            '"fromAddress": "email@funraise.io",' +
+            '"fromName": "John Smith",' +
+            '"toAddress": "testEmail@google.com",' +
             '"statusCode": 202,'+
             '"sentDate": ' + 1536184380L + ','+
             '"subject": "Hello there"'+
         	'}';
     }
-        private static String getMultipleTestPayload() {
-            return '{'+
-                '"id":856,'+
-                '"emailId": 4,'+
-                '"messageId": "db92570b-766b-46b9-8b7a-a0c7efa92053",'+
-                '"correlationId": "4aeeCRcARIamde0uiZAr6Q",'+
-                '"statusCode": 202,'+
-                '"sentDate": ' + 1536184380L + ','+
-                '"subject": "Hello there"'+
-            '}';
-        }
 }

@@ -53,6 +53,9 @@ public class frDonorEmailsTest {
         request.put('emailId', 4);
         request.put('messageId', 'db92570b-766b-46b9-8b7a-a0c7efa92053');
         request.put('correlationId', '4aeeCRcARIamde0uiZAr6Q');
+        request.put('fromAddress', 'test@funraise.io');
+        request.put('fromName', 'Bob Hope');
+        request.put('toAddress', 'notfunraise@funraise.io');
         request.put('statusCode', 202);
         request.put('sentDate', 1536184380L);
         request.put('subject', 'Hello there!');
@@ -62,35 +65,9 @@ public class frDonorEmailsTest {
         Test.stopTest();
 
         Contact[] newContact = [SELECT Id, fr_ID__c FROM Contact WHERE fr_ID__c = :funraiseId];
-        Event newEvent = [SELECT fr_Email_ID__c FROM Event WHERE WhoId = :newContact[0].Id];
-        System.assertEquals('4', newEvent.fr_Email_ID__C, 'The funraise email id was not correct');
-    }
-
-    static testMethod void createExistingContactMultipleEmails_test() {
-        String funraiseId = '123456';
-        Contact testContact = new Contact(
-            FirstName = 'Bruce', LastName = 'Wayne', Email = 'bruce@wayne.example.com',
-            MailingStreet = '1007 Mountain Drive', MailingCity = 'Gotham', MailingState = 'NJ',
-            MailingPostalCode = '12345', MailingCountry = 'United States', fr_ID__c = funraiseId
-        );
-        insert testContact;
-
-        Map<String, Object> request = new Map<String, Object>();
-        request.put('id', funraiseId);
-        request.put('emailId', 4);
-        request.put('messageId', 'db92570b-766b-46b9-8b7a-a0c7efa92053');
-        request.put('correlationId', '4aeeCRcARIamde0uiZAr6Q');
-        request.put('statusCode', 202);
-        request.put('sentDate', 1536184380L);
-        request.put('subject', 'Hello there!');
-
-        Test.startTest();
-        String donorEmailsResponse = frDonorEmails.create(request);
-        Test.stopTest();
-
-        Contact[] newContact = [SELECT Id, fr_ID__c FROM Contact WHERE fr_ID__c = :funraiseId];
-        Event newEvent = [SELECT fr_Email_ID__c FROM Event WHERE WhoId = :newContact[0].Id];
-        System.assertEquals('4', newEvent.fr_Email_ID__C, 'The funraise email id was not correct');
+        String[] toAddress = new String[]{'notfunraise@funraise.io'};
+        EmailMessage newEmail = [SELECT fromAddress FROM EmailMessage WHERE fr_Email_ID__c = '4'];
+        System.assertEquals('test@funraise.io', newEmail.fromAddress, 'The fromAddress was not correct');
     }
 
     static testMethod void createNoExistingContact_test() {
