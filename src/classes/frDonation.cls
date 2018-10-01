@@ -39,7 +39,7 @@
  */
 
 public class frDonation extends frModel {
-	
+
     public static List<frMapping__c> mappings {
         get {
             if(mappings == null) {
@@ -76,10 +76,19 @@ public class frDonation extends frModel {
         super.populateFromRequest(request);
         this.setDonorId(String.valueOf(request.get('donorId')));
         String status = String.valueOf(request.get('status'));
-        if(String.isBlank(o.StageName)) {
-            o.StageName = (status == 'Failed') ? 'Closed Lost' : 'Closed Won';    
+
+        if (Boolean.valueOf(request.get('pledge'))) {
+            if (status == 'Pending') {
+                o.StageName = 'Pending';
+            } else if (status == 'Closed') {
+                o.StageName = 'Closed Won';
+            }
         }
-        
+				
+        if(String.isBlank(o.StageName)) {
+            o.StageName = (status == 'Failed') ? 'Closed Lost' : 'Closed Won';
+        }
+
         if(hasNonProfitSuccessPackage()){
             List<Contact> contacts = Database.query('select AccountId from Contact where fr_ID__c = :donorId');
             if(contacts.size() > 0){
@@ -101,7 +110,7 @@ public class frDonation extends frModel {
 			return false;
 		}
 	}
-	
+
     public static frDonation create(Map<String, Object> request) {
         frDonation donation = new frDonation();
         donation.populateFromRequest(request);
