@@ -3,6 +3,8 @@
     <types>
         <members>frDonation</members>
         <members>frDonor</members>
+        <members>frDonorEmails</members>
+        <members>frDonorEmailsTest</members>
         <members>frDonorTest</members>
         <members>frModel</members>
         <members>frSchemaUtil</members>
@@ -24,6 +26,7 @@
     </types>
     <types>
         <members>Contact.fr_ID__c</members>
+        <members>EmailMessage.fr_Email_ID__c</members>
         <members>Opportunity.fr_Donor__c</members>
         <members>Opportunity.fr_ID__c</members>
         <name>CustomField</name>
@@ -42,5 +45,5 @@
         <members>*</members>
         <name>CustomMetadata</name>
     </types>
-    <version>36.0</version>
+    <version>43.0</version>
 </Package>
