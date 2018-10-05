@@ -114,6 +114,11 @@ global with sharing class frWSTaskController {
 		Map<String,Object> resp = new Map<String,Object>();
         resp.put('success', success);
         resp.put('message', message);
+
+        if(!success){
+            insert new Error__c(Error__c = message);
+        }
+
         RestContext.response.responseBody = Blob.valueOf(JSON.serialize(resp));
     }
 }
