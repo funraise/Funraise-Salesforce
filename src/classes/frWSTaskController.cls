@@ -40,15 +40,15 @@
 
 @RestResource(urlMapping='/v1/task')
 global with sharing class frWSTaskController {
-    
+
     @HttpPost
     global static void syncEntity() {
         Map<String, Object> frTask = (Map<String, Object>)JSON.deserializeUntyped(
             RestContext.request.requestBody.toString()
         );
-        
+
         RestContext.response.addHeader('Content-Type', 'application/json');
-        
+
         String frTaskId = String.valueOf(frTask.get('id'));
         String donorId = String.valueOf(frTask.get('donorId'));
         List<Contact> contacts = (List<Contact>)Database.query('select Id, fr_ID__c from Contact where fr_ID__c = :donorId');
@@ -56,21 +56,21 @@ global with sharing class frWSTaskController {
             setResponse('Contact not found for donorId:  ' + donorId, false);
             return;
         }
-        
+
         String donationId = String.valueOf(frTask.get('donationId'));
         List<Opportunity> opportunities = (List<Opportunity>)Database.query('select Id, fr_ID__c from Opportunity where fr_ID__c = :donationId');
         if(opportunities.isEmpty()){
             setResponse('Opportunity not found for donationId:  ' + donationId, false);
             return;
         }
-        
+
         Contact contact = contacts.get(0);
         Opportunity opportunity = opportunities.get(0);
-        
+
         List<Task> existingSfTasks = (List<Task>)Database.query('select Id, fr_Task_ID__c from Task where fr_Task_ID__c = :frTaskId');
-        
+
         Task sfTask;
-        
+
         if(existingSfTasks.isEmpty()){
             sfTask = new Task();
             sfTask.WhoId = contact.Id;
@@ -79,11 +79,16 @@ global with sharing class frWSTaskController {
             sfTask.Description = (String)frTask.get('description');
             sfTask.Priority = 'Normal';
             sfTask.ActivityDate = DateTime.newInstance((Long)frTask.get('createdDate')).dateGMT();
-            sfTask.Status = 'Waiting on someone else';
+            if(frTask.containsKey('assignedToName')){
+                String assignedToName = (String)frTask.get('assignedToName');
+                if(assignedToName.trim().length() > 0){
+            		sfTask.Status = 'Waiting on ' + frTask.get('assignedToName');
+                }
+            }
         } else {
             sfTask = existingSfTasks.get(0);
         }
-        
+
         String frType = (String)frTask.get('type');
         String frStatus = (String)frTask.get('status');
         if(frStatus == 'Complete' || frType == 'Interaction'){
@@ -94,17 +99,17 @@ global with sharing class frWSTaskController {
         } else if(frStatus == 'Canceled'){
             sfTask.Status = 'Not Started';
         }
-        
+
         try {
             upsert sfTask Task.Fields.fr_Task_ID__c;
         } catch (DMLException e) {
             setResponse(e.getMessage(), false);
             return;
         }
-        
+
         setResponse('', true);
     }
-    
+
     private static void setResponse(String message, Boolean success){
 		Map<String,Object> resp = new Map<String,Object>();
         resp.put('success', success);
