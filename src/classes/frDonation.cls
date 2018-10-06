@@ -84,7 +84,7 @@ public class frDonation extends frModel {
                 o.StageName = 'Closed Won';
             }
         }
-				
+
         if(String.isBlank(o.StageName)) {
             o.StageName = (status == 'Failed') ? 'Closed Lost' : 'Closed Won';
         }
