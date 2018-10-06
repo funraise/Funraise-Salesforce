@@ -1,11 +1,6 @@
 public class frDonorEmails {
-    private frDonor d;
 
-    public frDonorEmails(frDonor d) {
-        this.d = d;
-    }
-
-    public void parseEmails(Map<String, Object> request, String contactId) {
+    public static void parseEmails(Map<String, Object> request, String contactId) {
         try {
             EmailMessage email = new EmailMessage();
             email.Status = '3';
@@ -23,7 +18,9 @@ public class frDonorEmails {
             emr.RelationType = 'ToAddress';
             insert emr;
         } catch (DMLException e) {
-        	insert new Error__c(Error__c = e.getMessage());
+        	insert new Error__c(Error__c =
+            'Failed to insert funraise email for donor id ' + contactId +
+            '. Exception: ' + e.getMessage());
         }
     }
 
@@ -35,8 +32,7 @@ public class frDonorEmails {
 
         // If we don't a donor we will not add the emails
         if (donor != null) {
-            frDonorEmails donorEmails = new frDonorEmails(donor);
-            donorEmails.parseEmails(request, donor.getContactId());
+            frDonorEmails.parseEmails(request, donor.getContactId());
 
             return donor.getContactId();
         }
