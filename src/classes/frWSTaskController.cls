@@ -57,15 +57,7 @@ global with sharing class frWSTaskController {
             return;
         }
 
-        String donationId = String.valueOf(frTask.get('donationId'));
-        List<Opportunity> opportunities = (List<Opportunity>)Database.query('select Id, fr_ID__c from Opportunity where fr_ID__c = :donationId');
-        if(opportunities.isEmpty()){
-            setResponse('Opportunity not found for donationId:  ' + donationId, false);
-            return;
-        }
-
         Contact contact = contacts.get(0);
-        Opportunity opportunity = opportunities.get(0);
 
         List<Task> existingSfTasks = (List<Task>)Database.query('select Id, fr_Task_ID__c from Task where fr_Task_ID__c = :frTaskId');
 
@@ -74,17 +66,28 @@ global with sharing class frWSTaskController {
         if(existingSfTasks.isEmpty()){
             sfTask = new Task();
             sfTask.WhoId = contact.Id;
-            sfTask.WhatId = opportunity.Id;
+
+            String donationId = '';
+        	if(frTask.containsKey('donationId') && frTask.get('donationId') != null){
+            	donationId = String.valueOf(frTask.get('donationId'));
+        	}
+
+        	List<Opportunity> opportunities = new List<Opportunity>();
+        	if(donationId.length() > 0){
+        		opportunities = (List<Opportunity>)Database.query('select Id, fr_ID__c from Opportunity where fr_ID__c = :donationId');
+        	}
+
+            if(!opportunities.isEmpty()){
+            	sfTask.WhatId = opportunities.get(0).Id;
+            }
+
             sfTask.put('fr_Task_ID__c', frTaskId);
-            sfTask.Description = (String)frTask.get('description');
+
+            String description = (String)frTask.get('description');
+            sfTask.Subject = description;
+            sfTask.Description = description;
             sfTask.Priority = 'Normal';
             sfTask.ActivityDate = DateTime.newInstance((Long)frTask.get('createdDate')).dateGMT();
-            if(frTask.containsKey('assignedToName')){
-                String assignedToName = (String)frTask.get('assignedToName');
-                if(assignedToName.trim().length() > 0){
-            		sfTask.Status = 'Waiting on ' + frTask.get('assignedToName');
-                }
-            }
         } else {
             sfTask = existingSfTasks.get(0);
         }
@@ -96,6 +99,12 @@ global with sharing class frWSTaskController {
             sfTask.ActivityDate = DateTime.newInstance((Long)frTask.get('completedDate')).dateGMT();
         } else if(frStatus == 'Pending'){
             sfTask.Status = 'Waiting on someone else';
+            if(frTask.containsKey('assignedToName')){
+                String assignedToName = (String)frTask.get('assignedToName');
+                if(assignedToName.trim().length() > 0){
+            		sfTask.Status = 'Waiting on ' + frTask.get('assignedToName');
+                }
+            }
         } else if(frStatus == 'Canceled'){
             sfTask.Status = 'Not Started';
         }
