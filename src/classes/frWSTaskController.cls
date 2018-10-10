@@ -83,9 +83,14 @@ global with sharing class frWSTaskController {
 
             sfTask.put('fr_Task_ID__c', frTaskId);
 
-            String description = (String)frTask.get('description');
-            sfTask.Subject = description;
-            sfTask.Description = description;
+            if(frTask.containsKey('actionRequired')){
+                String actionRequired = (String)frTask.get('actionRequired');
+                if(actionRequired.trim().length() > 0){
+            		sfTask.Subject = actionRequired;
+                }
+            }
+
+            sfTask.Description = (String)frTask.get('description');
             sfTask.Priority = 'Normal';
             sfTask.ActivityDate = DateTime.newInstance((Long)frTask.get('createdDate')).dateGMT();
         } else {
@@ -99,12 +104,6 @@ global with sharing class frWSTaskController {
             sfTask.ActivityDate = DateTime.newInstance((Long)frTask.get('completedDate')).dateGMT();
         } else if(frStatus == 'Pending'){
             sfTask.Status = 'Waiting on someone else';
-            if(frTask.containsKey('assignedToName')){
-                String assignedToName = (String)frTask.get('assignedToName');
-                if(assignedToName.trim().length() > 0){
-            		sfTask.Status = 'Waiting on ' + frTask.get('assignedToName');
-                }
-            }
         } else if(frStatus == 'Canceled'){
             sfTask.Status = 'Not Started';
         }
