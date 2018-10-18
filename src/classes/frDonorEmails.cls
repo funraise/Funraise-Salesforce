@@ -18,7 +18,9 @@ public class frDonorEmails {
             emr.RelationType = 'ToAddress';
             insert emr;
         } catch (DMLException e) {
-        	insert new Error__c(Error__c = e.getMessage());
+        	insert new Error__c(Error__c =
+            'Failed to insert funraise email for donor id ' + contactId +
+            '. Exception: ' + e.getMessage());
         }
     }
 
