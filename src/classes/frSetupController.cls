@@ -11,7 +11,7 @@ public with sharing class frSetupController {
 		}
 		private set;
 	}
-    
+
     public static Set<String> RESTRICTED_DONOR_FIELDS {
         get {
             if(RESTRICTED_DONOR_FIELDS == null) {
@@ -23,12 +23,12 @@ public with sharing class frSetupController {
         }
         private set;
     }
-    
+
     public static Set<String> RESTRICTED_DONATION_FIELDS {
         get {
             if(RESTRICTED_DONATION_FIELDS == null) {
                 RESTRICTED_DONATION_FIELDS = new Set<String>{
-                    'funraise__fr_ID__c', 
+                    'funraise__fr_ID__c',
                     'funraise__fr_Donor__c'
                 };
             }
@@ -44,7 +44,7 @@ public with sharing class frSetupController {
 	public List<SelectOption> donorSFOptions {get; set;}
 	public List<SelectOption> donorFROptions {get; set;}
 	public List<frMapping__c> donorMappings {get; set;}
-	
+
 	public frSetupController() {
 		SelectOption noneOption = new SelectOption('', '--None--');
 		donationSFOptions = new List<SelectOption>();
@@ -92,7 +92,7 @@ public with sharing class frSetupController {
 		if(String.isBlank(type)) {
 			return;
 		}
-		if(DONATION_TYPE.equals(type)) {			
+		if(DONATION_TYPE.equals(type)) {
 			donationMappings.add(new frMapping__c(Type__c = DONATION_TYPE));
 		} else {
 			donorMappings.add(new frMapping__c(Type__c = DONOR_TYPE));
@@ -164,7 +164,7 @@ public with sharing class frSetupController {
 	}
 
 	private void addError(String message) {
-		ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.ERROR, message));	
+		ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.ERROR, message));
 	}
 
 	public void defaults() {
@@ -222,7 +222,8 @@ public with sharing class frSetupController {
 			new frMapping__c(Name = 'City Default', fr_Name__c = 'city', sf_Name__c = 'mailingcity', Type__c = DONOR_TYPE),
 			new frMapping__c(Name = 'State Default', fr_Name__c = 'state', sf_Name__c = 'mailingstate', Type__c = DONOR_TYPE),
 			new frMapping__c(Name = 'Postal Code Default', fr_Name__c = 'postalCode', sf_Name__c = 'mailingpostalcode', Type__c = DONOR_TYPE),
-			new frMapping__c(Name = 'Country Default', fr_Name__c = 'country', sf_Name__c = 'mailingcountry', Type__c = DONOR_TYPE)
+			new frMapping__c(Name = 'Country Default', fr_Name__c = 'country', sf_Name__c = 'mailingcountry', Type__c = DONOR_TYPE),
+			new frMapping__c(Name = 'Fundraiser Default', fr_Name__c = 'fundraiser', sf_Name__c = 'funraise__is_fundraiser__c', Type__c = DONOR_TYPE)
 		};
 	}
 
