@@ -130,6 +130,17 @@ public class frDonation extends frModel {
         return isSuccess;
     }
 
+    public void createOpportunityMapping(Map<String, Object> request, String contactId) {
+        String mappingType = String.valueOf(request.get('opportunityRoleMapping'));
+        if (mappingType != 'disabled' && mappingType != null) {
+            OpportunityContactRole role = new OpportunityContactRole();
+            role.ContactId = contactId;
+            role.OpportunityId = o.Id;
+            role.Role = mappingType;
+            insert role;
+        }
+    }
+
     public String getDonorId() {
         return this.donorId;
     }
