@@ -57,8 +57,10 @@ global with sharing class frWSDonationController {
         }
 
         Boolean isSuccess = donation.save();
-
-        donation.createOpportunityMapping(request, donor.getContactId());
+        
+        if (donor != null) {
+        	donation.createOpportunityMapping(request, donor.getContactId());
+        }
 
         resp.put('id',donation.getOpportunityId());
         resp.put('errors',errors);
