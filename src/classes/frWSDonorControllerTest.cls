@@ -49,27 +49,27 @@ public class frWSDonorControllerTest {
         RestContext.request = req;
         RestContext.response = res;
 
-        createMapping('firstName', 'FirstName');
-        createMapping('lastName', 'LastName');
-        createMapping('email', 'email');
-        createMapping('address1', 'MailingStreet');
-        createMapping('city', 'MailingCity');
-        createMapping('state', 'MailingState');
-        createMapping('postalCode', 'MailingPostalCode');
-        createMapping('country', 'MailingCountry');
-        createMapping('donor_cretime', 'BirthDate');
+        createMapping('firstName', 'FirstName', frDonor.TYPE);
+        createMapping('lastName', 'LastName', frDonor.TYPE);
+        createMapping('email', 'email', frDonor.TYPE);
+        createMapping('address1', 'MailingStreet', frDonor.TYPE);
+        createMapping('city', 'MailingCity', frDonor.TYPE);
+        createMapping('state', 'MailingState', frDonor.TYPE);
+        createMapping('postalCode', 'MailingPostalCode', frDonor.TYPE);
+        createMapping('country', 'MailingCountry', frDonor.TYPE);
+        createMapping('donor_cretime', 'BirthDate', frDonor.TYPE);
         Test.startTest();
 
         frWSDonorController.syncEntity();
 
         Test.stopTest();
-        
+
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
 
-        
+
         Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
+        System.assert(String.isNotBlank(contactId),
             'There was not an contact Id in the response as expected');
         Contact newContact = [SELECT Id, fr_ID__c FROM Contact WHERE Id = :contactId];
         System.assertEquals('856', newContact.fr_ID__c, 'The funraise donor id was not populated to the contact field');
@@ -91,26 +91,26 @@ public class frWSDonorControllerTest {
         RestContext.request = req;
         RestContext.response = res;
 
-        createMapping('firstName', 'FirstName');
-        createMapping('lastName', 'LastName');
-        createMapping('email', 'email');
-        createMapping('address1', 'MailingStreet');
-        createMapping('city', 'MailingCity');
-        createMapping('state', 'MailingState');
-        createMapping('postalCode', 'MailingPostalCode');
-        createMapping('country', 'MailingCountry');
+        createMapping('firstName', 'FirstName', frDonor.TYPE);
+        createMapping('lastName', 'LastName', frDonor.TYPE);
+        createMapping('email', 'email', frDonor.TYPE);
+        createMapping('address1', 'MailingStreet', frDonor.TYPE);
+        createMapping('city', 'MailingCity', frDonor.TYPE);
+        createMapping('state', 'MailingState', frDonor.TYPE);
+        createMapping('postalCode', 'MailingPostalCode', frDonor.TYPE);
+        createMapping('country', 'MailingCountry', frDonor.TYPE);
         Test.startTest();
 
         frWSDonorController.syncEntity();
 
         Test.stopTest();
-        
+
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
 
-        
+
         Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
+        System.assert(String.isNotBlank(contactId),
             'There was not an contact Id in the response as expected');
         System.assertEquals(existing.Id, contactId, 'The existing contact should have been used');
         Contact newContact = [SELECT Id, fr_ID__c, Email FROM Contact WHERE Id = :contactId];
@@ -134,26 +134,26 @@ public class frWSDonorControllerTest {
         RestContext.request = req;
         RestContext.response = res;
 
-        createMapping('firstName', 'FirstName');
-        createMapping('lastName', 'LastName');
-        createMapping('email', 'email');
-        createMapping('address1', 'MailingStreet');
-        createMapping('city', 'MailingCity');
-        createMapping('state', 'MailingState');
-        createMapping('postalCode', 'MailingPostalCode');
-        createMapping('country', 'MailingCountry');
+        createMapping('firstName', 'FirstName', frDonor.TYPE);
+        createMapping('lastName', 'LastName', frDonor.TYPE);
+        createMapping('email', 'email', frDonor.TYPE);
+        createMapping('address1', 'MailingStreet', frDonor.TYPE);
+        createMapping('city', 'MailingCity', frDonor.TYPE);
+        createMapping('state', 'MailingState', frDonor.TYPE);
+        createMapping('postalCode', 'MailingPostalCode', frDonor.TYPE);
+        createMapping('country', 'MailingCountry', frDonor.TYPE);
         Test.startTest();
 
         frWSDonorController.syncEntity();
 
         Test.stopTest();
-        
+
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
 
-        
+
         Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
+        System.assert(String.isNotBlank(contactId),
             'There was not an contact Id in the response as expected');
         System.assertEquals(existing.Id, contactId, 'The existing contact should have been used');
         Contact newContact = [SELECT Id, fr_ID__c FROM Contact WHERE Id = :contactId];
@@ -185,26 +185,26 @@ public class frWSDonorControllerTest {
         RestContext.request = req;
         RestContext.response = res;
 
-        createMapping('firstName', 'FirstName');
-        createMapping('lastName', 'LastName');
-        createMapping('email', 'email');
-        createMapping('address1', 'MailingStreet');
-        createMapping('city', 'MailingCity');
-        createMapping('state', 'MailingState');
-        createMapping('postalCode', 'MailingPostalCode');
-        createMapping('country', 'MailingCountry');
+        createMapping('firstName', 'FirstName', frDonor.TYPE);
+        createMapping('lastName', 'LastName', frDonor.TYPE);
+        createMapping('email', 'email', frDonor.TYPE);
+        createMapping('address1', 'MailingStreet', frDonor.TYPE);
+        createMapping('city', 'MailingCity', frDonor.TYPE);
+        createMapping('state', 'MailingState', frDonor.TYPE);
+        createMapping('postalCode', 'MailingPostalCode', frDonor.TYPE);
+        createMapping('country', 'MailingCountry', frDonor.TYPE);
         Test.startTest();
 
         frWSDonorController.syncEntity();
 
         Test.stopTest();
-        
+
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
 
-        
+
         Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
+        System.assert(String.isNotBlank(contactId),
             'There was not an contact Id in the response as expected');
         System.assertEquals(existing.Id, contactId, 'The existing contact should have been used');
         Contact newContact = [SELECT Id, fr_ID__c FROM Contact WHERE Id = :contactId];
@@ -223,25 +223,25 @@ public class frWSDonorControllerTest {
         RestContext.request = req;
         RestContext.response = res;
 
-        createMapping('firstName', 'FirstName');
-        createMapping('lastName', 'LastName');
-        createMapping('email', 'email');
-        createMapping('address1', 'MailingStreet');
-        createMapping('city', 'MailingCity');
-        createMapping('state', 'MailingState');
-        createMapping('postalCode', 'MailingPostalCode');
-        createMapping('country', 'MailingCountry');
+        createMapping('firstName', 'FirstName', frDonor.TYPE);
+        createMapping('lastName', 'LastName', frDonor.TYPE);
+        createMapping('email', 'email', frDonor.TYPE);
+        createMapping('address1', 'MailingStreet', frDonor.TYPE);
+        createMapping('city', 'MailingCity', frDonor.TYPE);
+        createMapping('state', 'MailingState', frDonor.TYPE);
+        createMapping('postalCode', 'MailingPostalCode', frDonor.TYPE);
+        createMapping('country', 'MailingCountry', frDonor.TYPE);
 
         //bad mapping for date
-        createMapping('institutionCategory', 'BirthDate');
+        createMapping('institutionCategory', 'BirthDate', frDonor.TYPE);
         //bad mapping for datetime
-        createMapping('p2gScore', 'LastCURequestDate');
+        createMapping('p2gScore', 'LastCURequestDate', frDonor.TYPE);
         Test.startTest();
 
         frWSDonorController.syncEntity();
 
         Test.stopTest();
-        
+
         List<Error__c> errors = [SELECT Error__c FROM Error__c];
         String errorsStr = '';
         for(Error__c error : errors) {
@@ -253,15 +253,57 @@ public class frWSDonorControllerTest {
 
         //but even with bad field mappings the record should still come over correctly
         Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
+        System.assert(String.isNotBlank(contactId),
             'There was not an contact Id in the response as expected');
         Contact newContact = [SELECT Id, fr_ID__c FROM Contact WHERE Id = :contactId];
 
         System.assertEquals('856', newContact.fr_ID__c, 'The funraise donor id was not populated to the contact field');
     }
 
-    private static void createMapping(String frField, String sfField) {
-        insert new frMapping__c(Name = frField+sfField, fr_Name__c = frField, sf_Name__c = sfField, Type__c = frDonor.TYPE);
+    static testMethod void syncEntity_addTags() {
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donor';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(getTestPayload());
+        RestContext.request = req;
+        RestContext.response = res;
+
+        createMapping('firstName', 'FirstName', frDonor.TYPE);
+        createMapping('lastName', 'LastName', frDonor.TYPE);
+        createMapping('email', 'email', frDonor.TYPE);
+        createMapping('address1', 'MailingStreet', frDonor.TYPE);
+        createMapping('city', 'MailingCity', frDonor.TYPE);
+        createMapping('state', 'MailingState', frDonor.TYPE);
+        createMapping('postalCode', 'MailingPostalCode', frDonor.TYPE);
+        createMapping('country', 'MailingCountry', frDonor.TYPE);
+        createMapping('donor_cretime', 'BirthDate', frDonor.TYPE);
+
+        createMapping('Feeding Poor', 'Hunger Force', frModel.TAG_TYPE);
+        createMapping('Free Housing', 'House Power', frModel.TAG_TYPE);
+
+        Test.startTest();
+
+        frWSDonorController.syncEntity();
+
+        Test.stopTest();
+
+
+        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
+
+
+        Id contactId = response.id;
+
+        List<ContactTag> tags = [SELECT Name FROM ContactTag WHERE ItemId = :contactId];
+
+        System.assertEquals('Hunger Force', tags.get(0).Name, 'Tag was not mapped');
+        System.assertEquals('House Power', tags.get(1).Name, 'Tag was not mapped');
+        System.assertEquals('School Books', tags.get(2).Name, 'Un-mapped Tag was not passed through');
+    }
+
+    private static void createMapping(String frField, String sfField, String mappingType) {
+        insert new frMapping__c(Name = frField+sfField, fr_Name__c = frField, sf_Name__c = sfField, Type__c = mappingType);
     }
 
     public class MockResponse {
@@ -314,6 +356,7 @@ public class frWSDonorControllerTest {
                 '"fundraiserDonationAmount":null,'+
                 '"fundraiserDonationCount":null,'+
                 '"fundraiser":false,'+
+                '"tags":["Feeding Poor", "Free Housing", "School Books"],'+
                 '"donor_cretime":1487801043597'+
         '}';
     }

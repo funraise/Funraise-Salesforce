@@ -138,6 +138,27 @@ public class frDonor extends frModel {
         return donor;
     }
 
+    public void addTags(List<Object> tags) {
+        if(tags == null || tags.isEmpty()){
+            return;
+        }
+
+        Contact c = getContact();
+
+        List<ContactTag> contactTags = new List<ContactTag>();
+
+        for(Object tag : tags){
+            String name = String.valueOf(tag);
+            ContactTag contactTag = new ContactTag();
+            contactTag.ItemId = c.Id;
+            contactTag.Name = mapTag(name);
+            contactTag.Type = 'Personal';
+            contactTags.add(contactTag);
+        }
+
+        Database.upsert(contactTags);
+    }
+
     public Boolean save() {
         Boolean isSuccess = false;
         try {
@@ -163,6 +184,7 @@ public class frDonor extends frModel {
     }
 
     public void setContactId(String contactId) {
+        System.debug('Setting contact id: ' + contactId);
         if(this.c == null) {
             this.c = new Contact(Id = contactId);
         }

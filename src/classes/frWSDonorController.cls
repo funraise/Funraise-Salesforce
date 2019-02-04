@@ -47,6 +47,8 @@ global with sharing class frWSDonorController {
         frDonor donor = frDonor.create(request);
         Boolean isSuccess = donor.save();
 
+        donor.addTags((List<Object>)request.get('tags'));
+
         Map<String,Object> resp = new Map<String,Object>();
         resp.put('id', donor.getContactId());
         resp.put('success', isSuccess);

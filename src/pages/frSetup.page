@@ -8,12 +8,12 @@
 			<apex:commandButton action="{!defaults}" value="Use Default Mappings" onclick="return confirm('This will delete ALL of your current mappings and replace them with the defaults.  Are you sure you want to continue?');" />
 		</apex:pageBlockButtons>
 		<h2>
-		Use this page to define what fields should be populated when a new donation (opportunity) or donor (contact) is sent from the 
+		Use this page to define what fields should be populated when a new donation (opportunity) or donor (contact) is sent from the
 		Funraise platform
 		</h2>
 		<br/> <br/>
 		<h2>
-		If you would prefer to hardcode a value for an opportunity or contact, check the "Constant?" box and enter the hardcoded value.  
+		If you would prefer to hardcode a value for an opportunity or contact, check the "Constant?" box and enter the hardcoded value.
 		If not, you can select a field value that comes from Funraise
 		</h2>
 	</apex:pageBlock>
@@ -38,7 +38,7 @@
 					<apex:inputField value="{!mapping.Constant_Value__c}" rendered="{!mapping.Is_Constant__c}" />
 					<apex:selectList value="{!mapping.fr_Name__c}" size="1" rendered="{!!mapping.Is_Constant__c}">
 						<apex:selectOptions value="{!donationFROptions}" />
-					</apex:selectList> 
+					</apex:selectList>
 				</apex:column>
 				<apex:column >
 					<apex:facet name="header">
@@ -46,7 +46,7 @@
 					</apex:facet>
 					<apex:selectList value="{!mapping.sf_Name__c}" size="1">
 						<apex:selectOptions value="{!donationSFOptions}" />
-					</apex:selectList> 
+					</apex:selectList>
 				</apex:column>
 				<apex:column >
 					<apex:facet name="header">
@@ -84,7 +84,7 @@
 					<apex:inputField value="{!mapping.Constant_Value__c}" rendered="{!mapping.Is_Constant__c}" />
 					<apex:selectList value="{!mapping.fr_Name__c}" size="1" rendered="{!!mapping.Is_Constant__c}">
 						<apex:selectOptions value="{!donorFROptions}" />
-					</apex:selectList> 
+					</apex:selectList>
 				</apex:column>
 				<apex:column >
 					<apex:facet name="header">
@@ -92,7 +92,7 @@
 					</apex:facet>
 					<apex:selectList value="{!mapping.sf_Name__c}" size="1">
 						<apex:selectOptions value="{!donorSFOptions}" />
-					</apex:selectList> 
+					</apex:selectList>
 				</apex:column>
 				<apex:column >
 					<apex:facet name="header">
@@ -106,6 +106,39 @@
 			</apex:pageBlockTable>
 			<apex:commandLink action="{!addMapping}" value="Add Donor Mapping" reRender="donorTable">
 				<apex:param name="type" value="{!DONOR_TYPE}" />
+			</apex:commandLink>
+		</apex:pageBlockSection>
+	</apex:pageBlock>
+
+	<apex:pageBlock title="Funraise Tag --> Salesforce Tag">
+		<apex:pageBlockSection columns="1">
+			<apex:pageBlockTable value="{!tagMappings}" var="mapping" id="tagTable" >
+				<apex:column id="fr-field-column">
+					<apex:facet name="header">
+						Value
+					</apex:facet>
+                    <apex:inputField value="{!mapping.fr_Name__c}" />
+				</apex:column>
+				<apex:column >
+					<apex:facet name="header">
+						Salesforce Tag
+					</apex:facet>
+					<apex:selectList value="{!mapping.sf_Name__c}" size="1">
+						<apex:selectOptions value="{!tagSFOptions}" />
+					</apex:selectList>
+				</apex:column>
+				<apex:column >
+					<apex:facet name="header">
+						Remove
+					</apex:facet>
+					<apex:commandLink action="{!removeMapping}" value="Remove" rendered="{!mapping.id != null}">
+						<apex:param name="id" value="{!mapping.Id}" />
+						<apex:param name="type" value="{!TAG_TYPE}" />
+					</apex:commandLink>
+				</apex:column>
+			</apex:pageBlockTable>
+			<apex:commandLink action="{!addMapping}" value="Add Tag Mapping" reRender="tagTable">
+				<apex:param name="type" value="{!TAG_TYPE}" />
 			</apex:commandLink>
 		</apex:pageBlockSection>
 	</apex:pageBlock>

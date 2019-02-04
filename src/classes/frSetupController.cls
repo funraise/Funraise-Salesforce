@@ -11,7 +11,13 @@ public with sharing class frSetupController {
 		}
 		private set;
 	}
-    
+	public static String TAG_TYPE {
+		get {
+			return frModel.TAG_TYPE;
+		}
+		private set;
+	}
+
     public static Set<String> RESTRICTED_DONOR_FIELDS {
         get {
             if(RESTRICTED_DONOR_FIELDS == null) {
@@ -23,12 +29,12 @@ public with sharing class frSetupController {
         }
         private set;
     }
-    
+
     public static Set<String> RESTRICTED_DONATION_FIELDS {
         get {
             if(RESTRICTED_DONATION_FIELDS == null) {
                 RESTRICTED_DONATION_FIELDS = new Set<String>{
-                    'funraise__fr_ID__c', 
+                    'funraise__fr_ID__c',
                     'funraise__fr_Donor__c'
                 };
             }
@@ -44,7 +50,11 @@ public with sharing class frSetupController {
 	public List<SelectOption> donorSFOptions {get; set;}
 	public List<SelectOption> donorFROptions {get; set;}
 	public List<frMapping__c> donorMappings {get; set;}
-	
+
+	public List<SelectOption> tagSFOptions {get; set;}
+	public List<SelectOption> tagFROptions {get; set;}
+	public List<frMapping__c> tagMappings {get; set;}
+
 	public frSetupController() {
 		SelectOption noneOption = new SelectOption('', '--None--');
 		donationSFOptions = new List<SelectOption>();
@@ -55,6 +65,10 @@ public with sharing class frSetupController {
 		donorSFOptions.add(noneOption);
 		donorFROptions = new List<SelectOption>();
 		donorFROptions.add(noneOption);
+		tagSFOptions = new List<SelectOption>();
+		tagSFOptions.add(noneOption);
+		tagFROptions = new List<SelectOption>();
+		tagFROptions.add(noneOption);
 
 		Map<String, Schema.SObjectField> oppFields = Opportunity.sObjectType.getDescribe().fields.getMap();
 		for(String fieldName : oppFields.keySet()) {
@@ -83,8 +97,13 @@ public with sharing class frSetupController {
 			donorFROptions.add(new SelectOption(field.DeveloperName, field.MasterLabel));
 		}
 
+        for(ContactTag sfTag : [SELECT Name FROM ContactTag]){
+            tagSFOptions.add(new SelectOption(sfTag.Name, sfTag.Name));
+        }
+
 		donationMappings = frDonation.mappings;
 		donorMappings = frDonor.mappings;
+        tagMappings = frModel.tagMappings;
 	}
 
 	public void addMapping() {
@@ -92,11 +111,13 @@ public with sharing class frSetupController {
 		if(String.isBlank(type)) {
 			return;
 		}
-		if(DONATION_TYPE.equals(type)) {			
+		if(DONATION_TYPE.equals(type)) {
 			donationMappings.add(new frMapping__c(Type__c = DONATION_TYPE));
-		} else {
+		} else if(DONOR_TYPE.equals(type)){
 			donorMappings.add(new frMapping__c(Type__c = DONOR_TYPE));
-		}
+        } else {
+            tagMappings.add(new frMapping__c(Type__c = TAG_TYPE));
+        }
 	}
 
 	public void removeMapping() {
@@ -110,7 +131,15 @@ public with sharing class frSetupController {
 			return;
 		}
 
-		List<frMapping__c> mappings = DONATION_TYPE.equals(type) ? donationMappings : donorMappings;
+		List<frMapping__c> mappings;
+        if(DONATION_TYPE.equals(type)){
+            mappings = donationMappings;
+        } else if(DONOR_TYPE.equals(type)){
+            mappings = donorMappings;
+        } else {
+            mappings = tagMappings;
+        }
+
 		for(Integer i = 0; i < mappings.size(); i++) {
 			frMapping__c mapping = mappings.get(i);
 			if(recordId.equals(mapping.id)) {
@@ -123,13 +152,30 @@ public with sharing class frSetupController {
 	}
 
 	public void save() {
+        if (!Schema.sObjectType.frMapping__c.fields.Name.isUpdateable() ||
+           !Schema.sObjectType.frMapping__c.fields.Name.isCreateable()) {
+            return;
+        }
+
 		Integer customSettingNameLength = frMapping__c.Name.getDescribe().getLength();
 		List<frMapping__c> upsertList = new List<frMapping__c>();
 		List<frMapping__c> allMappings = new List<frMapping__c>(donationMappings);
 		allMappings.addAll(donorMappings);
+        allMappings.addAll(tagMappings);
 		for(frMapping__c mapping : allMappings) {
 			if(String.isNotBlank(mapping.sf_Name__c)) {
-				mapping.Name = (mapping.Type__c == DONATION_TYPE ? 'o.' : 'c.') + mapping.sf_Name__c;
+                String prefix = '';
+
+                if(DONATION_TYPE.equals(mapping.Type__c)){
+                    prefix = 'o.';
+                } else if(DONOR_TYPE.equals(mapping.Type__c)){
+                    prefix = 'c.';
+                } else if(TAG_TYPE.equals(mapping.Type__c)){
+                    prefix = 't.';
+                }
+
+                mapping.Name = prefix + mapping.sf_Name__c;
+
 				if(mapping.Name.length() > customSettingNameLength) {
 					mapping.Name = mapping.Name.subString(0, customSettingNameLength);
 				}
@@ -164,20 +210,22 @@ public with sharing class frSetupController {
 	}
 
 	private void addError(String message) {
-		ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.ERROR, message));	
+		ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.ERROR, message));
 	}
 
 	public void defaults() {
 		if(!checkCD()) {
 			return;
 		}
-		delete [SELECT Id FROM frMapping__c];
+		delete [SELECT Id FROM frMapping__c LIMIT 10000];
 		List<frMapping__c> defaults = getDonorDefaults();
 		defaults.addAll(getDonationDefaults());
+		defaults.addAll(getTagDefaults());
 		insert defaults;
 		addConfirm('All Defaults Applied');
 		donationMappings = frDonation.mappings;
 		donorMappings = frDonor.mappings;
+		tagMappings = frModel.tagMappings;
 	}
 
 	public void donorDefaults() {
@@ -202,6 +250,17 @@ public with sharing class frSetupController {
 		donationMappings = frDonation.mappings;
 	}
 
+	public void tagDefaults() {
+		if(!checkCD()) {
+			return;
+		}
+		delete [SELECT Id FROM frMapping__c WHERE Type__c = :TAG_TYPE];
+		List<frMapping__c> defaults = getTagDefaults();
+		insert defaults;
+		addConfirm('Tag Defaults Applied');
+		tagMappings = frModel.tagMappings;
+	}
+
 	private Boolean checkCD() {
 		Schema.DescribeSObjectResult mappingDescribe = frMapping__c.sObjectType.getDescribe();
 		if(mappingDescribe.isCreateable() && mappingDescribe.isDeletable()) {
@@ -222,7 +281,8 @@ public with sharing class frSetupController {
 			new frMapping__c(Name = 'City Default', fr_Name__c = 'city', sf_Name__c = 'mailingcity', Type__c = DONOR_TYPE),
 			new frMapping__c(Name = 'State Default', fr_Name__c = 'state', sf_Name__c = 'mailingstate', Type__c = DONOR_TYPE),
 			new frMapping__c(Name = 'Postal Code Default', fr_Name__c = 'postalCode', sf_Name__c = 'mailingpostalcode', Type__c = DONOR_TYPE),
-			new frMapping__c(Name = 'Country Default', fr_Name__c = 'country', sf_Name__c = 'mailingcountry', Type__c = DONOR_TYPE)
+			new frMapping__c(Name = 'Country Default', fr_Name__c = 'country', sf_Name__c = 'mailingcountry', Type__c = DONOR_TYPE),
+			new frMapping__c(Name = 'Fundraiser Default', fr_Name__c = 'fundraiser', sf_Name__c = 'funraise__is_fundraiser__c', Type__c = DONOR_TYPE)
 		};
 	}
 
@@ -235,6 +295,11 @@ public with sharing class frSetupController {
 			new frMapping__c(Name = 'Stage Default', Is_Constant__c = true, Constant_Value__c = 'Closed Won', sf_Name__c = 'stagename', Type__c = DONATION_TYPE),
 			new frMapping__c(Name = 'Probability Default', Is_Constant__c = true, Constant_Value__c = '100', sf_Name__c = 'probability', Type__c = DONATION_TYPE)
 		};
+	}
+
+	@testVisible
+	private static List<frMapping__c> getTagDefaults() {
+		return new List<frMapping__c>{};
 	}
 
 }

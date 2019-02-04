@@ -1,4 +1,16 @@
 public abstract class frModel {
+    public static String TAG_TYPE = 'Tag';
+
+    public static List<frMapping__c> tagMappings {
+        get {
+            if(tagMappings == null) {
+                tagMappings = [SELECT fr_Name__c, sf_Name__c, Type__c FROM frMapping__c WHERE Type__c = :TAG_TYPE ORDER BY CreatedDate];
+            }
+            return tagMappings;
+        }
+        set;
+    }
+
 	protected abstract SObject getObject();
     public abstract List<frMapping__c> getMappings();
 
@@ -84,11 +96,11 @@ public abstract class frModel {
         }
     }
 
-    protected void handleException(Exception ex) {
+    public static void handleException(Exception ex) {
         insert new Error__c(Error__c = ex.getMessage());
     }
 
-    
+
     public static void flushLogs() {
         if([SELECT COUNT() FROM Error__c] > 100) {
             deleteLogs();
@@ -100,4 +112,13 @@ public abstract class frModel {
         delete [SELECT Id FROM Error__c ORDER BY CreatedDate DESC LIMIT 10000 OFFSET 100];
     }
 
+    public static String mapTag(String frTagName){
+        for(frMapping__c m : tagMappings){
+            if(frTagName == m.fr_Name__c){
+                return m.sf_Name__c;
+            }
+        }
+
+        return frTagName;
+    }
 }
