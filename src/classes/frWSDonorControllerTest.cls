@@ -63,13 +63,13 @@ public class frWSDonorControllerTest {
         frWSDonorController.syncEntity();
 
         Test.stopTest();
-        
+
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
 
-        
+
         Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
+        System.assert(String.isNotBlank(contactId),
             'There was not an contact Id in the response as expected');
         Contact newContact = [SELECT Id, fr_ID__c FROM Contact WHERE Id = :contactId];
         System.assertEquals('856', newContact.fr_ID__c, 'The funraise donor id was not populated to the contact field');
@@ -104,13 +104,13 @@ public class frWSDonorControllerTest {
         frWSDonorController.syncEntity();
 
         Test.stopTest();
-        
+
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
 
-        
+
         Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
+        System.assert(String.isNotBlank(contactId),
             'There was not an contact Id in the response as expected');
         System.assertEquals(existing.Id, contactId, 'The existing contact should have been used');
         Contact newContact = [SELECT Id, fr_ID__c, Email FROM Contact WHERE Id = :contactId];
@@ -147,13 +147,13 @@ public class frWSDonorControllerTest {
         frWSDonorController.syncEntity();
 
         Test.stopTest();
-        
+
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
 
-        
+
         Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
+        System.assert(String.isNotBlank(contactId),
             'There was not an contact Id in the response as expected');
         System.assertEquals(existing.Id, contactId, 'The existing contact should have been used');
         Contact newContact = [SELECT Id, fr_ID__c FROM Contact WHERE Id = :contactId];
@@ -198,13 +198,13 @@ public class frWSDonorControllerTest {
         frWSDonorController.syncEntity();
 
         Test.stopTest();
-        
+
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
 
-        
+
         Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
+        System.assert(String.isNotBlank(contactId),
             'There was not an contact Id in the response as expected');
         System.assertEquals(existing.Id, contactId, 'The existing contact should have been used');
         Contact newContact = [SELECT Id, fr_ID__c FROM Contact WHERE Id = :contactId];
@@ -241,7 +241,7 @@ public class frWSDonorControllerTest {
         frWSDonorController.syncEntity();
 
         Test.stopTest();
-        
+
         List<Error__c> errors = [SELECT Error__c FROM Error__c];
         String errorsStr = '';
         for(Error__c error : errors) {
@@ -253,7 +253,7 @@ public class frWSDonorControllerTest {
 
         //but even with bad field mappings the record should still come over correctly
         Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
+        System.assert(String.isNotBlank(contactId),
             'There was not an contact Id in the response as expected');
         Contact newContact = [SELECT Id, fr_ID__c FROM Contact WHERE Id = :contactId];
 
@@ -314,6 +314,7 @@ public class frWSDonorControllerTest {
                 '"fundraiserDonationAmount":null,'+
                 '"fundraiserDonationCount":null,'+
                 '"fundraiser":false,'+
+                '"donor_tags":"FeedingPoor EatingFood",'+
                 '"donor_cretime":1487801043597'+
         '}';
     }
