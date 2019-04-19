@@ -87,6 +87,12 @@ public class frDonation extends frModel {
             }
         }
 
+        String campaignId = String.valueOf(request.get('campaignGoalId'));
+        if (campaignId != '' && campaignId != null) {
+            Campaign campaign = [SELECT Id FROM Campaign WHERE fr_ID__c = :campaignId];
+            o.CampaignId = campaign.Id;
+        }
+
         if(hasNonProfitSuccessPackage()){
             List<Contact> contacts = Database.query('select AccountId from Contact where fr_ID__c = :donorId');
             if(contacts.size() > 0){
