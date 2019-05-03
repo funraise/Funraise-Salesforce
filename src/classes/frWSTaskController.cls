@@ -40,15 +40,15 @@
 
 @RestResource(urlMapping='/v1/task')
 global with sharing class frWSTaskController {
-
+    
     @HttpPost
     global static void syncEntity() {
         Map<String, Object> frTask = (Map<String, Object>)JSON.deserializeUntyped(
             RestContext.request.requestBody.toString()
         );
-
+        
         RestContext.response.addHeader('Content-Type', 'application/json');
-
+        
         String frTaskId = String.valueOf(frTask.get('id'));
         String donorId = String.valueOf(frTask.get('donorId'));
         List<Contact> contacts = (List<Contact>)Database.query('select Id, fr_ID__c from Contact where fr_ID__c = :donorId');
@@ -56,77 +56,88 @@ global with sharing class frWSTaskController {
             setResponse('Contact not found for donorId:  ' + donorId, false);
             return;
         }
-
+        
         Contact contact = contacts.get(0);
-
+        
         List<Task> existingSfTasks = (List<Task>)Database.query('select Id, fr_Task_ID__c from Task where fr_Task_ID__c = :frTaskId');
-
+        
         Task sfTask;
-
+        
+        String frType = (String)frTask.get('taskType');
+        
         if(existingSfTasks.isEmpty()){
             sfTask = new Task();
-            sfTask.WhoId = contact.Id;
-
-            String donationId = '';
-        	if(frTask.containsKey('donationId') && frTask.get('donationId') != null){
-            	donationId = String.valueOf(frTask.get('donationId'));
-        	}
-
-        	List<Opportunity> opportunities = new List<Opportunity>();
-        	if(donationId.length() > 0){
-        		opportunities = (List<Opportunity>)Database.query('select Id, fr_ID__c from Opportunity where fr_ID__c = :donationId');
-        	}
-
-            if(!opportunities.isEmpty()){
-            	sfTask.WhatId = opportunities.get(0).Id;
-            }
-
-            sfTask.put('fr_Task_ID__c', frTaskId);
-
-            if(frTask.containsKey('actionRequired')){
-                String actionRequired = (String)frTask.get('actionRequired');
-                if(actionRequired.trim().length() > 0){
-            		sfTask.Subject = actionRequired;
-                }
-            }
-
-            sfTask.Description = (String)frTask.get('description');
-            sfTask.Priority = 'Normal';
-            sfTask.ActivityDate = DateTime.newInstance((Long)frTask.get('createdDate')).dateGMT();
+        	sfTask.Priority = 'Normal';
         } else {
             sfTask = existingSfTasks.get(0);
         }
-
-        String frType = (String)frTask.get('type');
+        
+        Object isDeleted = frTask.get('deleted');
+        if(isDeleted != null && Boolean.valueOf(isDeleted)){
+            delete existingSfTasks;
+            setResponse('', true);
+            return;
+        }
+        
+        sfTask.WhoId = contact.Id;
+        
+        String donationId = '';
+        if(frTask.containsKey('donationId') && frTask.get('donationId') != null){
+            donationId = String.valueOf(frTask.get('donationId'));
+        }
+        
+        List<Opportunity> opportunities = new List<Opportunity>();
+        if(donationId.length() > 0){
+            opportunities = (List<Opportunity>)Database.query('select Id, fr_ID__c from Opportunity where fr_ID__c = :donationId');
+        }
+        
+        if(!opportunities.isEmpty()){
+            sfTask.WhatId = opportunities.get(0).Id;
+        }
+        
+        sfTask.put('fr_Task_ID__c', frTaskId);
+        
+        if(frTask.containsKey('actionRequired')){
+            String actionRequired = (String)frTask.get('actionRequired');
+            if(actionRequired != null && actionRequired.trim().length() > 0){
+                sfTask.Subject = actionRequired;
+            }
+        }
+        
+        if(sfTask.Subject == null || sfTask.Subject.length() == 0){
+            sfTask.Subject = frType;
+        }
+        
+        sfTask.Description = (String)frTask.get('description');
+        sfTask.ActivityDate = DateTime.newInstance((Long)frTask.get('createdDate')).dateGMT();
+        
         String frStatus = (String)frTask.get('status');
         if(frStatus == 'Complete' || frType == 'Interaction'){
             sfTask.Status = 'Completed';
             sfTask.ActivityDate = DateTime.newInstance((Long)frTask.get('completedDate')).dateGMT();
-        } else if(frStatus == 'Pending'){
-            sfTask.Status = 'Waiting on someone else';
-        } else if(frStatus == 'Canceled'){
+        } else if(frStatus == 'Pending' || frStatus == 'Canceled'){
             sfTask.Status = 'Not Started';
         }
-
+        
         try {
             upsert sfTask Task.Fields.fr_Task_ID__c;
         } catch (DMLException e) {
             setResponse(e.getMessage(), false);
             return;
         }
-
+        
         setResponse('', true);
     }
-
+    
     private static void setResponse(String message, Boolean success){
-		Map<String,Object> resp = new Map<String,Object>();
+        Map<String,Object> resp = new Map<String,Object>();
         resp.put('success', success);
         resp.put('message', message);
-
+        
         if(!success){
             insert new Error__c(Error__c = message);
         }
-
+        
         RestContext.response.responseBody = Blob.valueOf(JSON.serialize(resp));
     }
 }

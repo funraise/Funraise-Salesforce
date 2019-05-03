@@ -180,6 +180,55 @@ public class frWSDonationControllerTest {
         System.assertEquals(newCampaign.Id, newOpportunity.CampaignId, 
             'The campaign Id was not added to the donation');
     }
+    
+    static testMethod void syncEntity_donationStatusDefaulting() { 
+        Contact testContact = new Contact(FirstName = 'Bruce', LastName = 'Wayne', 
+            Email = 'bruce.wayne@wayne.example.com', fr_ID__c = '856');
+        insert testContact;
+        
+        Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
+                                             ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
+        insert testCampaign;
+
+        Long currentMillis = Datetime.now().getTime();
+
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
+        req.httpMethod = 'POST';
+        String payload = getTestPayload();
+        payload = payload.replace('"status":"Complete"', '"status":"Refunded"');
+        req.requestBody = Blob.valueOf(payload);
+        RestContext.request = req;
+        RestContext.response = res;
+        createMapping('name', 'Name');
+        createMapping('donation_cretime', 'CloseDate');
+        Test.startTest();
+
+        frWSDonationController.syncEntity();
+
+        Test.stopTest();
+
+        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
+        
+        List<String> responseErrors = response.errors;
+        System.assertEquals(0, responseErrors.size(), 
+            'They were unexpected errors. Errors: '+responseErrors);
+        List<Error__c> errors = [SELECT Error__c FROM Error__c];
+        String errorsStr = '';
+        for(Error__c error : errors) {
+            errorsStr += error.Error__c + '\n';
+        }
+        System.assertEquals(0, errors.size(), 'There were unexpected errors. Errors:' + errorsStr);
+        System.assert(response.success, 'There were no errors expected, result should be successful save');
+        
+        Id oppId = response.id;
+        System.assert(String.isNotBlank(oppId), 
+            'There was not an opportunity Id in the response as expected');
+        Opportunity newOpportunity = [SELECT Id, StageName, fr_ID__c, fr_Donor__c FROM Opportunity WHERE Id = :oppId];
+		System.assertEquals('Closed Lost', newOpportunity.StageName, 'A status of refunded should have resulted in a Closed Lost stage');
+    }
 
     public class MockResponse {
         String id;

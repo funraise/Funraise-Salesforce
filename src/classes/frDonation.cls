@@ -77,10 +77,12 @@ public class frDonation extends frModel {
         this.setDonorId(String.valueOf(request.get('donorId')));
         String status = String.valueOf(request.get('status'));
         
-        if (Boolean.valueOf(request.get('pledge'))) {
+        if(String.isBlank(o.StageName)) {
             if (status == 'Pending') {
                 o.StageName = 'Pending';
-            } else if (status == 'Closed') {
+            } else if (status == 'Failed' || status == 'Refunded') {
+                o.StageName = 'Closed Lost';
+            } else {
                 o.StageName = 'Closed Won';
             }
         }
@@ -92,10 +94,6 @@ public class frDonation extends frModel {
             if (campaign.size() > 0) {
             	o.CampaignId = campaign[0].Id;
             }
-        }
-
-        if(String.isBlank(o.StageName)) {
-            o.StageName = (status == 'Failed') ? 'Closed Lost' : 'Closed Won';    
         }
 
         if(hasNonProfitSuccessPackage()){
