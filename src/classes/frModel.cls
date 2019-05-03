@@ -84,7 +84,7 @@ public abstract class frModel {
         }
     }
 
-    protected void handleException(Exception ex) {
+    public static void handleException(Exception ex) {
         insert new Error__c(Error__c = ex.getMessage());
     }
 
@@ -99,5 +99,4 @@ public abstract class frModel {
     private static void deleteLogs() {
         delete [SELECT Id FROM Error__c ORDER BY CreatedDate DESC LIMIT 10000 OFFSET 100];
     }
-
 }

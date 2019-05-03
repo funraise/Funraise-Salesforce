@@ -39,7 +39,7 @@
  */
 
 public class frDonation extends frModel {
-
+	
     public static List<frMapping__c> mappings {
         get {
             if(mappings == null) {
@@ -76,21 +76,26 @@ public class frDonation extends frModel {
         super.populateFromRequest(request);
         this.setDonorId(String.valueOf(request.get('donorId')));
         String status = String.valueOf(request.get('status'));
-
-        if(String.isBlank(o.StageName)) {
+        
+        if (Boolean.valueOf(request.get('pledge'))) {
             if (status == 'Pending') {
                 o.StageName = 'Pending';
-            } else if (status == 'Failed') {
-                o.StageName = 'Closed Lost';
-            } else {
+            } else if (status == 'Closed') {
                 o.StageName = 'Closed Won';
             }
         }
 
         String campaignId = String.valueOf(request.get('campaignGoalId'));
         if (campaignId != '' && campaignId != null) {
-            Campaign campaign = [SELECT Id FROM Campaign WHERE fr_ID__c = :campaignId];
-            o.CampaignId = campaign.Id;
+            Campaign[] campaign = [SELECT Id FROM Campaign WHERE fr_ID__c = :campaignId];
+            // Make sure a campaign was found before we assign it
+            if (campaign.size() > 0) {
+            	o.CampaignId = campaign[0].Id;
+            }
+        }
+
+        if(String.isBlank(o.StageName)) {
+            o.StageName = (status == 'Failed') ? 'Closed Lost' : 'Closed Won';    
         }
 
         if(hasNonProfitSuccessPackage()){
@@ -114,7 +119,7 @@ public class frDonation extends frModel {
 			return false;
 		}
 	}
-
+	
     public static frDonation create(Map<String, Object> request) {
         frDonation donation = new frDonation();
         donation.populateFromRequest(request);
@@ -134,6 +139,18 @@ public class frDonation extends frModel {
         }
         flushLogs();
         return isSuccess;
+    }
+    
+    public void createOpportunityMapping(Map<String, Object> request, String contactId) {
+        String mappingType = String.valueOf(request.get('opportunityRoleMapping'));
+        System.debug('Mapping Type: ' + mappingType);
+        if (mappingType != 'disabled' && mappingType != null) {
+            OpportunityContactRole role = new OpportunityContactRole();
+            role.ContactId = contactId;
+            role.OpportunityId = o.Id;
+            role.Role = mappingType;
+            insert role;
+        }
     }
 
     public String getDonorId() {

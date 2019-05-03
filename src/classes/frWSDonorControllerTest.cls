@@ -314,6 +314,7 @@ public class frWSDonorControllerTest {
                 '"fundraiserDonationAmount":null,'+
                 '"fundraiserDonationCount":null,'+
                 '"fundraiser":false,'+
+                '"donor_tags":"FeedingPoor EatingFood",'+
                 '"donor_cretime":1487801043597'+
         '}';
     }

@@ -49,8 +49,8 @@ public class frDonorEmailsTest {
         insert testContact;
 
         Map<String, Object> request = new Map<String, Object>();
-        request.put('id', funraiseId);
-        request.put('emailId', 4);
+        request.put('donorId', funraiseId);
+        request.put('id', 4);
         request.put('messageId', 'db92570b-766b-46b9-8b7a-a0c7efa92053');
         request.put('correlationId', '4aeeCRcARIamde0uiZAr6Q');
         request.put('fromAddress', 'test@funraise.io');
@@ -81,11 +81,42 @@ public class frDonorEmailsTest {
         request.put('statusCode', 202);
         request.put('sentDate', 1536184380L);
         request.put('subject', 'Hello there!');
+        
+        Test.startTest();
+        String donorEmailsResponse = frDonorEmails.create(request);
+        Test.stopTest();
+        
+        System.assertEquals(null, donorEmailsResponse, 'The donor was not null');
+    }
+
+    static testMethod void createEmailNoEmailId_test() {
+        String funraiseId = '123456';
+        Contact testContact = new Contact(
+            FirstName = 'Bruce', LastName = 'Wayne', Email = 'bruce@wayne.example.com',
+            MailingStreet = '1007 Mountain Drive', MailingCity = 'Gotham', MailingState = 'NJ',
+            MailingPostalCode = '12345', MailingCountry = 'United States', fr_ID__c = funraiseId
+        );
+        insert testContact;
+
+        Map<String, Object> request = new Map<String, Object>();
+        request.put('donorId', funraiseId);
+        request.put('messageId', 'db92570b-766b-46b9-8b7a-a0c7efa92053');
+        request.put('correlationId', '4aeeCRcARIamde0uiZAr6Q');
+        request.put('fromAddress', 'test111@funraise.io');
+        request.put('fromName', 'Bob Hope');
+        request.put('toAddress', 'notfunraise111@funraise.io');
+        request.put('statusCode', 202);
+        request.put('sentDate', 1536184380L);
+        request.put('subject', 'Hello there!');
 
         Test.startTest();
         String donorEmailsResponse = frDonorEmails.create(request);
         Test.stopTest();
+        System.debug('Response: ' + donorEmailsResponse);
 
-        System.assertEquals(null, donorEmailsResponse, 'The donor was not null');
+        Contact[] newContact = [SELECT Id, fr_ID__c FROM Contact WHERE fr_ID__c = :funraiseId];
+        String[] toAddress = new String[]{'notfunraise111@funraise.io'};
+        EmailMessage newEmail = [SELECT fromAddress FROM EmailMessage WHERE FromAddress = 'test111@funraise.io'];
+        System.assertEquals('test111@funraise.io', newEmail.fromAddress, 'The fromAddress was not correct');
     }
 }

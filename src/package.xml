@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
         <members>frDonation</members>
@@ -14,6 +14,8 @@
         <members>frWSDonationControllerTest</members>
         <members>frWSDonorController</members>
         <members>frWSDonorControllerTest</members>
+        <members>frWSTaskController</members>
+        <members>frWSTaskControllerTest</members>
         <name>ApexClass</name>
     </types>
     <types>
@@ -25,11 +27,16 @@
         <name>CustomApplication</name>
     </types>
     <types>
+        <members>Activity.fr_Task_ID__c</members>
         <members>Contact.fr_ID__c</members>
         <members>EmailMessage.fr_Email_ID__c</members>
         <members>Opportunity.fr_Donor__c</members>
         <members>Opportunity.fr_ID__c</members>
         <name>CustomField</name>
+    </types>
+    <types>
+        <members>*</members>
+        <name>CustomMetadata</name>
     </types>
     <types>
         <members>frField__mdt</members>
@@ -40,10 +47,6 @@
         <members>Error__c</members>
         <members>Funraise_Setup</members>
         <name>CustomTab</name>
-    </types>
-    <types>
-        <members>*</members>
-        <name>CustomMetadata</name>
     </types>
     <version>43.0</version>
 </Package>

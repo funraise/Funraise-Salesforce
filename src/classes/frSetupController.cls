@@ -82,7 +82,7 @@ public with sharing class frSetupController {
 		for(frField__mdt field : [SELECT DeveloperName, MasterLabel FROM frField__mdt WHERE Type__c = :DONOR_TYPE ORDER BY MasterLabel]) {
 			donorFROptions.add(new SelectOption(field.DeveloperName, field.MasterLabel));
 		}
-
+        
 		donationMappings = frDonation.mappings;
 		donorMappings = frDonor.mappings;
 	}
@@ -96,7 +96,7 @@ public with sharing class frSetupController {
 			donationMappings.add(new frMapping__c(Type__c = DONATION_TYPE));
 		} else {
 			donorMappings.add(new frMapping__c(Type__c = DONOR_TYPE));
-		}
+        }
 	}
 
 	public void removeMapping() {
@@ -123,13 +123,18 @@ public with sharing class frSetupController {
 	}
 
 	public void save() {
+        if (!Schema.sObjectType.frMapping__c.fields.Name.isUpdateable() ||
+           !Schema.sObjectType.frMapping__c.fields.Name.isCreateable()) {
+            return;
+        }
+        
 		Integer customSettingNameLength = frMapping__c.Name.getDescribe().getLength();
 		List<frMapping__c> upsertList = new List<frMapping__c>();
 		List<frMapping__c> allMappings = new List<frMapping__c>(donationMappings);
 		allMappings.addAll(donorMappings);
 		for(frMapping__c mapping : allMappings) {
 			if(String.isNotBlank(mapping.sf_Name__c)) {
-				mapping.Name = (mapping.Type__c == DONATION_TYPE ? 'o.' : 'c.') + mapping.sf_Name__c;
+                mapping.Name = (mapping.Type__c == DONATION_TYPE ? 'o.' : 'c.') + mapping.sf_Name__c;
 				if(mapping.Name.length() > customSettingNameLength) {
 					mapping.Name = mapping.Name.subString(0, customSettingNameLength);
 				}
@@ -171,7 +176,7 @@ public with sharing class frSetupController {
 		if(!checkCD()) {
 			return;
 		}
-		delete [SELECT Id FROM frMapping__c];
+		delete [SELECT Id FROM frMapping__c LIMIT 10000];
 		List<frMapping__c> defaults = getDonorDefaults();
 		defaults.addAll(getDonationDefaults());
 		insert defaults;

@@ -75,7 +75,7 @@ public class frDonor extends frModel {
 
     public static frDonor findByFunraiseId(String frId) {
         List<Contact> contacts = (List<Contact>)Database.query('select Id, fr_ID__c from Contact where fr_ID__c = :frId');
-        if(contacts.size() > 0) {
+        if(contacts != null && contacts.size() > 0) {
             return new frDonor(contacts[0]);
         }
         return null;
@@ -86,7 +86,7 @@ public class frDonor extends frModel {
         String frId = String.valueOf(request.get('id'));
         //try to find a donor that's already been integrated, use their funraise ID
         List<Contact> contacts = (List<Contact>)Database.query('select Id, fr_ID__c from Contact where fr_ID__c = :frId');
-        if(contacts.size() > 0) {
+        if(contacts != null && contacts.size() > 0) {
             existingContact = contacts.get(0);
         }
 
@@ -95,7 +95,7 @@ public class frDonor extends frModel {
             //next try email, dont try to match on blank emails
             if(!String.isBlank(email)) {
                 contacts = (List<Contact>)Database.query('select Id, fr_ID__c from Contact where Email = :email order by CreatedDate desc limit 1');
-                if(contacts.size() > 0) {
+                if(contacts != null && contacts.size() > 0) {
                     existingContact = contacts.get(0);
                 }
             }
@@ -121,7 +121,7 @@ public class frDonor extends frModel {
                                ' order by CreatedDate desc limit 1';
 
             contacts = (List<Contact>)Database.query(byAddress);
-            if(contacts.size() > 0) {
+            if(contacts != null && contacts.size() > 0) {
                 existingContact = contacts.get(0);
             }
         }
@@ -163,6 +163,7 @@ public class frDonor extends frModel {
     }
 
     public void setContactId(String contactId) {
+        System.debug('Setting contact id: ' + contactId);
         if(this.c == null) {
             this.c = new Contact(Id = contactId);
         }

@@ -43,12 +43,11 @@ global with sharing class frWSDonationController {
 
     @HttpPost
     global static void syncEntity() {
-        Map<String,Object> resp = new Map<String,Object>();
-        List<String> errors = new List<String>();
-
+        
         Map<String, Object> request = (Map<String, Object>)JSON.deserializeUntyped(RestContext.request.requestBody.toString());
         frDonation donation = frDonation.create(request);
-
+    	
+        List<String> errors = new List<String>();
         frDonor donor = frDonor.findByFunraiseId(donation.getDonorId());
         if(donor != null) {
             donation.setSfDonorId(donor.getContactId());
@@ -57,7 +56,14 @@ global with sharing class frWSDonationController {
         }
 
         Boolean isSuccess = donation.save();
-
+        
+        /*
+        if (donor != null) {
+        	donation.createOpportunityMapping(request, donor.getContactId());
+        }
+		*/
+        
+        Map<String,Object> resp = new Map<String,Object>();
         resp.put('id',donation.getOpportunityId());
         resp.put('errors',errors);
         resp.put('success',isSuccess);

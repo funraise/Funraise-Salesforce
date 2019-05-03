@@ -42,7 +42,7 @@ public class frWSDonationControllerTest {
     private static void createMapping(String frField, String sfField) {
         insert new frMapping__c(Name = frField+sfField, fr_Name__c = frField, sf_Name__c = sfField, Type__c = frDonation.TYPE);
     }
-    static testMethod void syncEntity_newDonor() {
+    static testMethod void syncEntity_newDonor() {  
         RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
 
@@ -68,15 +68,15 @@ public class frWSDonationControllerTest {
         Test.stopTest();
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-
+        
         List<String> responseErrors = response.errors;
-        System.assertEquals(1, responseErrors.size(),
+        System.assertEquals(1, responseErrors.size(), 
             'They were unexpected errors. Errors: '+responseErrors);
-        System.assert(responseErrors.get(0).contains('Donor not found'),
+        System.assert(responseErrors.get(0).contains('Donor not found'), 
             'The error message was not the expected one');
-
+        
         Id oppId = response.id;
-        System.assert(String.isNotBlank(oppId),
+        System.assert(String.isNotBlank(oppId), 
             'There was not an opportunity Id in the response as expected');
         Opportunity newOpportunity = [SELECT Id, fr_ID__c, StageName, Probability, FiscalYear, TotalOpportunityQuantity FROM Opportunity WHERE Id = :oppId];
         System.assertEquals('Closed Won', newOpportunity.StageName, 'The constant mapping for StageName was not used');
@@ -85,8 +85,8 @@ public class frWSDonationControllerTest {
         System.assertEquals(1.5, newOpportunity.TotalOpportunityQuantity, 'The constant mapping for Total Opportunity Quantity was not used');
     }
 
-    static testMethod void syncEntity_existingDonor() {
-        Contact testContact = new Contact(FirstName = 'Bruce', LastName = 'Wayne',
+    static testMethod void syncEntity_existingDonor() { 
+        Contact testContact = new Contact(FirstName = 'Bruce', LastName = 'Wayne', 
             Email = 'bruce.wayne@wayne.example.com', fr_ID__c = '856');
         insert testContact;
 
@@ -109,9 +109,9 @@ public class frWSDonationControllerTest {
         Test.stopTest();
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-
+        
         List<String> responseErrors = response.errors;
-        System.assertEquals(0, responseErrors.size(),
+        System.assertEquals(0, responseErrors.size(), 
             'They were unexpected errors. Errors: '+responseErrors);
         List<Error__c> errors = [SELECT Error__c FROM Error__c];
         String errorsStr = '';
@@ -120,22 +120,22 @@ public class frWSDonationControllerTest {
         }
         System.assertEquals(0, errors.size(), 'There were unexpected errors. Errors:' + errorsStr);
         System.assert(response.success, 'There were no errors expected, result should be successful save');
-
+        
         Id oppId = response.id;
-        System.assert(String.isNotBlank(oppId),
+        System.assert(String.isNotBlank(oppId), 
             'There was not an opportunity Id in the response as expected');
         Opportunity newOpportunity = [SELECT Id, fr_ID__c, fr_Donor__c FROM Opportunity WHERE Id = :oppId];
-        System.assertEquals(testContact.Id, newOpportunity.fr_Donor__c,
+        System.assertEquals(testContact.Id, newOpportunity.fr_Donor__c, 
             'The funraise sf donor id was not populated to the opportunity\'s contact lookup field');
     }
-
-
-    static testMethod void syncEntity_CampaignDonation() {
-        Contact testContact = new Contact(FirstName = 'Bruce', LastName = 'Wayne',
+    
+    
+    static testMethod void syncEntity_CampaignDonation() { 
+        Contact testContact = new Contact(FirstName = 'Bruce', LastName = 'Wayne', 
             Email = 'bruce.wayne@wayne.example.com', fr_ID__c = '856');
         insert testContact;
-
-        Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign',
+        
+        Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
         insert testCampaign;
 
@@ -158,9 +158,9 @@ public class frWSDonationControllerTest {
         Test.stopTest();
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-
+        
         List<String> responseErrors = response.errors;
-        System.assertEquals(0, responseErrors.size(),
+        System.assertEquals(0, responseErrors.size(), 
             'They were unexpected errors. Errors: '+responseErrors);
         List<Error__c> errors = [SELECT Error__c FROM Error__c];
         String errorsStr = '';
@@ -169,15 +169,15 @@ public class frWSDonationControllerTest {
         }
         System.assertEquals(0, errors.size(), 'There were unexpected errors. Errors:' + errorsStr);
         System.assert(response.success, 'There were no errors expected, result should be successful save');
-
+        
         Id oppId = response.id;
-        System.assert(String.isNotBlank(oppId),
+        System.assert(String.isNotBlank(oppId), 
             'There was not an opportunity Id in the response as expected');
         Opportunity newOpportunity = [SELECT Id, fr_ID__c, fr_Donor__c, CampaignId FROM Opportunity WHERE Id = :oppId];
-        System.assertEquals(testContact.Id, newOpportunity.fr_Donor__c,
+        System.assertEquals(testContact.Id, newOpportunity.fr_Donor__c, 
             'The funraise sf donor id was not populated to the opportunity\'s contact lookup field');
         Campaign newCampaign = [SELECT Id FROM Campaign WHERE fr_ID__c = '10'];
-        System.assertEquals(newCampaign.Id, newOpportunity.CampaignId,
+        System.assertEquals(newCampaign.Id, newOpportunity.CampaignId, 
             'The campaign Id was not added to the donation');
     }
 
@@ -188,7 +188,7 @@ public class frWSDonationControllerTest {
     }
 
     private static String getTestPayload() {
-        return
+        return 
         '{"id":2048,'+
         '"organizationId":"ae8d412b-db97-49dc-8c8c-5bfe0f41fc6d",'+
         '"amount":1E+1,'+
@@ -214,9 +214,9 @@ public class frWSDonationControllerTest {
         '"donation_cretime":1493077510493,'+
         '"opportunityRoleMapping":"disabled"}';
     }
-
+    
     private static String getTestPayloadCampaign() {
-        return
+        return 
         '{"id":2048,'+
         '"organizationId":"ae8d412b-db97-49dc-8c8c-5bfe0f41fc6d",'+
         '"amount":1E+1,'+
