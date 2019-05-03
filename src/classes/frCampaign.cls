@@ -39,7 +39,7 @@
  */
 
 public class frCampaign {
-
+    
     public frCampaign(Map<String, Object> request) {
         if (Boolean.valueOf(request.get('deleted'))) {
             deleteCampaign(request);
@@ -47,7 +47,7 @@ public class frCampaign {
     		create(request);
         }
     }
-
+    
     public void deleteCampaign(Map<String, Object> request) {
         String goalId = String.valueOf(request.get('goalId'));
         try {
@@ -76,27 +76,54 @@ public class frCampaign {
             '. Exception: ' + e.getMessage());
         }
     }
-
+    
     public void create(Map<String, Object> request) {
         String goalId = String.valueOf(request.get('goalId'));
-        try {
-            Campaign newCampaign = new Campaign();
-            newCampaign.Name = String.valueOf(request.get('name'));
-            newCampaign.Description = String.valueOf(request.get('reason'));
-            newCampaign.Status = String.valueOf(request.get('status'));
-            newCampaign.ExpectedRevenue = Decimal.valueOf(String.valueOf(request.get('goal')));
-            newCampaign.fr_ID__c = goalId;
-
-            String parentId = String.valueOf(request.get('parentGoalId'));
-            if (parentId != null && parentId != '0') {
-                Campaign parentCampaign = Database.query('select Id, fr_ID__c from Campaign where fr_ID__c = :parentId');
-                newCampaign.ParentId = parentCampaign.Id;
+       
+        Campaign newCampaign = new Campaign();
+        newCampaign.Name = String.valueOf(request.get('name'));
+        newCampaign.Description = String.valueOf(request.get('reason'));
+        newCampaign.Status = String.valueOf(request.get('status'));
+        newCampaign.ExpectedRevenue = Decimal.valueOf(String.valueOf(request.get('goalAmount')));
+        newCampaign.fr_ID__c = goalId;
+        
+        String parentId = String.valueOf(request.get('parentGoalId'));
+        if (parentId != null && parentId != '0') {
+            Campaign parentCampaign = Database.query('select Id, fr_ID__c from Campaign where fr_ID__c = :parentId');
+            if(parentCampaign != null) {
+                newCampaign.ParentId = parentCampaign.Id;                
             }
+        }
+         try {
             Database.upsert(newCampaign, Campaign.Field.fr_ID__c, true);
         } catch (DMLException e) {
         	insert new Error__c(Error__c =
             'Failed to insert funraise campaign for campaign id ' + goalId +
             '. Exception: ' + e.getMessage());
+            return;
+        }
+        
+        String supporterId = String.valueOf(request.get('supporterId'));
+        if(String.isNotBlank(supporterId)) {
+            frDonor donor = frDonor.findByFunraiseId(supporterId);
+            if(donor != null) {
+				Boolean campaignMemberExists = [SELECT COUNT() FROM CampaignMember 
+                                                WHERE ContactId = :donor.getContactId() 
+                                                AND CampaignId = :newCampaign.Id] > 0;
+                CampaignMember fundraiserMember = new CampaignMember(
+                	CampaignId = newCampaign.Id,
+                    ContactId = donor.getContactId()
+                );
+                try {
+                    insert fundraiserMember;
+                } catch (DMLException e) {
+                    insert new Error__c(Error__c =
+                                        'Failed to insert funraise campaign member for campaign id ' + goalId +
+                                        'supporter id: ' + supporterId + '. Exception: ' + e.getMessage());
+                    return;
+                }
+
+            }
         }
     }
 }

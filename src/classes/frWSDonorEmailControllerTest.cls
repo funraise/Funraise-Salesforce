@@ -81,8 +81,8 @@ public class frWSDonorEmailControllerTest {
 
     private static String getTestPayload() {
         return '{'+
-            '"id":856,'+
-            '"emailId": 4,'+
+            '"donorId":856,'+
+            '"id": 4,'+
             '"messageId": "db92570b-766b-46b9-8b7a-a0c7efa92053",'+
             '"correlationId": "4aeeCRcARIamde0uiZAr6Q",'+
             '"fromAddress": "email@funraise.io",' +
@@ -91,6 +91,6 @@ public class frWSDonorEmailControllerTest {
             '"statusCode": 202,'+
             '"sentDate": ' + 1536184380L + ','+
             '"subject": "Hello there"'+
-        	'}';
+            '}';
     }
 }
