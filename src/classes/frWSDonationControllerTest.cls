@@ -50,10 +50,12 @@ public class frWSDonationControllerTest {
         req.httpMethod = 'POST';
 
         req.requestBody = Blob.valueOf(getTestPayload());
+
         RestContext.request = req;
         RestContext.response = res;
 
         createMapping('name', 'Name');
+        createMapping('name', 'Description');
         createMapping('amount', 'amount');
         createMapping('donation_cretime', 'CloseDate');
         insert new frMapping__c(Name = 'Test String', Is_Constant__c = true, Constant_Value__c = 'Closed Won', sf_Name__c = 'StageName', Type__c = frDonation.TYPE);
@@ -78,11 +80,16 @@ public class frWSDonationControllerTest {
         Id oppId = response.id;
         System.assert(String.isNotBlank(oppId), 
             'There was not an opportunity Id in the response as expected');
-        Opportunity newOpportunity = [SELECT Id, fr_ID__c, StageName, Probability, FiscalYear, TotalOpportunityQuantity FROM Opportunity WHERE Id = :oppId];
+        Opportunity newOpportunity = [SELECT Id, fr_ID__c, StageName, Name, Description, Probability, FiscalYear, TotalOpportunityQuantity FROM Opportunity WHERE Id = :oppId];
         System.assertEquals('Closed Won', newOpportunity.StageName, 'The constant mapping for StageName was not used');
         System.assertEquals(95, newOpportunity.Probability, 'The constant mapping for Probability was not used');
         System.assertEquals(2017, newOpportunity.FiscalYear, 'The constant mapping for Fiscal Year was not used');
         System.assertEquals(1.5, newOpportunity.TotalOpportunityQuantity, 'The constant mapping for Total Opportunity Quantity was not used');
+        Map<String, Object> body = (Map<String, Object>)JSON.deserializeUntyped(req.requestBody.toString());
+        String expectedNameAndDesc = (String)body.get('name');
+        //assert that we can use the same funraise field to 2 different SF fields
+        System.assertEquals(expectedNameAndDesc, newOpportunity.Name, 'The mapping for name should have been applied');
+        System.assertEquals(expectedNameAndDesc, newOpportunity.Description, 'The mapping for desc should have been applied');
     }
 
     static testMethod void syncEntity_existingDonor() { 

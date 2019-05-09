@@ -5,20 +5,29 @@ public abstract class frModel {
     public virtual void populateFromRequest(Map<String, Object> request) {
     	Map<String, Schema.SObjectField> fields = frSchemaUtil.getFields(getObject().getSObjectType().getDescribe().getName());
 
-        Map<String, frMapping__c> frNameToSfName = new Map<String, frMapping__c>();
+        //a single funraise field might flow into multiple salesforce fields
+        Map<String, List<frMapping__c>> frNameToSfName = new Map<String, List<frMapping__c>>();
         List<frMapping__c> constantMappings = new List<frMapping__c>();
         for(frMapping__c mapping : getMappings()) {
             if(mapping.Is_Constant__c) {
                 constantMappings.add(mapping);
             } else {
-                frNameToSfName.put(mapping.fr_Name__c, mapping);
+                List<frMapping__c> mappings;
+                if(frNameToSfName.containsKey(mapping.fr_Name__c)) {
+                    mappings = frNameToSfName.get(mapping.fr_Name__c);
+                } else {
+                    mappings = new List<frMapping__c>();
+                }
+                mappings.add(mapping);
+                frNameToSfName.put(mapping.fr_Name__c, mappings);
             }
         }
 
         for(String fieldName : frNameToSfName.keySet()) {
             if(request.containsKey(fieldName)) {
-                frMapping__c mapping = frNameToSfName.get(fieldName);
-                write(getObject(), fields, mapping.sf_Name__c, request.get(fieldName));
+                for(frMapping__c mapping : frNameToSfName.get(fieldName)) {
+                    write(getObject(), fields, mapping.sf_Name__c, request.get(fieldName));                    
+                }
             }
         }
         for(frMapping__c constantMapping : constantMappings) {
