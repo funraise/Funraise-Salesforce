@@ -88,7 +88,7 @@ public class frCampaign {
         newCampaign.fr_ID__c = goalId;
         
         String parentId = String.valueOf(request.get('parentGoalId'));
-        if (parentId != null && parentId != '0') {
+        if (String.isNotBlank(parentId) && parentId != '0') {
             Campaign parentCampaign = Database.query('select Id, fr_ID__c from Campaign where fr_ID__c = :parentId');
             if(parentCampaign != null) {
                 newCampaign.ParentId = parentCampaign.Id;                
@@ -104,7 +104,7 @@ public class frCampaign {
         }
         
         String supporterId = String.valueOf(request.get('supporterId'));
-        if(String.isNotBlank(supporterId)) {
+        if(String.isNotBlank(supporterId) && supporterId != '0') {
             frDonor donor = frDonor.findByFunraiseId(supporterId);
             if(donor != null) {
                 Boolean campaignMemberExists = [SELECT COUNT() FROM CampaignMember 
