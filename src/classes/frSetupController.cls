@@ -237,7 +237,6 @@ public with sharing class frSetupController {
 			new frMapping__c(Name = 'Amount Default', fr_Name__c = 'amount', sf_Name__c = 'amount', Type__c = DONATION_TYPE),
 			new frMapping__c(Name = 'Donation Name Default', fr_Name__c = 'name', sf_Name__c = 'name', Type__c = DONATION_TYPE),
 			new frMapping__c(Name = 'Created Date Default', fr_Name__c = 'donation_cretime', sf_Name__c = 'closedate', Type__c = DONATION_TYPE),
-			new frMapping__c(Name = 'Stage Default', Is_Constant__c = true, Constant_Value__c = 'Closed Won', sf_Name__c = 'stagename', Type__c = DONATION_TYPE),
 			new frMapping__c(Name = 'Probability Default', Is_Constant__c = true, Constant_Value__c = '100', sf_Name__c = 'probability', Type__c = DONATION_TYPE)
 		};
 	}
