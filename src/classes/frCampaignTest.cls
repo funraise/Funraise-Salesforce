@@ -192,10 +192,12 @@ public class frCampaignTest {
         request.put('deleted', false);
 
         Test.startTest();
+        Integer startingErrors = [SELECT COUNT() FROM Error__c];
         new frCampaign(request);
         
         //the same request twice shouldn't duplicate campaign members
         new frCampaign(request);
+        Integer afterErrors = [SELECT COUNT() FROM Error__c];
         Test.stopTest();
 
         Campaign newCampaign = [SELECT Id, fr_ID__c, Name FROM Campaign WHERE fr_ID__c = :goalId];
@@ -205,6 +207,7 @@ public class frCampaignTest {
         System.assertEquals(1, members.size(), 'There should be a CampaignMember for the Fundraiser');
         CampaignMember fundraiserMember = members.get(0);
         System.assertEquals(fundraiser.Id, fundraiserMember.ContactId, 'There should be a CampaignMember for the Fundraiser');
+        System.assertEquals(startingErrors, afterErrors, 'No errors were expected, even in the case of duplicate requests');
     }
     
     static void createCampaigns() {

@@ -110,6 +110,10 @@ public class frCampaign {
                 Boolean campaignMemberExists = [SELECT COUNT() FROM CampaignMember 
                                                 WHERE ContactId = :donor.getContactId() 
                                                 AND CampaignId = :newCampaign.Id] > 0;
+                if(campaignMemberExists) {
+                    return;
+                }
+                
                 CampaignMember fundraiserMember = new CampaignMember(
                     CampaignId = newCampaign.Id,
                     ContactId = donor.getContactId()
@@ -119,7 +123,7 @@ public class frCampaign {
                 } catch (DMLException e) {
                     insert new Error__c(Error__c =
                                         'Failed to insert funraise campaign member for campaign id ' + goalId +
-                                        'supporter id: ' + supporterId + '. Exception: ' + e.getMessage());
+                                        ' supporter id: ' + supporterId + '. Exception: ' + e.getMessage());
                     return;
                 }
                 
