@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
+        <members>frCampaign</members>
+        <members>frCampaignTest</members>
         <members>frDonation</members>
         <members>frDonor</members>
         <members>frDonorEmails</members>
@@ -10,10 +12,13 @@
         <members>frSchemaUtil</members>
         <members>frSetupController</members>
         <members>frSetupControllerTest</members>
+        <members>frWSCampaignController</members>
         <members>frWSDonationController</members>
         <members>frWSDonationControllerTest</members>
         <members>frWSDonorController</members>
         <members>frWSDonorControllerTest</members>
+        <members>frWSDonorEmailController</members>
+        <members>frWSDonorEmailControllerTest</members>
         <members>frWSTaskController</members>
         <members>frWSTaskControllerTest</members>
         <name>ApexClass</name>

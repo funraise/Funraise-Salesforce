@@ -40,7 +40,7 @@
 
 @RestResource(urlMapping='/v1/campaign')
 global with sharing class frWSCampaignController {
-
+    
     @HttpPost
     global static void syncEntity() {
         Map<String, Object> request = (Map<String, Object>)JSON.deserializeUntyped(RestContext.request.requestBody.toString());
