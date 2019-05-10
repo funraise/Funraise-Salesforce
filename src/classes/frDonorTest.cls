@@ -40,11 +40,7 @@
 @isTest
 public class frDonorTest {
     static testMethod void fromContact_test() {
-        Contact testContact = new Contact(
-            FirstName = 'Bruce', LastName = 'Wayne', Email = 'bruce@wayne.example.com',
-            MailingStreet = '1007 Mountain Drive', MailingCity = 'Gotham', MailingState = 'NJ', 
-            MailingPostalCode = '12345', MailingCountry = 'United States', fr_ID__c = '123456'
-        );
+        Contact testContact = getTestContact();
         insert testContact;
 
         Test.startTest();
@@ -87,5 +83,13 @@ public class frDonorTest {
 
         System.assertEquals(null, donor, 
             'The donor was retrieved when it did not match the fr_ID__c field');
+    }
+    
+    public static Contact getTestContact() {
+        return new Contact(
+            FirstName = 'Bruce', LastName = 'Wayne', Email = 'bruce@wayne.example.com',
+            MailingStreet = '1007 Mountain Drive', MailingCity = 'Gotham', MailingState = 'NJ', 
+            MailingPostalCode = '12345', MailingCountry = 'United States', fr_ID__c = '123456'
+        );
     }
 }
