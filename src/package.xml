@@ -8,6 +8,10 @@
         <members>frDonorEmails</members>
         <members>frDonorEmailsTest</members>
         <members>frDonorTest</members>
+        <members>frFundraisingEvent</members>
+        <members>frFundraisingEventRegistration</members>
+        <members>frFundraisingEventRegistrationTest</members>
+        <members>frFundraisingEventTest</members>
         <members>frModel</members>
         <members>frSchemaUtil</members>
         <members>frSetupController</members>
@@ -19,6 +23,8 @@
         <members>frWSDonorControllerTest</members>
         <members>frWSDonorEmailController</members>
         <members>frWSDonorEmailControllerTest</members>
+        <members>frWSFundraisingEventController</members>
+        <members>frWSFundraisingEventRegistrationCntrlr</members>
         <members>frWSTaskController</members>
         <members>frWSTaskControllerTest</members>
         <name>ApexClass</name>
@@ -44,6 +50,9 @@
         <name>CustomMetadata</name>
     </types>
     <types>
+        <members>Error__c</members>
+        <members>Fundraising_Event_Registration__c</members>
+        <members>Fundraising_Event__c</members>
         <members>frField__mdt</members>
         <members>frMapping__c</members>
         <name>CustomObject</name>
