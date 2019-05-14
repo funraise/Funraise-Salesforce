@@ -6,5 +6,9 @@
     <isNavPersonalizationDisabled>false</isNavPersonalizationDisabled>
     <label>Funraise</label>
     <tabs>Funraise_Setup</tabs>
+    <tabs>standard-Contact</tabs>
+    <tabs>standard-Opportunity</tabs>
+    <tabs>Fundraising_Event__c</tabs>
+    <tabs>Fundraising_Event_Registration__c</tabs>
     <tabs>Error__c</tabs>
 </CustomApplication>

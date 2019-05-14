@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (c) 2018, Funraise Inc
+ *  Copyright (c) 2019, Funraise Inc
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -34,16 +34,16 @@
  *
  *
  *
- * CREATED: 2018 Funraise Inc - https://funraise.io
- * AUTHOR: Jordan Speer
+ * CREATED: 2019 Funraise Inc - https://funraise.io
+ * AUTHOR: Alex Molina
  */
 
-@RestResource(urlMapping='/v1/campaign')
-global with sharing class frWSCampaignController {
+@RestResource(urlMapping='/v1/fundraising-event/registration')
+global with sharing class frWSFundraisingEventRegistrationCntrlr {
     
     @HttpPost
     global static void syncEntity() {
         Map<String, Object> request = (Map<String, Object>)JSON.deserializeUntyped(RestContext.request.requestBody.toString());
-        frCampaign campaign = new frCampaign(request);
+        frFundraisingEventRegistration registration = new frFundraisingEventRegistration(request);
     }
 }
