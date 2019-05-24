@@ -39,9 +39,6 @@
  */
 @isTest
 public class frWSDonationControllerTest {
-    private static void createMapping(String frField, String sfField) {
-        insert new frMapping__c(Name = frField+sfField, fr_Name__c = frField, sf_Name__c = sfField, Type__c = frDonation.TYPE);
-    }
     static testMethod void syncEntity_newDonor() {  
         RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
@@ -93,11 +90,8 @@ public class frWSDonationControllerTest {
     }
 
     static testMethod void syncEntity_existingDonor() { 
-        Contact testContact = new Contact(FirstName = 'Bruce', LastName = 'Wayne', 
-            Email = 'bruce.wayne@wayne.example.com', fr_ID__c = '856');
+        Contact testContact = frDonorTest.getTestContact();
         insert testContact;
-
-        Long currentMillis = Datetime.now().getTime();
 
         RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
@@ -116,17 +110,7 @@ public class frWSDonationControllerTest {
         Test.stopTest();
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        
-        List<String> responseErrors = response.errors;
-        System.assertEquals(0, responseErrors.size(), 
-            'They were unexpected errors. Errors: '+responseErrors);
-        List<Error__c> errors = [SELECT Error__c FROM Error__c];
-        String errorsStr = '';
-        for(Error__c error : errors) {
-            errorsStr += error.Error__c + '\n';
-        }
-        System.assertEquals(0, errors.size(), 'There were unexpected errors. Errors:' + errorsStr);
-        System.assert(response.success, 'There were no errors expected, result should be successful save');
+        assertNoErrors(response);
         
         Id oppId = response.id;
         System.assert(String.isNotBlank(oppId), 
@@ -138,15 +122,12 @@ public class frWSDonationControllerTest {
     
     
     static testMethod void syncEntity_CampaignDonation() { 
-        Contact testContact = new Contact(FirstName = 'Bruce', LastName = 'Wayne', 
-            Email = 'bruce.wayne@wayne.example.com', fr_ID__c = '856');
+        Contact testContact = frDonorTest.getTestContact();
         insert testContact;
         
         Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
         insert testCampaign;
-
-        Long currentMillis = Datetime.now().getTime();
 
         RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
@@ -165,17 +146,7 @@ public class frWSDonationControllerTest {
         Test.stopTest();
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        
-        List<String> responseErrors = response.errors;
-        System.assertEquals(0, responseErrors.size(), 
-            'They were unexpected errors. Errors: '+responseErrors);
-        List<Error__c> errors = [SELECT Error__c FROM Error__c];
-        String errorsStr = '';
-        for(Error__c error : errors) {
-            errorsStr += error.Error__c + '\n';
-        }
-        System.assertEquals(0, errors.size(), 'There were unexpected errors. Errors:' + errorsStr);
-        System.assert(response.success, 'There were no errors expected, result should be successful save');
+        assertNoErrors(response);
         
         Id oppId = response.id;
         System.assert(String.isNotBlank(oppId), 
@@ -189,24 +160,119 @@ public class frWSDonationControllerTest {
     }
     
     static testMethod void syncEntity_donationStatusDefaulting() { 
-        Contact testContact = new Contact(FirstName = 'Bruce', LastName = 'Wayne', 
-            Email = 'bruce.wayne@wayne.example.com', fr_ID__c = '856');
+        Contact testContact = frDonorTest.getTestContact();
         insert testContact;
         
         Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
         insert testCampaign;
 
-        Long currentMillis = Datetime.now().getTime();
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
+        req.httpMethod = 'POST';
+        Map<String, Object> request = getTestRequest();
+        request.put('status', 'Refunded');
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        RestContext.request = req;
+        RestContext.response = res;
+        createMapping('name', 'Name');
+        createMapping('donation_cretime', 'CloseDate');
+        Test.startTest();
+
+        frWSDonationController.syncEntity();
+
+        Test.stopTest();
+
+        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
+        assertNoErrors(response);
+        
+        Id oppId = response.id;
+        System.assert(String.isNotBlank(oppId), 
+            'There was not an opportunity Id in the response as expected');
+        Opportunity newOpportunity = [SELECT Id, StageName, fr_ID__c, fr_Donor__c FROM Opportunity WHERE Id = :oppId];
+		System.assertEquals('Closed Lost', newOpportunity.StageName, 'A status of refunded should have resulted in a Closed Lost stage');
+    }
+    
+    static testMethod void syncEntity_newOpportunityRoleMappings() { 
+        Contact donor = frDonorTest.getTestContact();
+        donor.fr_Id__c = '1';
+        donor.Email = 'donor@example.com';
+        Contact fundraiser = frDonorTest.getTestContact();
+        fundraiser.fr_Id__c = '2';
+        fundraiser.Email = 'fundraiser@example.com';
+        Contact teamCaptain = frDonorTest.getTestContact();
+        teamCaptain.fr_Id__c = '3';
+        teamCaptain.Email = 'teamCaptain@example.com';
+        insert new List<Contact>{donor, fundraiser, teamCaptain};
 
         RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
 
         req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
         req.httpMethod = 'POST';
-        String payload = getTestPayload();
-        payload = payload.replace('"status":"Complete"', '"status":"Refunded"');
-        req.requestBody = Blob.valueOf(payload);
+        Map<String, Object> request = getTestRequest();
+        request.put('opportunityContactMappingDisabled', 'false');
+        request.put('donorId', donor.fr_Id__c);
+        request.put('fundraiserId', fundraiser.fr_ID__c);
+        request.put('teamCaptainId', teamCaptain.fr_ID__c);
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        RestContext.request = req;
+        RestContext.response = res;
+        createMapping('name', 'Name');
+        createMapping('donation_cretime', 'CloseDate');
+        Test.startTest();
+
+        frWSDonationController.syncEntity();
+
+        Test.stopTest();
+
+        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
+        assertNoErrors(response);
+        
+        Id oppId = response.id;
+        System.assert(String.isNotBlank(oppId), 
+            'There was not an opportunity Id in the response as expected');
+        Opportunity newOpportunity = [SELECT Id, fr_ID__c, fr_Donor__c, (SELECT Id, ContactId, Role FROM OpportunityContactRoles) FROM Opportunity WHERE Id = :oppId];
+        List<OpportunityContactRole> roles = newOpportunity.OpportunityContactRoles;
+        System.assertEquals(3, roles.size(), 'Expected to be a role for donor, fundraiser, and team captain');
+        for(OpportunityContactRole role : roles) {
+            if(role.Role == frDonation.OPP_ROLE_DONOR) {
+                System.assertEquals(donor.Id, role.ContactId, 'The donor should have the donor opportunity role');                
+            } else if(role.Role == frDonation.OPP_ROLE_FUNDRAISER) {
+                System.assertEquals(fundraiser.Id, role.ContactId, 'The fundraiser should have the fundraiser opportunity role');                
+            } else if(role.Role == frDonation.OPP_ROLE_TEAM_CAPTAIN) {
+                System.assertEquals(teamCaptain.Id, role.ContactId, 'The team captain should have the team captain opportunity role');                
+            } else {
+                System.assert(false, 'An unexpected opportunity contact role was created from a funraise request');
+            }
+        }
+    }
+    
+    static testMethod void syncEntity_newOpportunityRoleMappings_missingContacts() { 
+        Contact donor = frDonorTest.getTestContact();
+        donor.fr_Id__c = '1';
+        donor.Email = 'donor@example.com';
+        Contact fundraiser = frDonorTest.getTestContact();
+        fundraiser.fr_Id__c = '2';
+        fundraiser.Email = 'fundraiser@example.com';
+        Contact teamCaptain = frDonorTest.getTestContact();
+        teamCaptain.fr_Id__c = '3';
+        teamCaptain.Email = 'teamCaptain@example.com';
+        insert new List<Contact>{donor, fundraiser, teamCaptain};
+
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
+        req.httpMethod = 'POST';
+        Map<String, Object> request = getTestRequest();
+        request.put('opportunityContactMappingDisabled', 'false');
+        request.put('donorId', donor.fr_Id__c);
+        request.put('fundraiserId', fundraiser.fr_ID__c+'1');
+        request.put('teamCaptainId', teamCaptain.fr_ID__c+'1');
+        req.requestBody = Blob.valueOf(Json.serialize(request));
         RestContext.request = req;
         RestContext.response = res;
         createMapping('name', 'Name');
@@ -219,6 +285,16 @@ public class frWSDonationControllerTest {
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
         
+        Id oppId = response.id;
+        System.assert(String.isNotBlank(oppId), 
+            'There was not an opportunity Id in the response as expected');
+        Opportunity newOpportunity = [SELECT Id, fr_ID__c, fr_Donor__c, (SELECT Id, ContactId, Role FROM OpportunityContactRoles) FROM Opportunity WHERE Id = :oppId];
+        List<OpportunityContactRole> roles = newOpportunity.OpportunityContactRoles;
+        System.assertEquals(1, roles.size(), 'Since the request had ids that did not exist in SF, no roles should have been created except for the donor');
+        System.assertEquals(2, [SELECT COUNT() FROM Error__c], 'There should be 3 error logs for missing supporters that prevented opp roles from being created');
+    }
+    
+    private static void assertNoErrors(MockResponse response) {
         List<String> responseErrors = response.errors;
         System.assertEquals(0, responseErrors.size(), 
             'They were unexpected errors. Errors: '+responseErrors);
@@ -229,12 +305,10 @@ public class frWSDonationControllerTest {
         }
         System.assertEquals(0, errors.size(), 'There were unexpected errors. Errors:' + errorsStr);
         System.assert(response.success, 'There were no errors expected, result should be successful save');
-        
-        Id oppId = response.id;
-        System.assert(String.isNotBlank(oppId), 
-            'There was not an opportunity Id in the response as expected');
-        Opportunity newOpportunity = [SELECT Id, StageName, fr_ID__c, fr_Donor__c FROM Opportunity WHERE Id = :oppId];
-		System.assertEquals('Closed Lost', newOpportunity.StageName, 'A status of refunded should have resulted in a Closed Lost stage');
+    }
+    
+    private static void createMapping(String frField, String sfField) {
+        insert new frMapping__c(Name = frField+sfField, fr_Name__c = frField, sf_Name__c = sfField, Type__c = frDonation.TYPE);
     }
 
     public class MockResponse {
@@ -244,58 +318,43 @@ public class frWSDonationControllerTest {
     }
 
     private static String getTestPayload() {
-        return 
-        '{"id":2048,'+
-        '"organizationId":"ae8d412b-db97-49dc-8c8c-5bfe0f41fc6d",'+
-        '"amount":1E+1,'+
-        '"name":"alex test02221503 - Funraise 2017-04-24T23:45:10.493Z",'+
-        '"donorId":856,'+
-        '"anonymous":false,'+
-        '"status":"Complete",'+
-        '"pledge":false,'+
-        '"formName":"Bitpay Widget Test",'+
-        '"url":"file:///home/alex/Desktop/form.html",'+
-        '"offline":false,'+
-        '"recurring":true,'+
-        '"memo":null,'+
-        '"dedicationMessage":null,'+
-        '"dedicationName":null,'+
-        '"dedicationEmail":null,'+
-        '"dedicationType":null,'+
-        '"tags":null,'+
-        '"recurringSequence":3,'+
-        '"operationsTip":false,'+
-        '"note":null,'+
-        '"campaignGoalId":null,'+
-        '"donation_cretime":1493077510493,'+
-        '"opportunityRoleMapping":"disabled"}';
+        return Json.serialize(getTestRequest());
     }
     
     private static String getTestPayloadCampaign() {
-        return 
-        '{"id":2048,'+
-        '"organizationId":"ae8d412b-db97-49dc-8c8c-5bfe0f41fc6d",'+
-        '"amount":1E+1,'+
-        '"name":"alex test02221503 - Funraise 2017-04-24T23:45:10.493Z",'+
-        '"donorId":856,'+
-        '"anonymous":false,'+
-        '"status":"Complete",'+
-        '"pledge":false,'+
-        '"formName":"Bitpay Widget Test",'+
-        '"url":"file:///home/alex/Desktop/form.html",'+
-        '"offline":false,'+
-        '"recurring":true,'+
-        '"memo":null,'+
-        '"dedicationMessage":null,'+
-        '"dedicationName":null,'+
-        '"dedicationEmail":null,'+
-        '"dedicationType":null,'+
-        '"tags":null,'+
-        '"recurringSequence":3,'+
-        '"operationsTip":false,'+
-        '"note":null,'+
-        '"campaignGoalId":"10",'+
-        '"donation_cretime":1493077510493,'+
-        '"opportunityRoleMapping":"disabled"}';
+        Map<String, Object> testRequest = getTestRequest();
+        testRequest.put('campaignGoalId', 10);
+        return Json.serialize(testRequest);
+    }
+    
+    private static Map<String, Object> getTestRequest() {
+        Map<String, Object> request = new Map<String, Object>();
+        request.put('id', 2048);
+        request.put('organizationId', 'ae8d412b-db97-49dc-8c8c-5bfe0f41fc6d');
+        request.put('amount', 10);
+        request.put('name', 'alex test02221503 - Funraise 2017-04-24T23:45:10.493Z');
+        request.put('donorId', 123456);
+        request.put('anonymous', false);
+        request.put('status', 'Complete');
+        request.put('pledge', false);
+        request.put('formName', 'Bitpay Widget Test');
+        request.put('url', 'file:///home/alex/Desktop/form.html');
+        request.put('offline', false);
+        request.put('recurring', true);
+        request.put('memo', null);
+        request.put('dedicationMessage', null);
+        request.put('dedicationName', null);
+        request.put('dedicationEmail', null);
+        request.put('dedicationType', null);
+        request.put('tags', null);
+        request.put('recurringSequence', 3);
+        request.put('operationsTip', false);
+        request.put('note', null);
+        request.put('campaignGoalId', null);
+        request.put('donation_cretime', 1493077510493L);
+        request.put('opportunityContactMappingDisabled', 'true');
+        request.put('fundraiserId', null);
+        request.put('teamCaptainId', null);
+        return request;
     }
 }

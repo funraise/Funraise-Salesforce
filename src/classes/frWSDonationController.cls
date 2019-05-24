@@ -57,11 +57,11 @@ global with sharing class frWSDonationController {
 
         Boolean isSuccess = donation.save();
         
-        /*
+        
         if (donor != null) {
-        	donation.createOpportunityMapping(request, donor.getContactId());
+        	donation.createOpportunityMapping(request);
         }
-		*/
+		
         
         Map<String,Object> resp = new Map<String,Object>();
         resp.put('id',donation.getOpportunityId());

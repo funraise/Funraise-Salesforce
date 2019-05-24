@@ -43,6 +43,7 @@
     <allowInChatterGroups>false</allowInChatterGroups>
     <compactLayoutAssignment>SYSTEM</compactLayoutAssignment>
     <deploymentStatus>Deployed</deploymentStatus>
+    <deprecated>false</deprecated>
     <enableActivities>false</enableActivities>
     <enableBulkApi>true</enableBulkApi>
     <enableChangeDataCapture>false</enableChangeDataCapture>
@@ -54,6 +55,7 @@
     <enableStreamingApi>true</enableStreamingApi>
     <fields>
         <fullName>Description__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Description</label>
         <length>131072</length>
@@ -63,6 +65,7 @@
     </fields>
     <fields>
         <fullName>End_Date__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>End Date</label>
         <required>false</required>
@@ -71,6 +74,7 @@
     </fields>
     <fields>
         <fullName>Start_Date__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Start Date</label>
         <required>false</required>
@@ -79,6 +83,7 @@
     </fields>
     <fields>
         <fullName>fr_ID__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>true</externalId>
         <label>Funraise ID</label>
         <length>255</length>

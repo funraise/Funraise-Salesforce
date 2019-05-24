@@ -43,6 +43,7 @@
     <allowInChatterGroups>false</allowInChatterGroups>
     <compactLayoutAssignment>SYSTEM</compactLayoutAssignment>
     <deploymentStatus>Deployed</deploymentStatus>
+    <deprecated>false</deprecated>
     <enableActivities>false</enableActivities>
     <enableBulkApi>true</enableBulkApi>
     <enableChangeDataCapture>false</enableChangeDataCapture>
@@ -55,6 +56,7 @@
     <fields>
         <fullName>Attended__c</fullName>
         <defaultValue>false</defaultValue>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Attended</label>
         <trackTrending>false</trackTrending>
@@ -62,6 +64,7 @@
     </fields>
     <fields>
         <fullName>Fundraising_Event__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Funraise Event</label>
         <referenceTo>Fundraising_Event__c</referenceTo>
@@ -76,6 +79,7 @@
     <fields>
         <fullName>Guest_Of__c</fullName>
         <deleteConstraint>SetNull</deleteConstraint>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Guest Of</label>
         <referenceTo>Contact</referenceTo>
@@ -87,6 +91,7 @@
     </fields>
     <fields>
         <fullName>Supporter__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Supporter</label>
         <referenceTo>Contact</referenceTo>
@@ -100,6 +105,7 @@
     </fields>
     <fields>
         <fullName>Ticket_Name__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Ticket Name</label>
         <length>255</length>
@@ -110,6 +116,7 @@
     </fields>
     <fields>
         <fullName>fr_ID__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>true</externalId>
         <label>Funraise ID</label>
         <length>255</length>
