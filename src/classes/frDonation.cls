@@ -39,10 +39,16 @@
 */
 
 public class frDonation extends frModel {
+    //Donation statuses
     private static final String COMPLETE = 'Complete';
     private static final String PENDING = 'Pending';
     private static final String REFUNDED = 'Refunded';
     private static final String FAILED = 'Failed';
+    
+    //Opportunity Contact Role types
+    @TestVisible private static final String OPP_ROLE_DONOR = 'Donor';
+    @TestVisible private static final String OPP_ROLE_FUNDRAISER = 'Fundraiser';
+    @TestVisible private static final String OPP_ROLE_TEAM_CAPTAIN = 'Team Captain';
     
     public static List<frMapping__c> mappings {
         get {
@@ -144,16 +150,75 @@ public class frDonation extends frModel {
         return isSuccess;
     }
     
-    public void createOpportunityMapping(Map<String, Object> request, String contactId) {
-        String mappingType = String.valueOf(request.get('opportunityRoleMapping'));
-        System.debug('Mapping Type: ' + mappingType);
-        if (mappingType != 'disabled' && mappingType != null) {
-            OpportunityContactRole role = new OpportunityContactRole();
-            role.ContactId = contactId;
-            role.OpportunityId = o.Id;
-            role.Role = mappingType;
-            insert role;
+    public void createOpportunityMapping(Map<String, Object> request) {
+        Boolean mappingDisabled = request.containsKey('opportunityContactMappingDisabled') ?
+            Boolean.valueOf(request.get('opportunityContactMappingDisabled')): true;
+        if (!mappingDisabled) {
+            String funraiseId = String.valueOf(request.get('id'));
+            String supporterId = String.valueOf(request.get('donorId'));
+            
+            Set<String> relatedSupporterFunraiseIds = new Set<String>{supporterId};
+            String fundraiserId = request.containsKey('fundraiserId') ? String.valueOf(request.get('fundraiserId')) : null;
+            if(String.isNotBlank(fundraiserId)) {
+                relatedSupporterFunraiseIds.add(fundraiserId);
+            }
+            String teamCaptainId = request.containsKey('teamCaptainId') ? String.valueOf(request.get('teamCaptainId')) : null;
+            if(String.isNotBlank(teamCaptainId)) {
+                relatedSupporterFunraiseIds.add(teamCaptainId);
+            }
+            Map<String, Contact> relatedContacts = new Map<String, Contact>();
+            for(Contact relatedContact : [SELECT Id, fr_Id__c, 
+                                          (SELECT Id, Role, ContactId FROM OpportunityContactRoles WHERE OpportunityId = :getOpportunityId()) 
+                                          from Contact WHERE fr_Id__c IN :relatedSupporterFunraiseIds]) {
+                relatedContacts.put(relatedContact.fr_Id__c, relatedContact);
+            }
+            
+            List<OpportunityContactRole> newContactRoles = new List<OpportunityContactRole>();
+            OpportunityContactRole donorRole = createRole(relatedContacts.get(supporterId), OPP_ROLE_DONOR);
+            if(donorRole != null) newContactRoles.add(donorRole);
+            
+            if(String.isNotBlank(fundraiserId)) {
+                if(!relatedContacts.containsKey(fundraiserId)) {
+                    insert new Error__c(Error__c =
+                                        'Failed to find related record: Contact with funraise id ' 
+                                        + fundraiserId+ 
+                                        ' for opportunity contact role '+ OPP_ROLE_FUNDRAISER +' for opportunity with funraise id ' 
+                                        + funraiseId);
+                } else {
+                    OpportunityContactRole fundraiserRole = createRole(relatedContacts.get(fundraiserId), OPP_ROLE_FUNDRAISER);
+                    if(fundraiserRole != null) newContactRoles.add(fundraiserRole);
+                }
+            }
+            if(String.isNotBlank(teamCaptainId)) {
+                if(!relatedContacts.containsKey(teamCaptainId)) {
+                    insert new Error__c(Error__c =
+                                        'Failed to find related record: Contact with funraise id ' 
+                                        + teamCaptainId+ 
+                                        ' for opportunity contact role '+ OPP_ROLE_TEAM_CAPTAIN +' for opportunity with funraise id ' 
+                                        + funraiseId);
+                } else {
+                    OpportunityContactRole captainRole = createRole(relatedContacts.get(teamCaptainId), OPP_ROLE_TEAM_CAPTAIN);
+                    if(captainRole != null) newContactRoles.add(captainRole);
+                }
+            }
+            
+            insert newContactRoles;
         }
+    }
+    
+    private OpportunityContactRole createRole(Contact supporter, String role) {
+        Set<String> existingRoles = new Set<String>();
+        for(OpportunityContactRole contactRole : supporter.OpportunityContactRoles) {
+            existingRoles.add(contactRole.Role);
+        }
+        if(!existingRoles.contains(role)) {
+            OpportunityContactRole newRole = new OpportunityContactRole();
+            newRole.ContactId = supporter.Id;
+            newRole.OpportunityId = getOpportunityId();
+            newRole.Role = role;
+            return newRole;
+        }
+        return null;
     }
     
     public String getDonorId() {
