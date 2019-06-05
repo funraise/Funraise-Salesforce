@@ -294,6 +294,48 @@ public class frWSDonationControllerTest {
         System.assertEquals(2, [SELECT COUNT() FROM Error__c], 'There should be 3 error logs for missing supporters that prevented opp roles from being created');
     }
     
+    static testMethod void syncEntity_LinkToSubscription() {  
+        Contact testSupporter = frDonorTest.getTestContact();
+        insert testSupporter;
+        
+        Subscription__c subscription = new Subscription__c(Name = 'Test Sub', fr_ID__c = '1234', Supporter__c = testSupporter.Id);
+        insert subscription;
+        
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
+        req.httpMethod = 'POST';
+
+        Map<String, Object> request = getTestRequest();
+        request.put('subscriptionId', subscription.fr_ID__c);
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+
+        RestContext.request = req;
+        RestContext.response = res;
+
+        createMapping('name', 'Name');
+        createMapping('donation_cretime', 'CloseDate');
+
+        Test.startTest();
+
+        frWSDonationController.syncEntity();
+
+        Test.stopTest();
+
+        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
+        
+        List<String> responseErrors = response.errors;
+        System.assertEquals(0, responseErrors.size(), 
+            'They were unexpected errors. Errors: '+responseErrors);
+        
+        Id oppId = response.id;
+        System.assert(String.isNotBlank(oppId), 
+            'There was not an opportunity Id in the response as expected');
+        Opportunity newOpportunity = [SELECT Id, fr_ID__c, Subscription__c FROM Opportunity WHERE Id = :oppId];
+        System.assertEquals(subscription.Id, newOpportunity.Subscription__c, 'The new donation should be pointing at the subscription corresponding to the id provided in the request');
+    }
+    
     private static void assertNoErrors(MockResponse response) {
         List<String> responseErrors = response.errors;
         System.assertEquals(0, responseErrors.size(), 

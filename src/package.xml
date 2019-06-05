@@ -16,6 +16,9 @@
         <members>frSchemaUtil</members>
         <members>frSetupController</members>
         <members>frSetupControllerTest</members>
+        <members>frSubscription</members>
+        <members>frSubscriptionTest</members>
+        <members>frUtil</members>
         <members>frWSCampaignController</members>
         <members>frWSDonationController</members>
         <members>frWSDonationControllerTest</members>
@@ -25,6 +28,7 @@
         <members>frWSDonorEmailControllerTest</members>
         <members>frWSFundraisingEventController</members>
         <members>frWSFundraisingEventRegistrationCntrlr</members>
+        <members>frWSSubscriptionController</members>
         <members>frWSTaskController</members>
         <members>frWSTaskControllerTest</members>
         <name>ApexClass</name>
@@ -41,6 +45,7 @@
         <members>Activity.fr_Task_ID__c</members>
         <members>Contact.fr_ID__c</members>
         <members>EmailMessage.fr_Email_ID__c</members>
+        <members>Opportunity.Subscription__c</members>
         <members>Opportunity.fr_Donor__c</members>
         <members>Opportunity.fr_ID__c</members>
         <name>CustomField</name>
@@ -53,13 +58,17 @@
         <members>Error__c</members>
         <members>Fundraising_Event_Registration__c</members>
         <members>Fundraising_Event__c</members>
+        <members>Subscription__c</members>
         <members>frField__mdt</members>
         <members>frMapping__c</members>
         <name>CustomObject</name>
     </types>
     <types>
         <members>Error__c</members>
+        <members>Fundraising_Event_Registration__c</members>
+        <members>Fundraising_Event__c</members>
         <members>Funraise_Setup</members>
+        <members>Subscription__c</members>
         <name>CustomTab</name>
     </types>
     <version>43.0</version>

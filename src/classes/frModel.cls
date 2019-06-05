@@ -4,7 +4,8 @@ public abstract class frModel {
 
     public virtual void populateFromRequest(Map<String, Object> request) {
     	Map<String, Schema.SObjectField> fields = frSchemaUtil.getFields(getObject().getSObjectType().getDescribe().getName());
-
+        String funraiseId = String.valueOf(request.get('id'));
+        
         //a single funraise field might flow into multiple salesforce fields
         Map<String, List<frMapping__c>> frNameToSfName = new Map<String, List<frMapping__c>>();
         List<frMapping__c> constantMappings = new List<frMapping__c>();
@@ -26,73 +27,19 @@ public abstract class frModel {
         for(String fieldName : frNameToSfName.keySet()) {
             if(request.containsKey(fieldName)) {
                 for(frMapping__c mapping : frNameToSfName.get(fieldName)) {
-                    write(getObject(), fields, mapping.sf_Name__c, request.get(fieldName));                    
+                    Schema.SObjectField field = fields.get(mapping.sf_Name__c);
+                    frUtil.write(getObject(), field, mapping.sf_Name__c, request.get(fieldName), funraiseId);                    
                 }
             }
         }
         for(frMapping__c constantMapping : constantMappings) {
-            write(getObject(), fields, constantMapping.sf_Name__c, constantMapping.Constant_Value__c);
+            Schema.SObjectField field = fields.get(constantMapping.sf_Name__c);
+            frUtil.write(getObject(), field, constantMapping.sf_Name__c, constantMapping.Constant_Value__c, funraiseId);
         }
 
-        getObject().put('fr_ID__c', String.valueOf(request.get('id')));
+        getObject().put('fr_ID__c', funraiseId);
     }
-
-    private static void write(SObject record, Map<String, Schema.SObjectField> fields, String fieldName, Object value) {
-        Schema.SObjectField field = fields.get(fieldName);
-        if (fieldName.toLowerCase() == 'id') {
-            if (value != null && ((String)value) != '') {
-                record.put(field, Id.valueOf((String)value));
-            }
-        } else if (field.getDescribe().getType() == Schema.DisplayType.DateTime) {
-            try {
-                record.put(field, DateTime.newInstance((Long)value));
-            }
-            catch (Exception e) {
-                write(record, field, value);
-            }
-        } else if (field.getDescribe().getType() == Schema.DisplayType.Date) {
-            try {
-                record.put(field, DateTime.newInstance((Long)value).dateGMT());
-            }
-            catch (Exception e) {
-                write(record, field, value);
-            }
-        } else if(field.getDescribe().getType() == Schema.DisplayType.Double) {
-            try {
-                record.put(field, Double.valueOf(value));
-            }
-            catch (Exception e) {
-                write(record, field, value);
-            }
-        } else if(field.getDescribe().getType() == Schema.DisplayType.Integer) {
-            try {
-                record.put(field, Integer.valueOf(value));
-            }
-            catch (Exception e) {
-                write(record, field, value);
-            }
-        } else if(field.getDescribe().getType() == Schema.DisplayType.Percent) {
-            try {
-                record.put(field, Decimal.valueOf(String.valueOf(value)));
-            }
-            catch (Exception e) {
-                write(record, field, value);
-            }
-        } else {
-            write(record, field, value);
-        }
-    }
-    private static void write(SObject record, Schema.SObjectField field, Object value) {
-        try {
-            record.put(field, value);
-        } catch (Exception ex) {
-            insert new Error__c(Error__c = 'Field mapping exception. Object type: '+ record.getSObjectType().getDescribe().getName()
-                +' Record Id: '+record.Id+' - Field: '+field.getDescribe().getName()+' - Value: '+value
-                +' Exception: '+ex
-            );
-        }
-    }
-
+    
     public static void handleException(Exception ex) {
         insert new Error__c(Error__c = ex.getMessage());
     }

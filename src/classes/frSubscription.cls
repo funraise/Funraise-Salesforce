@@ -38,18 +38,20 @@
 * AUTHOR: Alex Molina
 */
 
-public class frFundraisingEventRegistration {    
-    public frFundraisingEventRegistration(Map<String, Object> request) {
+public class frSubscription {
+    public static final Map<String, Schema.SObjectField> fields = 
+        frSchemaUtil.getFields(Subscription__c.getSObjectType().getDescribe().getName());
+    public frSubscription(Map<String, Object> request) {
         if (Boolean.valueOf(request.get('deleted'))) {
-            deleteRegistration(String.valueOf(request.get('id')));
+            deleteSubscription(String.valueOf(request.get('id')));
         } else {
             create(request);
         }
     }
     
-    public void deleteRegistration(String funraiseId) {
+    public void deleteSubscription(String funraiseId) {
         try {
-            delete [SELECT id FROM Fundraising_Event_Registration__c WHERE fr_ID__c = :funraiseId];
+            delete [SELECT id FROM Subscription__c WHERE fr_ID__c = :funraiseId];
         } catch (DMLException e) {
             insert new Error__c(Error__c =
                                 'Failed to delete funraise registration for registration id ' + funraiseId +
@@ -59,52 +61,59 @@ public class frFundraisingEventRegistration {
     
     public void create(Map<String, Object> request) {
         String funraiseId = String.valueOf(request.get('id'));
-        String funraiseEventId = String.valueOf(request.get('eventId'));
-        List<Fundraising_Event__c> event = [SELECT Id from Fundraising_Event__c WHERE fr_Id__c = :funraiseEventId];
-        if(event.isEmpty()) {
+        String name = String.valueOf(request.get('name'));
+        String funraiseSupporterId = String.valueOf(request.get('supporterId'));
+        List<Contact> contacts = [SELECT Id from Contact WHERE fr_Id__c = :funraiseSupporterId];
+        if(contacts.isEmpty()) {
             insert new Error__c(Error__c =
-                                'Failed to find related record: Event with id ' + funraiseEventId+ ' for registration id ' + funraiseId);
+                                'Failed to find related record: Supporter with id ' + funraiseSupporterId+ ' for subscription id ' + funraiseId);
             return;
         }
         
-        String funraiseSupporterId = String.valueOf(request.get('supporterId'));
-        List<Contact> supporter = [SELECT Id from Contact WHERE fr_Id__c = :funraiseSupporterId];
-        if(supporter.isEmpty()) {
-            insert new Error__c(Error__c =
-                                'Failed to find related record: Supporter with id ' + funraiseSupporterId+ ' for registration id ' + funraiseId);
-            return;
-        }
-        String funraiseGuestOfId = String.valueOf(request.get('guestOfId'));
-        List<Contact> guestOf = [SELECT Id from Contact WHERE fr_Id__c = :funraiseGuestOfId];
-        if(guestOf.isEmpty() && funraiseGuestOfId != null) {
-            //if it wasn't found, log an error but continue
-            insert new Error__c(Error__c =
-                                'Failed to find related record: Guest Of supporter with id ' + funraiseGuestOfId+ ' for registration id ' + funraiseId);
-        }
-    
-        Fundraising_Event_Registration__c registration = new Fundraising_Event_Registration__c(
+        Subscription__c subscription = new Subscription__c(
         	fr_ID__c = funraiseId,
             Name = frUtil.truncateToFieldLength(
-                Fundraising_Event_Registration__c.Name.getDescribe(), 
+                Subscription__c.Name.getDescribe(), 
                 String.valueOf(request.get('name'))
             ), 
-            Ticket_Name__c = frUtil.truncateToFieldLength(
-                Fundraising_Event_Registration__c.Ticket_Name__c.getDescribe(), 
-                String.valueOf(request.get('ticketName'))
-            ),
-            Attended__c = Boolean.valueOf(request.get('attended')),
-            Fundraising_Event__c = event.get(0).Id,
-            Supporter__c = supporter.get(0).Id,
-            Guest_Of__c = guestOf.isEmpty() ?  null : guestOf.get(0).Id
+            Supporter__c = contacts.get(0).Id
         );
         
+        String goalId = String.valueOf(request.get('campaignGoalId'));
+        if (String.isNotBlank(goalId)) {
+            List<Campaign> campaigns = [SELECT Id FROM Campaign WHERE fr_ID__c = :goalId];
+            if (campaigns.size() > 0) {
+                subscription.Campaign_Goal__c = campaigns.get(0).Id;
+            } else {
+                insert new Error__c(Error__c =
+                'Failed to find related record: campaign with id ' + goalId+ ' for subscription id ' + funraiseId);
+            }
+        }
+        
+		//transform other request fields into SF custom fields, these are not applicable
+        request.remove('id');
+        request.remove('name');
+        request.remove('supporterId');
+        request.remove('campaignGoalId');
+        request.remove('deleted');
+        
+        String regex = '([a-z])([A-Z]+)';
+        String replacement = '$1_$2';
+        for(String funraiseFieldName : request.keySet()) {
+            String salesforceFieldName = funraiseFieldName.replaceAll(regex, replacement);
+            salesforceFieldName =+ 'funraise__' + salesforceFieldName.capitalize() + '__c';
+            Schema.SObjectField field = fields.get(salesforceFieldName);
+            frUtil.write(subscription, field, funraiseFieldName, request.get(funraiseFieldName), funraiseId);
+        }
+        
         try {
-            Database.upsert(registration, Fundraising_Event_Registration__c.Field.fr_ID__c, true);
+            Database.upsert(subscription, Subscription__c.Field.fr_ID__c, true);
         } catch (DMLException e) {
             insert new Error__c(Error__c =
-                                'Failed to insert funraise registration for registration id ' + funraiseId +
+                                'Failed to insert funraise subscription id ' + funraiseId +
                                 '. Exception: ' + e.getMessage());
             return;
         }
     }
+    
 }

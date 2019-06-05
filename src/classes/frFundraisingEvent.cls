@@ -61,10 +61,10 @@ public class frFundraisingEvent {
         String funraiseId = String.valueOf(request.get('id'));
         Fundraising_Event__c event = new Fundraising_Event__c(
         	fr_ID__c = funraiseId,
-            Name = truncateToFieldLength(Fundraising_Event__c.Name.getDescribe(), String.valueOf(request.get('name'))), 
-            Description__c = truncateToFieldLength(Fundraising_Event__c.Description__c.getDescribe(), String.valueOf(request.get('description'))), 
-            Start_Date__c = convertFromLocalDate((List<Object>)request.get('eventStartDate'), funraiseId),
-            End_Date__c = convertFromLocalDate((List<Object>)request.get('eventEndDate'), funraiseId)
+            Name = frUtil.truncateToFieldLength(Fundraising_Event__c.Name.getDescribe(), String.valueOf(request.get('name'))), 
+            Description__c = frUtil.truncateToFieldLength(Fundraising_Event__c.Description__c.getDescribe(), String.valueOf(request.get('description'))), 
+            Start_Date__c = convertFromLocalDateTime((List<Object>)request.get('eventStartDate'), funraiseId),
+            End_Date__c = convertFromLocalDateTime((List<Object>)request.get('eventEndDate'), funraiseId)
         );
 
         
@@ -78,23 +78,10 @@ public class frFundraisingEvent {
         }
     }
     
-    private static String truncateToFieldLength(DescribeFieldResult describe, String value) { 
-        return String.isNotBlank(value) && value.length() > describe.getLength() ? 
-        value.substring(0, describe.getLength()) 
-        : value;
-    }
-    
-    private static DateTime convertFromLocalDate(List<Object> localDate, String recordId) {
+    private static DateTime convertFromLocalDateTime(List<Object> localDate, String recordId) {
         if(localDate != null && localDate.size() == 5) {
             try {
-                return DateTime.newInstance(
-                    (Integer)localDate.get(0), //year
-                    (Integer)localDate.get(1), //month
-                    (Integer)localDate.get(2), //day
-                    (Integer)localDate.get(3), //hour
-                    (Integer)localDate.get(4), //minute
-                    0 				  //second
-                );
+                return frUtil.convertFromLocalDateTime(localDate);
             } catch (Exception ex) {
                 insert new Error__c(Error__c =
                                     'Could not parse event date.  Event created without this data. Event Id: ' + recordId +

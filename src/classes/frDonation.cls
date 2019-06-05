@@ -84,6 +84,7 @@ public class frDonation extends frModel {
     
     public override void populateFromRequest(Map<String, Object> request) {
         super.populateFromRequest(request);
+        String funraiseId = String.valueOf(request.get('id'));
         this.setDonorId(String.valueOf(request.get('donorId')));
         String status = String.valueOf(request.get('status'));
         
@@ -98,11 +99,22 @@ public class frDonation extends frModel {
         }
         
         String campaignId = String.valueOf(request.get('campaignGoalId'));
-        if (campaignId != '' && campaignId != null) {
+        if (String.isNotBlank(campaignId)) {
             Campaign[] campaign = [SELECT Id FROM Campaign WHERE fr_ID__c = :campaignId];
-            // Make sure a campaign was found before we assign it
             if (campaign.size() > 0) {
                 o.CampaignId = campaign[0].Id;
+            } else {
+                insert new Error__c(Error__c = 'Failed to find related record: Campaign with funraise id ' + campaignId+' for opportunity with funraise id '+ funraiseId);
+            }
+        }
+        
+        String subscriptionId = String.valueOf(request.get('subscriptionId'));
+        if (String.isNotBlank(subscriptionId)) {
+            List<Subscription__c> subscriptions = [SELECT Id FROM Subscription__c WHERE fr_ID__c = :subscriptionId];
+            if (subscriptions.size() > 0) {
+                o.Subscription__c = subscriptions.get(0).Id;
+            } else {
+                insert new Error__c(Error__c ='Failed to find related record: subscription with funraise id ' + subscriptionId+' for opportunity with funraise id '+ funraiseId);
             }
         }
         
