@@ -38,7 +38,7 @@
  * AUTHOR: Alex Molina
  */
 @isTest
-public class frWSDonationControllerTest {
+public class frDonationTest {
     static testMethod void syncEntity_newDonor() {  
         RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();

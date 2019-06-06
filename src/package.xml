@@ -4,9 +4,11 @@
         <members>frCampaign</members>
         <members>frCampaignTest</members>
         <members>frDonation</members>
+        <members>frDonationTest</members>
         <members>frDonor</members>
         <members>frDonorEmails</members>
         <members>frDonorEmailsTest</members>
+        <members>frDonorTest</members>
         <members>frDonorTest</members>
         <members>frFundraisingEvent</members>
         <members>frFundraisingEventRegistration</members>
@@ -21,11 +23,8 @@
         <members>frUtil</members>
         <members>frWSCampaignController</members>
         <members>frWSDonationController</members>
-        <members>frWSDonationControllerTest</members>
         <members>frWSDonorController</members>
-        <members>frWSDonorControllerTest</members>
         <members>frWSDonorEmailController</members>
-        <members>frWSDonorEmailControllerTest</members>
         <members>frWSFundraisingEventController</members>
         <members>frWSFundraisingEventRegistrationCntrlr</members>
         <members>frWSSubscriptionController</members>

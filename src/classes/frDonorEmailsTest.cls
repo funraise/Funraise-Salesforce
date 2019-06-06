@@ -119,4 +119,56 @@ public class frDonorEmailsTest {
         EmailMessage newEmail = [SELECT fromAddress FROM EmailMessage WHERE FromAddress = 'test111@funraise.io'];
         System.assertEquals('test111@funraise.io', newEmail.fromAddress, 'The fromAddress was not correct');
     }
+    
+    static testMethod void syncEntity_test() {
+        Contact testContact = frDonorTest.getTestContact();
+        testContact.fr_ID__c = '856';
+        insert testContact;
+        
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donoremail';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(getTestPayload());
+        RestContext.request = req;
+        RestContext.response = res;
+
+        Test.startTest();
+
+        frWSDonorEmailController.syncEntity();
+
+        Test.stopTest();
+        
+        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
+
+		frTestUtil.assertNoErrors();        
+        Id emailId = response.id;
+        System.assert(String.isNotBlank(emailId), 'There was not an email Id in the response as expected');
+        EmailMessage newEmail = [SELECT fromAddress, (SELECT Id, RelationId FROM EmailMessageRelations WHERE RelationType = 'ToAddress') FROM EmailMessage WHERE Id = :emailId];
+        System.assertEquals('email@funraise.io', newEmail.fromAddress, 'The funraise email address was not correct');
+        System.assertEquals(1, newEmail.EmailMessageRelations.size(), 'There should be a single email relation on the message. '+newEmail.EmailMessageRelations);
+        Contact supporter = [SELECT Id, fr_ID__c FROM Contact WHERE Id = :newEmail.EmailMessageRelations.get(0).RelationId];
+        System.assertEquals(testContact.Id, supporter.Id, 'The email should have been associated with the contact with the same fr_ID__c as the request had');
+        System.assertEquals(testContact.fr_Id__c, supporter.fr_ID__c, 'The email should have been associated with the contact referenced in the request');
+    }
+
+    public class MockResponse {
+        String id;
+    }
+
+    private static String getTestPayload() {
+        return '{'+
+            '"donorId":856,'+
+            '"id": 4,'+
+            '"messageId": "db92570b-766b-46b9-8b7a-a0c7efa92053",'+
+            '"correlationId": "4aeeCRcARIamde0uiZAr6Q",'+
+            '"fromAddress": "email@funraise.io",' +
+            '"fromName": "John Smith",' +
+            '"toAddress": "testEmail@google.com",' +
+            '"statusCode": 202,'+
+            '"sentDate": ' + 1536184380L + ','+
+            '"subject": "Hello there"'+
+            '}';
+    }
 }
