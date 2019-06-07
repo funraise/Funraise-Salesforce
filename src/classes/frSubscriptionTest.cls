@@ -68,8 +68,8 @@ public class frSubscriptionTest {
                                         Company_Match__c, Company_Match_Company_Name__c, 
                                         Company_Match_Employee_Email__c, Currency__c, Dedication__c, 
                                         Dedication_Email__c, Dedication_Message__c, Dedication_Name__c, 
-                                        Dedication_Type__c, Donation_Count__c, Form_Name__c, Frequency__c, 
-                                        Campaign_Goal__c, Imported__c, Last_Payment_Date__c, Next_Payment_Date__c, 
+                                        Dedication_Type__c, Form_Name__c, Frequency__c, 
+                                        Campaign_Goal__c, Imported__c, Next_Payment_Date__c, 
                                         Note__c, Operations_Tip__c, Payment_Method_Expiration_Date__c, Payment_Method_Last_Four__c, 
                                         Payment_Method_Type__c, Status__c, Supporter__c
         FROM Subscription__c WHERE fr_ID__c = :funraiseId];
@@ -87,7 +87,6 @@ public class frSubscriptionTest {
         System.assertEquals(String.valueOf(request.get('dedicationMessage')), subscription.Dedication_Message__c, 'The property should be what was provided in the request');
         System.assertEquals(String.valueOf(request.get('dedicationName')), subscription.Dedication_Name__c, 'The property should be what was provided in the request');
         System.assertEquals(String.valueOf(request.get('dedicationType')), subscription.Dedication_Type__c, 'The property should be what was provided in the request');
-        System.assertEquals(Integer.valueOf(request.get('donationCount')), subscription.Donation_Count__c, 'The property should be what was provided in the request');
         System.assertEquals(String.valueOf(request.get('formName')), subscription.Form_Name__c, 'The property should be what was provided in the request');
         System.assertEquals(String.valueOf(request.get('frequency')), subscription.Frequency__c, 'The property should be what was provided in the request');
         System.assertEquals(Boolean.valueOf(request.get('imported')), subscription.Imported__c, 'The property should be what was provided in the request');
@@ -97,7 +96,6 @@ public class frSubscriptionTest {
         System.assertEquals(String.valueOf(request.get('paymentMethodLastFour')), subscription.Payment_Method_Last_Four__c, 'The property should be what was provided in the request');
         System.assertEquals(String.valueOf(request.get('paymentMethodType')), subscription.Payment_Method_Type__c, 'The property should be what was provided in the request');
         System.assertEquals(String.valueOf(request.get('status')), subscription.Status__c, 'The property should be what was provided in the request');
-        System.assertEquals(DateTime.newInstance((Long)request.get('lastPaymentDate')), subscription.Last_Payment_Date__c, 'The property for last payment date should be what was provided in the request');
         List<Object> requestPaymentDate = (List<Object>)request.get('nextPaymentDate');
         System.assertEquals(frUtil.convertFromLocalDate(requestPaymentDate), subscription.Next_Payment_Date__c, 'The property for next payment date should be what was provided in the request');
         
@@ -198,13 +196,11 @@ public class frSubscriptionTest {
         request.put('paymentMethodType', 'Credit Card');
         request.put('paymentMethodLastFour', '1111');
         request.put('formName', 'Test Site 12041007');
-        request.put('lastPaymentDate', 1558374505240L);
         List<Object> nextPaymentDate = new List<Object> {2019, 6, 20};
         request.put('nextPaymentDate', nextPaymentDate);
         request.put('frequency', 'Monthly');
         request.put('amount', 20.6);
         request.put('currency', 'USD');
-        request.put('donationCount', 1);
         request.put('campaignPageName', 'Test Site 12041007 homepage');
         request.put('allocationName', 'alex test alloc');
         request.put('comment', 'Test Comment');

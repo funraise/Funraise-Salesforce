@@ -189,17 +189,6 @@
         <type>Checkbox</type>
     </fields>
     <fields>
-        <fullName>Donation_Count__c</fullName>
-        <externalId>false</externalId>
-        <label>Donation Count</label>
-        <precision>18</precision>
-        <required>false</required>
-        <scale>0</scale>
-        <trackTrending>false</trackTrending>
-        <type>Number</type>
-        <unique>false</unique>
-    </fields>
-    <fields>
         <fullName>Form_Name__c</fullName>
         <externalId>false</externalId>
         <label>Form Name</label>
@@ -226,14 +215,6 @@
         <label>Imported</label>
         <trackTrending>false</trackTrending>
         <type>Checkbox</type>
-    </fields>
-    <fields>
-        <fullName>Last_Payment_Date__c</fullName>
-        <externalId>false</externalId>
-        <label>Last Payment Date</label>
-        <required>false</required>
-        <trackTrending>false</trackTrending>
-        <type>DateTime</type>
     </fields>
     <fields>
         <fullName>Next_Payment_Date__c</fullName>
