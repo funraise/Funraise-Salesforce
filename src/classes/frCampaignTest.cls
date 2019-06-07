@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (c) 2016, Funraise Inc
+ *  Copyright (c) 2019, Funraise Inc
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -53,7 +53,7 @@ public class frCampaignTest {
         request.put('reason', 'The campaign is new');
         request.put('status', 'Published');
         request.put('goalAmount', '238329.12');
-        request.put('parentGoalId', '0');
+        request.put('parentGoalId', null);
         request.put('goalId', goalId);
         request.put('deleted', false);
 
@@ -76,7 +76,7 @@ public class frCampaignTest {
         parentRequest.put('reason', 'The campaign is new');
         parentRequest.put('status', 'Published');
         parentRequest.put('goalAmount', '238329.12');
-        parentRequest.put('parentGoalId', '0');
+        parentRequest.put('parentGoalId', null);
         parentRequest.put('goalId', parentGoalId);
         parentRequest.put('deleted', false);
         
@@ -99,6 +99,29 @@ public class frCampaignTest {
         Campaign childCampaign = [SELECT Id, fr_ID__c, Name, ParentId FROM Campaign WHERE fr_ID__c = :childGoalId];
         System.assertEquals(childCampaignName, childCampaign.Name, 'The campaign name was not correct');
         System.assertEquals(parentCampaign.Id, childCampaign.ParentId, 'The campaign parentId was not correct');
+    }
+    
+    static testMethod void testDeleteTopLevel() {
+        createCampaigns();
+                
+        Map<String, Object> topLevelCampaign = new Map<String, Object>();
+        topLevelCampaign.put('name', 'Top level Campaign');
+        topLevelCampaign.put('reason', 'The campaign is old');
+        topLevelCampaign.put('status', 'Published');
+        topLevelCampaign.put('goalAmount', '238329.12');
+        topLevelCampaign.put('parentGoalId', null);
+        topLevelCampaign.put('goalId', topLevelGoalId);
+        topLevelCampaign.put('deleted', true);
+        
+        Test.startTest();
+        new frCampaign(topLevelCampaign);
+        Test.stopTest();
+        
+        List<Campaign> campaigns = [SELECT Id, ParentId, Parent.fr_ID__c FROM Campaign];
+        for(Campaign campaign : campaigns) {
+            System.assert(campaign.Parent.fr_ID__c != topLevelGoalId, 'There should not be any campaigns referencing the deleted campaign');
+        }
+        
     }
     
     static testMethod void testDeleteParent() {
@@ -124,7 +147,7 @@ public class frCampaignTest {
         System.assertEquals(childCampaign2.ParentId, topLevelCampaign.Id, 'Parent GoalId is not correct');
     }
     
-    static testMethod void testDeleteCampaign() {
+    static testMethod void testDeleteGrandChild() {
         createCampaigns();
 
         Map<String, Object> grandchildCampaign2 = new Map<String, Object>();
@@ -186,7 +209,7 @@ public class frCampaignTest {
         request.put('reason', 'The campaign is new');
         request.put('status', 'Published');
         request.put('goalAmount', '238329.12');
-        request.put('parentGoalId', '0');
+        request.put('parentGoalId', null);
         request.put('supporterId', fundraiser.fr_Id__c);
         request.put('goalId', goalId);
         request.put('deleted', false);
@@ -216,7 +239,7 @@ public class frCampaignTest {
         topLevelCampaign.put('reason', 'The campaign is old');
         topLevelCampaign.put('status', 'Published');
         topLevelCampaign.put('goalAmount', '238329.12');
-        topLevelCampaign.put('parentGoalId', '0');
+        topLevelCampaign.put('parentGoalId', null);
         topLevelCampaign.put('goalId', topLevelGoalId);
         topLevelCampaign.put('deleted', false);
         

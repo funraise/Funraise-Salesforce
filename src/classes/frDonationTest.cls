@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (c) 2016, Funraise Inc
+ *  Copyright (c) 2019, Funraise Inc
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@
  *
  *
  *
- * CREATED: 2016 Funraise Inc - https://funraise.io
+ * CREATED: 2019 Funraise Inc - https://funraise.io
  * AUTHOR: Alex Molina
  */
 @isTest
@@ -57,7 +57,6 @@ public class frDonationTest {
         createMapping('donation_cretime', 'CloseDate');
         insert new frMapping__c(Name = 'Test String', Is_Constant__c = true, Constant_Value__c = 'Closed Won', sf_Name__c = 'StageName', Type__c = frDonation.TYPE);
         insert new frMapping__c(Name = 'Test Percent', Is_Constant__c = true, Constant_Value__c = '95', sf_Name__c = 'Probability', Type__c = frDonation.TYPE);
-        insert new frMapping__c(Name = 'Test Integer', Is_Constant__c = true, Constant_Value__c = String.valueOf(Date.today().year()), sf_Name__c = 'fiscalyear', Type__c = frDonation.TYPE);
         insert new frMapping__c(Name = 'Test Double', Is_Constant__c = true, Constant_Value__c = '1.5', sf_Name__c = 'totalopportunityquantity', Type__c = frDonation.TYPE);
 
         Test.startTest();
@@ -68,10 +67,10 @@ public class frDonationTest {
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
         
-        List<String> responseErrors = response.errors;
-        System.assertEquals(1, responseErrors.size(), 
-            'They were unexpected errors. Errors: '+responseErrors);
-        System.assert(responseErrors.get(0).contains('Donor not found'), 
+		List<Error__c> errors = [SELECT Id, Name, Error__c from Error__c];
+        System.assertEquals(1, errors.size(), 
+            'They were unexpected errors. Errors: '+errors);
+        System.assert(errors.get(0).Error__c.contains('Failed to find related record: Contact (donor)'), 
             'The error message was not the expected one');
         
         Id oppId = response.id;
@@ -110,7 +109,7 @@ public class frDonationTest {
         Test.stopTest();
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        assertNoErrors(response);
+        frTestUtil.assertNoErrors();
         
         Id oppId = response.id;
         System.assert(String.isNotBlank(oppId), 
@@ -146,7 +145,7 @@ public class frDonationTest {
         Test.stopTest();
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        assertNoErrors(response);
+        frTestUtil.assertNoErrors();
         
         Id oppId = response.id;
         System.assert(String.isNotBlank(oppId), 
@@ -186,7 +185,7 @@ public class frDonationTest {
         Test.stopTest();
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        assertNoErrors(response);
+        frTestUtil.assertNoErrors();
         
         Id oppId = response.id;
         System.assert(String.isNotBlank(oppId), 
@@ -229,7 +228,7 @@ public class frDonationTest {
         Test.stopTest();
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        assertNoErrors(response);
+        frTestUtil.assertNoErrors();
         
         Id oppId = response.id;
         System.assert(String.isNotBlank(oppId), 
@@ -324,10 +323,7 @@ public class frDonationTest {
         Test.stopTest();
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        
-        List<String> responseErrors = response.errors;
-        System.assertEquals(0, responseErrors.size(), 
-            'They were unexpected errors. Errors: '+responseErrors);
+        frTestUtil.assertNoErrors();
         
         Id oppId = response.id;
         System.assert(String.isNotBlank(oppId), 
@@ -336,27 +332,12 @@ public class frDonationTest {
         System.assertEquals(subscription.Id, newOpportunity.Subscription__c, 'The new donation should be pointing at the subscription corresponding to the id provided in the request');
     }
     
-    private static void assertNoErrors(MockResponse response) {
-        List<String> responseErrors = response.errors;
-        System.assertEquals(0, responseErrors.size(), 
-            'They were unexpected errors. Errors: '+responseErrors);
-        List<Error__c> errors = [SELECT Error__c FROM Error__c];
-        String errorsStr = '';
-        for(Error__c error : errors) {
-            errorsStr += error.Error__c + '\n';
-        }
-        System.assertEquals(0, errors.size(), 'There were unexpected errors. Errors:' + errorsStr);
-        System.assert(response.success, 'There were no errors expected, result should be successful save');
-    }
-    
     private static void createMapping(String frField, String sfField) {
         insert new frMapping__c(Name = frField+sfField, fr_Name__c = frField, sf_Name__c = sfField, Type__c = frDonation.TYPE);
     }
 
     public class MockResponse {
         String id;
-        List<String> errors;
-        Boolean success;
     }
 
     private static String getTestPayload() {

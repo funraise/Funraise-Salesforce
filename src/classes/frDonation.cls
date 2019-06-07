@@ -1,6 +1,6 @@
 /*
 *
-*  Copyright (c) 2016, Funraise Inc
+*  Copyright (c) 2019, Funraise Inc
 *  All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
@@ -68,24 +68,17 @@ public class frDonation extends frModel {
         return o;
     }
     
-    private String opportunityId;
-    private String donorId;
-    private String sfDonorId;
     private Opportunity o;
     
-    public frDonation() {
-        this.o = new Opportunity();
-    }
-    
     public Opportunity getOpportunity() {
-        o.fr_Donor__c = getSfDonorId();
         return o;
     }
     
-    public override void populateFromRequest(Map<String, Object> request) {
+    public frDonation(Map<String, Object> request) {
+        o = new Opportunity();
         super.populateFromRequest(request);
         String funraiseId = String.valueOf(request.get('id'));
-        this.setDonorId(String.valueOf(request.get('donorId')));
+
         String status = String.valueOf(request.get('status'));
         
         if(String.isBlank(o.StageName)) {
@@ -98,11 +91,26 @@ public class frDonation extends frModel {
             }
         }
         
+        String supporterFunraiseId = String.valueOf(request.get('donorId'));        
+        if (String.isNotBlank(supporterFunraiseId)) {
+            List<Contact> contacts = [SELECT Id, AccountId FROM Contact WHERE fr_ID__c = :supporterFunraiseId];
+            if (contacts.size() > 0) {
+                Contact supporterContact = contacts.get(0);
+                o.fr_Donor__c = supporterContact.Id;
+                if(frUtil.hasNPSP()){
+                    o.put('npsp__Primary_Contact__c', supporterContact.Id);
+                    o.AccountId = supporterContact.AccountId;
+                }
+            } else {
+                insert new Error__c(Error__c = 'Failed to find related record: Contact (donor) with funraise id ' + supporterFunraiseId+' for opportunity with funraise id '+ funraiseId);
+            }
+        }
+        
         String campaignId = String.valueOf(request.get('campaignGoalId'));
         if (String.isNotBlank(campaignId)) {
-            Campaign[] campaign = [SELECT Id FROM Campaign WHERE fr_ID__c = :campaignId];
-            if (campaign.size() > 0) {
-                o.CampaignId = campaign[0].Id;
+            List<Campaign> campaigns = [SELECT Id FROM Campaign WHERE fr_ID__c = :campaignId];
+            if (campaigns.size() > 0) {
+                o.CampaignId = campaigns[0].Id;
             } else {
                 insert new Error__c(Error__c = 'Failed to find related record: Campaign with funraise id ' + campaignId+' for opportunity with funraise id '+ funraiseId);
             }
@@ -118,49 +126,15 @@ public class frDonation extends frModel {
             }
         }
         
-        if(hasNonProfitSuccessPackage()){
-            List<Contact> contacts = Database.query('select AccountId from Contact where fr_ID__c = :donorId');
-            if(contacts.size() > 0){
-                Contact primaryContact = contacts.get(0);
-                if(o.get('npsp__Primary_Contact__c') == null){
-                    o.put('npsp__Primary_Contact__c', primaryContact.Id);
-                }
-                if(o.AccountId == null){
-                    o.AccountId=primaryContact.AccountId;
-                }
-            }
-        }
-    }
-    
-    private Boolean hasNonProfitSuccessPackage(){
-        try {
-            return UserInfo.isCurrentUserLicensed('npsp');
-        } catch (TypeException te) {
-            return false;
-        }
-    }
-    
-    public static frDonation create(Map<String, Object> request) {
-        frDonation donation = new frDonation();
-        donation.populateFromRequest(request);
-        return donation;
-    }
-    
-    public Boolean save() {
-        Boolean isSuccess = false;
         try {
             Opportunity opp = getOpportunity();
-            
-            Database.upsert(opp,Opportunity.Fields.fr_Id__c,true);
-            setOpportunityId(opp.Id);
-            isSuccess = true;
+            Database.upsert(opp, Opportunity.Fields.fr_Id__c, true);
         } catch (Exception ex) {
             handleException(ex);
-            isSuccess = false;
         }
-        flushLogs();
-        return isSuccess;
     }
+    
+    
     
     public void createOpportunityMapping(Map<String, Object> request) {
         Boolean mappingDisabled = request.containsKey('opportunityContactMappingDisabled') ?
@@ -233,27 +207,11 @@ public class frDonation extends frModel {
         return null;
     }
     
-    public String getDonorId() {
-        return this.donorId;
-    }
-    
-    public void setDonorId(String donorId) {
-        this.donorId = donorId;
+    public Boolean hasDonor() {
+        return getOpportunity() != null && getOpportunity().fr_Donor__c != null;
     }
     
     public String getOpportunityId() {
-        return opportunityId;
-    }
-    
-    public void setOpportunityId(String opportunityId) {
-        this.opportunityId = opportunityId;
-    }
-    
-    public String getSfDonorId() {
-        return sfDonorId;
-    }
-    
-    public void setSfDonorId(String sfDonorId) {
-        this.sfDonorId = sfDonorId;
+        return getOpportunity() != null ? getOpportunity().Id : null;
     }
 }

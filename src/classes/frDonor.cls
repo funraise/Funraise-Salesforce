@@ -62,46 +62,29 @@ public class frDonor extends frModel {
     private String id;
     private Contact c;
 
-    public frDonor(Contact c) {
-        this.contactId = c.Id;
-        this.id = c.fr_ID__c;
-        this.c = c;
-    }
-
-    public frDonor(String frId) {
-        this.id = frId;
-        this.c = new Contact(fr_ID__c = frId);
-    }
-
-    public static frDonor findByFunraiseId(String frId) {
-        List<Contact> contacts = (List<Contact>)Database.query('select Id, fr_ID__c from Contact where fr_ID__c = :frId');
-        if(contacts != null && contacts.size() > 0) {
-            return new frDonor(contacts[0]);
-        }
-        return null;
-    }
-
-    public static frDonor create(Map<String, Object> request) {
-        Contact existingContact = null;
+    public frDonor(Map<String, Object> request) {
+        Contact supporterContact = null;
         String frId = String.valueOf(request.get('id'));
         //try to find a donor that's already been integrated, use their funraise ID
         List<Contact> contacts = (List<Contact>)Database.query('select Id, fr_ID__c from Contact where fr_ID__c = :frId');
         if(contacts != null && contacts.size() > 0) {
-            existingContact = contacts.get(0);
+            supporterContact = contacts.get(0);
         }
 
-        if(existingContact == null) {
+        if(supporterContact == null) {
             String email = String.valueOf(request.get('email'));
             //next try email, dont try to match on blank emails
             if(!String.isBlank(email)) {
                 contacts = (List<Contact>)Database.query('select Id, fr_ID__c from Contact where Email = :email order by CreatedDate desc limit 1');
                 if(contacts != null && contacts.size() > 0) {
-                    existingContact = contacts.get(0);
+                    supporterContact = contacts.get(0);
+                    supporterContact.fr_ID__c = frId;
+                    update supporterContact;
                 }
             }
         }
 
-        if(existingContact == null) {
+        if(supporterContact == null) {
             String address1 = String.valueOf(request.get('address1'));
             String city = String.valueOf(request.get('city'));
             String state = String.valueOf(request.get('state'));
@@ -122,58 +105,34 @@ public class frDonor extends frModel {
 
             contacts = (List<Contact>)Database.query(byAddress);
             if(contacts != null && contacts.size() > 0) {
-                existingContact = contacts.get(0);
+                supporterContact = contacts.get(0);
+                supporterContact.fr_ID__c = frId;
+                update supporterContact;
             }
         }
 
-        frDonor donor;
-        if(existingContact == null) {
-            donor = new frDonor(frId);
-        } else {
-            existingContact.fr_ID__c = frId;
-            donor = new frDonor(existingContact);
+        if(supporterContact == null) {
+            supporterContact = new Contact();
         }
-        donor.populateFromRequest(request);
+        setContact(supporterContact);
+        populateFromRequest(request);
 
-        return donor;
-    }
-
-    public Boolean save() {
-        Boolean isSuccess = false;
         try {
-            Contact c = getContact();
-            if(String.isBlank(c.Id) && String.isNotBlank(c.fr_ID__c)) {
-                Database.upsert(c,Contact.Fields.fr_ID__c,true);
-            }
-            else {
-                upsert c;
-            }
-            this.setContactId(c.Id);
-            isSuccess = true;
+            Database.upsert(supporterContact, Contact.Fields.fr_ID__c, true);
         } catch (Exception ex) {
             handleException(ex);
-            isSuccess = false;
         }
-        flushLogs();
-        return isSuccess;
     }
-
-    public String getContactId() {
-        return this.contactId;
-    }
-
-    public void setContactId(String contactId) {
-        System.debug('Setting contact id: ' + contactId);
-        if(this.c == null) {
-            this.c = new Contact(Id = contactId);
-        }
-        this.contactId = contactId;
+    
+    private void setContact(Contact contact) {
+        this.c = contact;
     }
 
     public Contact getContact() {
-        if(String.isNotBlank(getContactId())) {
-            c.Id = getContactId();
-        }
         return c;
+    }
+    
+    public String getContactId() {
+        return getContact() != null ? getContact().Id : null;
     }
 }

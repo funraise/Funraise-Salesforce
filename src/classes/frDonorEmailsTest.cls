@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (c) 2016, Funraise Inc
+ *  Copyright (c) 2019, Funraise Inc
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -41,11 +41,8 @@
 public class frDonorEmailsTest {
     static testMethod void createExistingContact_test() {
         String funraiseId = '123456';
-        Contact testContact = new Contact(
-            FirstName = 'Bruce', LastName = 'Wayne', Email = 'bruce@wayne.example.com',
-            MailingStreet = '1007 Mountain Drive', MailingCity = 'Gotham', MailingState = 'NJ',
-            MailingPostalCode = '12345', MailingCountry = 'United States', fr_ID__c = funraiseId
-        );
+        Contact testContact = frDonorTest.getTestContact();
+        testContact.fr_ID__c = funraiseId;
         insert testContact;
 
         Map<String, Object> request = new Map<String, Object>();
@@ -61,12 +58,11 @@ public class frDonorEmailsTest {
         request.put('subject', 'Hello there!');
 
         Test.startTest();
-        String donorEmailsResponse = frDonorEmails.create(request);
+        String responseEmailId = frDonorEmails.create(request);
         Test.stopTest();
 
-        Contact[] newContact = [SELECT Id, fr_ID__c FROM Contact WHERE fr_ID__c = :funraiseId];
-        String[] toAddress = new String[]{'notfunraise@funraise.io'};
-        EmailMessage newEmail = [SELECT fromAddress FROM EmailMessage WHERE fr_Email_ID__c = '4'];
+        frTestUtil.assertNoErrors();
+        EmailMessage newEmail = [SELECT Id, fromAddress FROM EmailMessage WHERE Id = :responseEmailId];
         System.assertEquals('test@funraise.io', newEmail.fromAddress, 'The fromAddress was not correct');
     }
 
@@ -74,6 +70,7 @@ public class frDonorEmailsTest {
         String funraiseId = '2314';
 
         Map<String, Object> request = new Map<String, Object>();
+        request.put('donorId', funraiseId);
         request.put('id', 2314);
         request.put('emailId', 4);
         request.put('messageId', 'db92570b-766b-46b9-8b7a-a0c7efa92053');
@@ -83,19 +80,17 @@ public class frDonorEmailsTest {
         request.put('subject', 'Hello there!');
         
         Test.startTest();
-        String donorEmailsResponse = frDonorEmails.create(request);
+        String responseEmailId = frDonorEmails.create(request);
         Test.stopTest();
         
-        System.assertEquals(null, donorEmailsResponse, 'The donor was not null');
+        System.assertEquals(null, responseEmailId, 'We did not expect the email to be created created when the supporter could not be found');
+        System.assertEquals(1, [SELECT COUNT() FROM Error__c], 'There should be an error for not being able to find the related supporter');
     }
 
     static testMethod void createEmailNoEmailId_test() {
         String funraiseId = '123456';
-        Contact testContact = new Contact(
-            FirstName = 'Bruce', LastName = 'Wayne', Email = 'bruce@wayne.example.com',
-            MailingStreet = '1007 Mountain Drive', MailingCity = 'Gotham', MailingState = 'NJ',
-            MailingPostalCode = '12345', MailingCountry = 'United States', fr_ID__c = funraiseId
-        );
+        Contact testContact = frDonorTest.getTestContact();
+        testContact.fr_ID__c = funraiseId;
         insert testContact;
 
         Map<String, Object> request = new Map<String, Object>();
@@ -110,13 +105,11 @@ public class frDonorEmailsTest {
         request.put('subject', 'Hello there!');
 
         Test.startTest();
-        String donorEmailsResponse = frDonorEmails.create(request);
+        String responseEmailId = frDonorEmails.create(request);
         Test.stopTest();
-        System.debug('Response: ' + donorEmailsResponse);
 
-        Contact[] newContact = [SELECT Id, fr_ID__c FROM Contact WHERE fr_ID__c = :funraiseId];
-        String[] toAddress = new String[]{'notfunraise111@funraise.io'};
-        EmailMessage newEmail = [SELECT fromAddress FROM EmailMessage WHERE FromAddress = 'test111@funraise.io'];
+        frTestUtil.assertNoErrors();
+        EmailMessage newEmail = [SELECT fromAddress FROM EmailMessage WHERE Id = :responseEmailId];
         System.assertEquals('test111@funraise.io', newEmail.fromAddress, 'The fromAddress was not correct');
     }
     

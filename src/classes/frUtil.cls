@@ -3,6 +3,14 @@ public class frUtil {
         return String.isNotBlank(value) && value.length() > describe.getLength() ? value.substring(0, describe.getLength()) : value;
     }
     
+    public static Boolean hasNPSP(){
+        try {
+            return UserInfo.isCurrentUserLicensed('npsp');
+        } catch (TypeException te) {
+            return false;
+        }
+    }
+    
     public static DateTime convertFromLocalDateTime(List<Object> localDateTime) {
         return DateTime.newInstance(
             (Integer)localDateTime.get(0), //year

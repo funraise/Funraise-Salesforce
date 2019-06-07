@@ -64,10 +64,8 @@ public class frDonorTest {
         
         Test.stopTest();
         
-        
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        
-        
+
         Id contactId = response.id;
         System.assert(String.isNotBlank(contactId), 
                       'There was not an contact Id in the response as expected');
@@ -104,11 +102,9 @@ public class frDonorTest {
         frWSDonorController.syncEntity();
         
         Test.stopTest();
-        
-        
+
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        
-        
+
         Id contactId = response.id;
         System.assert(String.isNotBlank(contactId), 
                       'There was not an contact Id in the response as expected');
@@ -122,8 +118,8 @@ public class frDonorTest {
         Contact existing = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'alextest02221503@example.com');
         Contact noMatch = new Contact(LastName = 'nomatch', FirstName = 'nomatch', Email = 'nomatch@example.com', fr_ID__c = '111');
         insert new List<Contact>{existing, noMatch};
-            
-            Integer countBeforeSync = [SELECT COUNT() FROM Contact];
+        
+        Integer countBeforeSync = [SELECT COUNT() FROM Contact];
         
         RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
@@ -147,10 +143,8 @@ public class frDonorTest {
         frWSDonorController.syncEntity();
         
         Test.stopTest();
-        
-        
+
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        
         
         Id contactId = response.id;
         System.assert(String.isNotBlank(contactId), 
@@ -199,9 +193,7 @@ public class frDonorTest {
         
         Test.stopTest();
         
-        
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        
+        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class); 
         
         Id contactId = response.id;
         System.assert(String.isNotBlank(contactId), 
@@ -210,7 +202,7 @@ public class frDonorTest {
         Contact newContact = [SELECT Id, fr_ID__c FROM Contact WHERE Id = :contactId];
         Integer countAfterSync = [SELECT COUNT() FROM Contact];
         System.assertEquals(countBeforeSync, countAfterSync, 'No additional contacts should have been created');
-        System.assertEquals('856', newContact.fr_ID__c, 'The funraise Id should be populated on the existing contact matched by email');
+        System.assertEquals('856', newContact.fr_ID__c, 'The funraise Id should be populated on the existing contact matched by address');
     }
     
     static testMethod void syncEntity_badMappings() {
@@ -266,7 +258,6 @@ public class frDonorTest {
     
     public class MockResponse {
         String id;
-        Boolean success;
     }
     
     public static Contact getTestContact() {
@@ -277,7 +268,7 @@ public class frDonorTest {
         );
     }
     
-        private static String getTestPayload() {
+    private static String getTestPayload() {
         return '{'+
             '"id":856,'+
             '"organizationId":"ae8d412b-db97-49dc-8c8c-5bfe0f41fc6d",'+
