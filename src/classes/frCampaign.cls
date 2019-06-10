@@ -51,9 +51,11 @@ public class frCampaign {
     public void deleteCampaign(Map<String, Object> request) {
         String goalId = String.valueOf(request.get('goalId'));
         try {
-            Campaign campaignToDelete = [SELECT Id, fr_ID__c, ParentId, 
+            List<Campaign> campaigns = [SELECT Id, fr_ID__c, ParentId, 
                                  (SELECT Id, fr_ID__c, ParentId from ChildCampaigns)
                                  from Campaign where fr_ID__c = :goalId];
+            if(campaigns.size() == 0) {return;}
+            Campaign campaignToDelete = campaigns.get(0);
             if (campaignToDelete.ChildCampaigns.size() > 0) {
                 if(String.isNotBlank(campaignToDelete.ParentId)) {
                     for (Campaign childCampaign : campaignToDelete.ChildCampaigns) {

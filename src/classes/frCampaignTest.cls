@@ -101,6 +101,49 @@ public class frCampaignTest {
         System.assertEquals(parentCampaign.Id, childCampaign.ParentId, 'The campaign parentId was not correct');
     }
     
+    static testMethod void createChildCampaign_missingParent() {	
+        String childCampaignName = 'Child campaign';
+        String childGoalId = '19';
+        
+        Map<String, Object> childRequest = new Map<String, Object>();
+        childRequest.put('name', childCampaignName);
+        childRequest.put('reason', 'The campaign is new');
+        childRequest.put('status', 'Published');
+        childRequest.put('goalAmount', '1200');
+        childRequest.put('parentGoalId', parentGoalId);
+        childRequest.put('goalId', childGoalId);
+        childRequest.put('deleted', false);
+
+        Test.startTest();
+        new frCampaign(childRequest);
+        Test.stopTest();
+
+        List<Campaign> childCampaigns = [SELECT Id, fr_ID__c, Name, ParentId FROM Campaign WHERE fr_ID__c = :childGoalId];
+        System.assertEquals(1, childCampaigns.size(), 'The campaign should have been created even though its parent could not be found');
+        Campaign childCampaign = childCampaigns.get(0);
+        System.assertEquals(childCampaignName, childCampaign.Name, 'The campaign name was not correct');
+        System.assertEquals(null, childCampaign.ParentId, 'The campaign should not have a parent since the referenced id did not exist');
+    }
+    
+    static testMethod void testDelete_missingRecord() {
+        Map<String, Object> topLevelCampaign = new Map<String, Object>();
+        topLevelCampaign.put('name', 'Top level Campaign');
+        topLevelCampaign.put('reason', 'The campaign is old');
+        topLevelCampaign.put('status', 'Published');
+        topLevelCampaign.put('goalAmount', '238329.12');
+        topLevelCampaign.put('parentGoalId', null);
+        topLevelCampaign.put('goalId', topLevelGoalId);
+        topLevelCampaign.put('deleted', true);
+        
+        Test.startTest();
+        new frCampaign(topLevelCampaign);
+        Test.stopTest();
+        
+        List<Campaign> campaigns = [SELECT Id, ParentId, Parent.fr_ID__c FROM Campaign];
+        System.assertEquals(0, campaigns.size(), 'No exceptions should have been thrown and no data created for trying to delete a record that didnt exist');
+        
+    }
+    
     static testMethod void testDeleteTopLevel() {
         createCampaigns();
                 
@@ -121,7 +164,6 @@ public class frCampaignTest {
         for(Campaign campaign : campaigns) {
             System.assert(campaign.Parent.fr_ID__c != topLevelGoalId, 'There should not be any campaigns referencing the deleted campaign');
         }
-        
     }
     
     static testMethod void testDeleteParent() {
