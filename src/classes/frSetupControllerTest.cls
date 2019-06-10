@@ -1,4 +1,4 @@
-@IsTest
+@isTest
 public class frSetupControllerTest {
 	static testMethod void test_availableMappings() {
 		//get the donor and donation custom metadata fields, assert that those are the same ones that controller provides

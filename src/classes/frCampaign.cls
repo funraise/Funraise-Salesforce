@@ -51,29 +51,23 @@ public class frCampaign {
     public void deleteCampaign(Map<String, Object> request) {
         String goalId = String.valueOf(request.get('goalId'));
         try {
-            Campaign campaign = Database.query('select Id, fr_ID__c, ParentId from Campaign where fr_ID__c = :goalId');
-            String sfCampaignId = campaign.Id;
-            List<Campaign> childCampaigns = Database.query('select Id, fr_ID__c, ParentId from Campaign where parentId = :sfCampaignId');
-            if (childCampaigns.size() > 0) {
-                String sfParentCampaignId = campaign.ParentId;
-                Boolean updateChildren = sfParentCampaignId != '0' && sfParentCampaignId != null;
-                for (Campaign childCampaign : childCampaigns) {
-                    if (updateChildren) {
-                        childCampaign.parentId = sfParentCampaignId;
-                    } else {
-                        delete childCampaign;
+            Campaign campaignToDelete = [SELECT Id, fr_ID__c, ParentId, 
+                                 (SELECT Id, fr_ID__c, ParentId from ChildCampaigns)
+                                 from Campaign where fr_ID__c = :goalId];
+            if (campaignToDelete.ChildCampaigns.size() > 0) {
+                if(String.isNotBlank(campaignToDelete.ParentId)) {
+                    for (Campaign childCampaign : campaignToDelete.ChildCampaigns) {
+                        childCampaign.parentId = campaignToDelete.ParentId;
                     }
-                }
-                if (updateChildren) {
-                    Database.update(childCampaigns, true);
+                    update campaignToDelete.ChildCampaigns;
+                } else {
+                    delete campaignToDelete.ChildCampaigns;
                 }
             }
-            delete campaign;
+            delete campaignToDelete;
             return;
         } catch (DMLException e) {
-            insert new Error__c(Error__c =
-                                'Failed to delete funraise campaign for campaign id ' + goalId +
-                                '. Exception: ' + e.getMessage());
+            insert new Error__c(Error__c ='Failed to delete funraise campaign for campaign id ' + goalId + '. Exception: ' + e.getMessage());
         }
     }
     
@@ -88,45 +82,42 @@ public class frCampaign {
         newCampaign.fr_ID__c = goalId;
         
         String parentId = String.valueOf(request.get('parentGoalId'));
-        if (String.isNotBlank(parentId) && parentId != '0') {
-            Campaign parentCampaign = Database.query('select Id, fr_ID__c from Campaign where fr_ID__c = :parentId');
-            if(parentCampaign != null) {
-                newCampaign.ParentId = parentCampaign.Id;                
+        if (String.isNotBlank(parentId)) {
+            List<Campaign> parentCampaigns = [SELECT Id, fr_ID__c from Campaign where fr_ID__c = :parentId];
+            if(parentCampaigns.size() > 0) {
+                newCampaign.ParentId = parentCampaigns.get(0).Id;                
+            } else {
+                insert new Error__c(Error__c = 'Failed to find related record: Campaign (parent campaign) with funraise id ' + parentId+' for campaign with funraise id '+ goalId);
             }
         }
         try {
             Database.upsert(newCampaign, Campaign.Field.fr_ID__c, true);
         } catch (DMLException e) {
-            insert new Error__c(Error__c =
-                                'Failed to insert funraise campaign for campaign id ' + goalId +
-                                '. Exception: ' + e.getMessage());
+            insert new Error__c(Error__c = 'Failed to insert funraise campaign for campaign id ' + goalId + '. Exception: ' + e.getMessage());
             return;
         }
         
-        String supporterId = String.valueOf(request.get('supporterId'));
-        if(String.isNotBlank(supporterId) && supporterId != '0') {
-            frDonor donor = frDonor.findByFunraiseId(supporterId);
-            if(donor != null) {
-                Boolean campaignMemberExists = [SELECT COUNT() FROM CampaignMember 
-                                                WHERE ContactId = :donor.getContactId() 
-                                                AND CampaignId = :newCampaign.Id] > 0;
-                if(campaignMemberExists) {
-                    return;
+        
+        String supporterFunraiseId = String.valueOf(request.get('supporterId'));        
+        if (String.isNotBlank(supporterFunraiseId)) {
+            List<Contact> contacts = [SELECT Id, AccountId, (SELECT Id FROM CampaignMembers WHERE CampaignId = :newCampaign.Id) 
+                                      FROM Contact WHERE fr_ID__c = :supporterFunraiseId];
+            if (contacts.size() > 0) {
+                Contact supporterContact = contacts.get(0);
+                if(supporterContact.CampaignMembers.size() == 0) {
+                    CampaignMember fundraiserMember = new CampaignMember(
+                        CampaignId = newCampaign.Id,
+                        ContactId = supporterContact.Id
+                    );
+                    try {
+                        insert fundraiserMember;
+                    } catch (DMLException e) {
+                        insert new Error__c(Error__c = 'Failed to insert funraise campaign member for campaign id ' + goalId +' supporter id: ' + supporterFunraiseId + '. Exception: ' + e.getMessage());
+                        return;
+                    }
                 }
-                
-                CampaignMember fundraiserMember = new CampaignMember(
-                    CampaignId = newCampaign.Id,
-                    ContactId = donor.getContactId()
-                );
-                try {
-                    insert fundraiserMember;
-                } catch (DMLException e) {
-                    insert new Error__c(Error__c =
-                                        'Failed to insert funraise campaign member for campaign id ' + goalId +
-                                        ' supporter id: ' + supporterId + '. Exception: ' + e.getMessage());
-                    return;
-                }
-                
+            } else {
+                insert new Error__c(Error__c = 'Failed to find related record required for creating CampaignMember: Contact (fundraiser) with funraise id ' + supporterFunraiseId+' for Campaign with funraise id '+ goalId);
             }
         }
     }

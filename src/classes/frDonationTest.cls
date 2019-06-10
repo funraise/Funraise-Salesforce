@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (c) 2016, Funraise Inc
+ *  Copyright (c) 2019, Funraise Inc
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -34,11 +34,11 @@
  *
  *
  *
- * CREATED: 2016 Funraise Inc - https://funraise.io
+ * CREATED: 2019 Funraise Inc - https://funraise.io
  * AUTHOR: Alex Molina
  */
 @isTest
-public class frWSDonationControllerTest {
+public class frDonationTest {
     static testMethod void syncEntity_newDonor() {  
         RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
@@ -57,7 +57,6 @@ public class frWSDonationControllerTest {
         createMapping('donation_cretime', 'CloseDate');
         insert new frMapping__c(Name = 'Test String', Is_Constant__c = true, Constant_Value__c = 'Closed Won', sf_Name__c = 'StageName', Type__c = frDonation.TYPE);
         insert new frMapping__c(Name = 'Test Percent', Is_Constant__c = true, Constant_Value__c = '95', sf_Name__c = 'Probability', Type__c = frDonation.TYPE);
-        insert new frMapping__c(Name = 'Test Integer', Is_Constant__c = true, Constant_Value__c = String.valueOf(Date.today().year()), sf_Name__c = 'fiscalyear', Type__c = frDonation.TYPE);
         insert new frMapping__c(Name = 'Test Double', Is_Constant__c = true, Constant_Value__c = '1.5', sf_Name__c = 'totalopportunityquantity', Type__c = frDonation.TYPE);
 
         Test.startTest();
@@ -68,10 +67,10 @@ public class frWSDonationControllerTest {
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
         
-        List<String> responseErrors = response.errors;
-        System.assertEquals(1, responseErrors.size(), 
-            'They were unexpected errors. Errors: '+responseErrors);
-        System.assert(responseErrors.get(0).contains('Donor not found'), 
+		List<Error__c> errors = [SELECT Id, Name, Error__c from Error__c];
+        System.assertEquals(1, errors.size(), 
+            'They were unexpected errors. Errors: '+errors);
+        System.assert(errors.get(0).Error__c.contains('Failed to find related record: Contact (donor)'), 
             'The error message was not the expected one');
         
         Id oppId = response.id;
@@ -110,7 +109,7 @@ public class frWSDonationControllerTest {
         Test.stopTest();
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        assertNoErrors(response);
+        frTestUtil.assertNoErrors();
         
         Id oppId = response.id;
         System.assert(String.isNotBlank(oppId), 
@@ -146,7 +145,7 @@ public class frWSDonationControllerTest {
         Test.stopTest();
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        assertNoErrors(response);
+        frTestUtil.assertNoErrors();
         
         Id oppId = response.id;
         System.assert(String.isNotBlank(oppId), 
@@ -186,7 +185,7 @@ public class frWSDonationControllerTest {
         Test.stopTest();
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        assertNoErrors(response);
+        frTestUtil.assertNoErrors();
         
         Id oppId = response.id;
         System.assert(String.isNotBlank(oppId), 
@@ -229,7 +228,7 @@ public class frWSDonationControllerTest {
         Test.stopTest();
 
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        assertNoErrors(response);
+        frTestUtil.assertNoErrors();
         
         Id oppId = response.id;
         System.assert(String.isNotBlank(oppId), 
@@ -294,17 +293,43 @@ public class frWSDonationControllerTest {
         System.assertEquals(2, [SELECT COUNT() FROM Error__c], 'There should be 3 error logs for missing supporters that prevented opp roles from being created');
     }
     
-    private static void assertNoErrors(MockResponse response) {
-        List<String> responseErrors = response.errors;
-        System.assertEquals(0, responseErrors.size(), 
-            'They were unexpected errors. Errors: '+responseErrors);
-        List<Error__c> errors = [SELECT Error__c FROM Error__c];
-        String errorsStr = '';
-        for(Error__c error : errors) {
-            errorsStr += error.Error__c + '\n';
-        }
-        System.assertEquals(0, errors.size(), 'There were unexpected errors. Errors:' + errorsStr);
-        System.assert(response.success, 'There were no errors expected, result should be successful save');
+    static testMethod void syncEntity_LinkToSubscription() {  
+        Contact testSupporter = frDonorTest.getTestContact();
+        insert testSupporter;
+        
+        Subscription__c subscription = new Subscription__c(Name = 'Test Sub', fr_ID__c = '1234', Supporter__c = testSupporter.Id);
+        insert subscription;
+        
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
+        req.httpMethod = 'POST';
+
+        Map<String, Object> request = getTestRequest();
+        request.put('subscriptionId', subscription.fr_ID__c);
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+
+        RestContext.request = req;
+        RestContext.response = res;
+
+        createMapping('name', 'Name');
+        createMapping('donation_cretime', 'CloseDate');
+
+        Test.startTest();
+
+        frWSDonationController.syncEntity();
+
+        Test.stopTest();
+
+        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
+        frTestUtil.assertNoErrors();
+        
+        Id oppId = response.id;
+        System.assert(String.isNotBlank(oppId), 
+            'There was not an opportunity Id in the response as expected');
+        Opportunity newOpportunity = [SELECT Id, fr_ID__c, Subscription__c FROM Opportunity WHERE Id = :oppId];
+        System.assertEquals(subscription.Id, newOpportunity.Subscription__c, 'The new donation should be pointing at the subscription corresponding to the id provided in the request');
     }
     
     private static void createMapping(String frField, String sfField) {
@@ -313,8 +338,6 @@ public class frWSDonationControllerTest {
 
     public class MockResponse {
         String id;
-        List<String> errors;
-        Boolean success;
     }
 
     private static String getTestPayload() {

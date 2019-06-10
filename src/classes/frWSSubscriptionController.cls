@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (c) 2016, Funraise Inc
+ *  Copyright (c) 2019, Funraise Inc
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -34,22 +34,16 @@
  *
  *
  *
- * CREATED: 2016 Funraise Inc - https://funraise.io
- * AUTHOR: Jason M. Swenski
+ * CREATED: 2019 Funraise Inc - https://funraise.io
+ * AUTHOR: Alex Molina
  */
 
-@RestResource(urlMapping='/v1/donor')
-global with sharing class frWSDonorController {
-
+@RestResource(urlMapping='/v1/subscription')
+global with sharing class frWSSubscriptionController {
+    
     @HttpPost
     global static void syncEntity() {
         Map<String, Object> request = (Map<String, Object>)JSON.deserializeUntyped(RestContext.request.requestBody.toString());
-        frDonor donor = new frDonor(request);
-
-        Map<String,Object> resp = new Map<String,Object>();
-        resp.put('id', donor.getContactId());
-
-        RestContext.response.addHeader('Content-Type', 'application/json');
-        RestContext.response.responseBody = Blob.valueOf(JSON.serialize(resp));
+        frSubscription subscription = new frSubscription(request);
     }
 }
