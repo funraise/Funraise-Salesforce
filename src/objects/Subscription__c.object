@@ -43,6 +43,7 @@
     <allowInChatterGroups>false</allowInChatterGroups>
     <compactLayoutAssignment>SYSTEM</compactLayoutAssignment>
     <deploymentStatus>Deployed</deploymentStatus>
+    <deprecated>false</deprecated>
     <enableActivities>false</enableActivities>
     <enableBulkApi>true</enableBulkApi>
     <enableChangeDataCapture>false</enableChangeDataCapture>
@@ -54,6 +55,7 @@
     <enableStreamingApi>true</enableStreamingApi>
     <fields>
         <fullName>Allocation_Name__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Allocation Name</label>
         <length>255</length>
@@ -64,6 +66,7 @@
     </fields>
     <fields>
         <fullName>Amount__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Amount</label>
         <precision>18</precision>
@@ -75,6 +78,7 @@
     <fields>
         <fullName>Campaign_Goal__c</fullName>
         <deleteConstraint>SetNull</deleteConstraint>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Funraise Campaign Goal</label>
         <referenceTo>Campaign</referenceTo>
@@ -86,6 +90,7 @@
     </fields>
     <fields>
         <fullName>Campaign_Page_Name__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Campaign Page Name</label>
         <length>255</length>
@@ -96,6 +101,7 @@
     </fields>
     <fields>
         <fullName>Comment__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Comment</label>
         <length>255</length>
@@ -106,6 +112,7 @@
     </fields>
     <fields>
         <fullName>Company_Match_Company_Name__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Company Match Company Name</label>
         <length>255</length>
@@ -116,6 +123,7 @@
     </fields>
     <fields>
         <fullName>Company_Match_Employee_Email__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Company Match Employee Email</label>
         <required>false</required>
@@ -126,6 +134,7 @@
     <fields>
         <fullName>Company_Match__c</fullName>
         <defaultValue>false</defaultValue>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Company Match</label>
         <trackTrending>false</trackTrending>
@@ -133,6 +142,7 @@
     </fields>
     <fields>
         <fullName>Currency__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Currency</label>
         <length>255</length>
@@ -143,6 +153,7 @@
     </fields>
     <fields>
         <fullName>Dedication_Email__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Dedication Email</label>
         <required>false</required>
@@ -152,6 +163,7 @@
     </fields>
     <fields>
         <fullName>Dedication_Message__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Dedication Message</label>
         <length>255</length>
@@ -162,6 +174,7 @@
     </fields>
     <fields>
         <fullName>Dedication_Name__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Dedication Name</label>
         <length>255</length>
@@ -172,6 +185,7 @@
     </fields>
     <fields>
         <fullName>Dedication_Type__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Dedication Type</label>
         <length>255</length>
@@ -183,6 +197,7 @@
     <fields>
         <fullName>Dedication__c</fullName>
         <defaultValue>false</defaultValue>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Dedication</label>
         <trackTrending>false</trackTrending>
@@ -190,6 +205,7 @@
     </fields>
     <fields>
         <fullName>Form_Name__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Form Name</label>
         <length>255</length>
@@ -200,6 +216,7 @@
     </fields>
     <fields>
         <fullName>Frequency__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Frequency</label>
         <length>255</length>
@@ -211,6 +228,7 @@
     <fields>
         <fullName>Imported__c</fullName>
         <defaultValue>false</defaultValue>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Imported</label>
         <trackTrending>false</trackTrending>
@@ -218,6 +236,7 @@
     </fields>
     <fields>
         <fullName>Next_Payment_Date__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Next Payment Date</label>
         <required>false</required>
@@ -226,6 +245,7 @@
     </fields>
     <fields>
         <fullName>Note__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Note</label>
         <length>255</length>
@@ -237,6 +257,7 @@
     <fields>
         <fullName>Operations_Tip__c</fullName>
         <defaultValue>false</defaultValue>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Operations Tip</label>
         <trackTrending>false</trackTrending>
@@ -244,6 +265,7 @@
     </fields>
     <fields>
         <fullName>Payment_Method_Expiration_Date__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Payment Method Expiration Date</label>
         <length>255</length>
@@ -254,6 +276,7 @@
     </fields>
     <fields>
         <fullName>Payment_Method_Last_Four__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Payment Method Last Four</label>
         <length>255</length>
@@ -264,6 +287,7 @@
     </fields>
     <fields>
         <fullName>Payment_Method_Type__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Payment Method Type</label>
         <length>255</length>
@@ -274,6 +298,7 @@
     </fields>
     <fields>
         <fullName>Status__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Status</label>
         <length>255</length>
@@ -284,6 +309,7 @@
     </fields>
     <fields>
         <fullName>Supporter__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Supporter</label>
         <referenceTo>Contact</referenceTo>
@@ -297,6 +323,7 @@
     </fields>
     <fields>
         <fullName>fr_ID__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>true</externalId>
         <label>Funraise ID</label>
         <length>255</length>
