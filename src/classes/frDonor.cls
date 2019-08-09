@@ -116,6 +116,11 @@ public class frDonor extends frModel {
         }
         setContact(supporterContact);
         populateFromRequest(request);
+        
+        if(String.isBlank(supporterContact.LastName)) {
+            //LastName is required.  If the mappings didn't populate it, try to populate with the institution name
+            supporterContact.LastName = String.valueOf(request.get('institutionName'));
+        }
 
         try {
             Database.upsert(supporterContact, Contact.Fields.fr_ID__c, true);

@@ -73,6 +73,46 @@ public class frDonorTest {
         System.assertEquals('856', newContact.fr_ID__c, 'The funraise donor id was not populated to the contact field');
     }
     
+    //If the contact's last name field is blank, we'll assume its because there's no last name in funraise
+    //likely meaning it's an institution contact, so we should put the institution name in the last name field
+    static testMethod void syncEntity_contactLastNameFallback() {
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donor';
+        req.httpMethod = 'POST';
+        Map<String, Object> requestBody = getTestRequest();
+        requestBody.put('lastName', null);
+        requestBody.put('institutionName', 'Test Inst Name');
+        req.requestBody = Blob.valueOf(Json.serialize(requestBody));
+        RestContext.request = req;
+        RestContext.response = res;
+        
+        createMapping('firstName', 'FirstName');
+        createMapping('lastName', 'LastName');
+        createMapping('email', 'email');
+        createMapping('address1', 'MailingStreet');
+        createMapping('city', 'MailingCity');
+        createMapping('state', 'MailingState');
+        createMapping('postalCode', 'MailingPostalCode');
+        createMapping('country', 'MailingCountry');
+        createMapping('donor_cretime', 'BirthDate');
+        Test.startTest();
+        
+        frWSDonorController.syncEntity();
+        
+        Test.stopTest();
+        
+        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
+
+        Id contactId = response.id;
+        System.assert(String.isNotBlank(contactId), 
+                      'There was not an contact Id in the response as expected');
+        Contact newContact = [SELECT Id, fr_ID__c, LastName FROM Contact WHERE Id = :contactId];
+        System.assertEquals('856', newContact.fr_ID__c, 'The funraise donor id was not populated to the contact field');
+        System.assertEquals(String.valueOf(requestBody.get('institutionName')), newContact.LastName, 'We expected a fallback so that the contact would still get created');
+    }
+    
     static testMethod void syncEntity_existing_match_funraise_id() {
         Contact existing = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'testExisting@example.com', fr_ID__c = '856');
         Contact noMatch = new Contact(LastName = 'nomatch', FirstName = 'nomatch', Email = 'nomatch@example.com', fr_ID__c = '111');
@@ -269,52 +309,56 @@ public class frDonorTest {
     }
     
     private static String getTestPayload() {
-        return '{'+
-            '"id":856,'+
-            '"organizationId":"ae8d412b-db97-49dc-8c8c-5bfe0f41fc6d",'+
-            '"email":"alextest02221503@example.com",'+
-            '"firstName":"alex",'+
-            '"lastName":"test02221503",'+
-            '"name":"alex test02221503",'+
-            '"institutionName":null,'+
-            '"institutionCategory":"Individual",'+
-            '"address1":"1234 S Street st",'+
-            '"address2":null,'+
-            '"city":"Test City",'+
-            '"state":"AZ",'+
-            '"postalCode":"85008",'+
-            '"country":"United States",'+
-            '"notes":null,'+
-            '"age":67,'+
-            '"gender":"F",'+
-            '"p2gScore":"3|6 - Average",'+
-            '"netWorth":"$100MM-$500MM",'+
-            '"income":"$10MM-$25MM",'+
-            '"giftCapacity":"$300K-$500K",'+
-            '"annualDonations":"$10K-$25K",'+
-            '"realEstate":"$5MM-$10MM",'+
-            '"photoUrl":null,'+
-            '"linkedinUrl":null,'+
-            '"facebookUrl":null,'+
-            '"twitterUrl":null,'+
-            '"employerName":null,'+
-            '"jobTitle":null,'+
-            '"homeowner":null,'+
-            '"maritalStatus":null,'+
-            '"influencerScore":null,'+
-            '"education":null,'+
-            '"donorType":"RECURRING",'+
-            '"totalDonationAmount":3E+1,'+
-            '"totalDonationCount":3,'+
-            '"lastDonationDate":1493077510493,'+
-            '"firstDonationDate":1487801043934,'+
-            '"totalSoftCreditAmount":null,'+
-            '"totalSoftCreditCount":null,'+
-            '"fundraiserDonationAmount":null,'+
-            '"fundraiserDonationCount":null,'+
-            '"fundraiser":false,'+
-            '"donor_tags":"FeedingPoor EatingFood",'+
-            '"donor_cretime":1487801043597'+
-            '}';
+        return Json.serialize(getTestRequest());
+    }
+    
+    private static Map<String, Object> getTestRequest() {
+        Map<String, Object> request = new Map<String, Object>();
+        request.put('id', 856);
+        request.put('organizationId', 'ae8d412b-db97-49dc-8c8c-5bfe0f41fc6d');
+        request.put('email', 'alextest02221503@example.com');
+        request.put('firstName', 'alex');
+        request.put('lastName', 'test02221503');
+        request.put('name', 'alex test02221503');
+        request.put('institutionName', null);
+        request.put('institutionCategory', 'Individual');
+        request.put('address1', '1234 S Street st');
+        request.put('address2', null);
+        request.put('city', 'Test City');
+        request.put('state', 'AZ');
+        request.put('postalCode', '85008');
+        request.put('country', 'United States');
+        request.put('notes', null);
+        request.put('age', 67);
+        request.put('gender', 'F');
+        request.put('p2gScore', '3|6 - Average');
+        request.put('netWorth', '$100MM-$500MM');
+        request.put('income', '$10MM-$25MM');
+        request.put('giftCapacity', '$300K-$500K');
+        request.put('annualDonations', '$10K-$25K');
+        request.put('realEstate', '$5MM-$10MM');
+        request.put('photoUrl', null);
+        request.put('linkedinUrl', null);
+        request.put('facebookUrl', null);
+        request.put('twitterUrl', null);
+        request.put('employerName', null);
+        request.put('jobTitle', null);
+        request.put('homeowner', null);
+        request.put('maritalStatus', null);
+        request.put('influencerScore', null);
+        request.put('education', null);
+        request.put('donorType', 'RECURRING');
+        request.put('totalDonationAmount', 30);
+        request.put('totalDonationCount', 3);
+        request.put('lastDonationDate', 1493077510493L);
+        request.put('firstDonationDate', 1487801043934L);
+        request.put('totalSoftCreditAmount', null);
+        request.put('totalSoftCreditCount', null);
+        request.put('fundraiserDonationAmount', null);
+        request.put('fundraiserDonationCount', null);
+        request.put('fundraiser', false);
+        request.put('donor_tags', 'FeedingPoor EatingFood');
+        request.put('donor_cretime', 1487801043597L);
+        return request;
     }
 }
