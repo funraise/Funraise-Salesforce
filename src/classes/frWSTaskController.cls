@@ -67,7 +67,7 @@ global with sharing class frWSTaskController {
         
         if(existingSfTasks.isEmpty()){
             sfTask = new Task();
-        	sfTask.Priority = 'Normal';
+            sfTask.Priority = 'Normal';
         } else {
             sfTask = existingSfTasks.get(0);
         }

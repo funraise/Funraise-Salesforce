@@ -3,6 +3,7 @@
     <fields>
         <fullName>Subscription__c</fullName>
         <deleteConstraint>SetNull</deleteConstraint>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Funraise Subscription</label>
         <referenceTo>Subscription__c</referenceTo>
