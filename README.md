@@ -15,6 +15,9 @@ Note: Before doing the steps below, be sure you have installed the package in th
 4. Add the OAuth Scopes **Access and manage your data (api)** and **Perform requests on your behalf at any time (refresh_token, offline_access)** and **Save** the record
 5. When viewing the Connected App record under Setup -> Build -> Create -> Apps, the **Consumer Key** and **Consumer Secret** should be visible, these values will be used to integrate with Funraise
 
+### Give the Salesforce user that will perform the OAuth flow in Funraise the permission set
+1. Apply "Funraise Permission Set" to your user that performs the OAuth flow so that the REST endpoints are available for Funraise to call
+
 ### Setup the Integration in the Funraise Platform
 1. When you are logged in to the Funraise platform, select the cog in the top right and click **Integrations**
 2. Click the **Settings** expand for the Salesforce integration (**Note:** If you do not see a Salesforce.com option when viewing the integrations screen, contact Funraise support to enable the feature)
