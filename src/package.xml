@@ -70,5 +70,9 @@
         <members>Subscription__c</members>
         <name>CustomTab</name>
     </types>
+    <types>
+        <members>Funraise_Permission_Set</members>
+        <name>PermissionSet</name>
+    </types>
     <version>43.0</version>
 </Package>
