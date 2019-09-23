@@ -32,3 +32,6 @@ Note: Before doing the steps below, be sure you have installed the package in th
 The package will let you customize how data flows from Funraise into Salesforce.  Once the package is installed, there will be a Funraise app in Salesforce with tabs for Setup and Errors.  
 
 The setup page is where the mappings can be changed.  Any changes will only apply to future incoming Funraise data.  
+
+## How it works
+If you want to trace how the code converts a POST request from the Funraise server to, choose one of the controllers in the src/classes directory.  All of the controllers that accept a REST webservice call from the Funraise platform are titled frWS<entity>Controller.   From there you can observe how the request is deserialized and used to create concret sObjects, in some cases using customized mappings.
