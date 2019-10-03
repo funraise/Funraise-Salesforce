@@ -76,10 +76,9 @@ public class frDonationTest {
         Id oppId = response.id;
         System.assert(String.isNotBlank(oppId), 
             'There was not an opportunity Id in the response as expected');
-        Opportunity newOpportunity = [SELECT Id, fr_ID__c, StageName, Name, Description, Probability, FiscalYear, TotalOpportunityQuantity FROM Opportunity WHERE Id = :oppId];
+        Opportunity newOpportunity = [SELECT Id, fr_ID__c, StageName, Name, Description, Probability, TotalOpportunityQuantity FROM Opportunity WHERE Id = :oppId];
         System.assertEquals('Closed Won', newOpportunity.StageName, 'The constant mapping for StageName was not used');
         System.assertEquals(95, newOpportunity.Probability, 'The constant mapping for Probability was not used');
-        System.assertEquals(2017, newOpportunity.FiscalYear, 'The constant mapping for Fiscal Year was not used');
         System.assertEquals(1.5, newOpportunity.TotalOpportunityQuantity, 'The constant mapping for Total Opportunity Quantity was not used');
         Map<String, Object> body = (Map<String, Object>)JSON.deserializeUntyped(req.requestBody.toString());
         String expectedNameAndDesc = (String)body.get('name');
