@@ -66,7 +66,7 @@ public class frDonor extends frModel {
         Contact supporterContact = null;
         String frId = String.valueOf(request.get('id'));
         //try to find a donor that's already been integrated, use their funraise ID
-        List<Contact> contacts = (List<Contact>)Database.query('select Id, fr_ID__c from Contact where fr_ID__c = :frId');
+        List<Contact> contacts = (List<Contact>)Database.query('select Id, fr_ID__c, LastName from Contact where fr_ID__c = :frId');
         if(contacts != null && contacts.size() > 0) {
             supporterContact = contacts.get(0);
         }
@@ -75,7 +75,7 @@ public class frDonor extends frModel {
             String email = String.valueOf(request.get('email'));
             //next try email, dont try to match on blank emails
             if(!String.isBlank(email)) {
-                contacts = (List<Contact>)Database.query('select Id, fr_ID__c from Contact where Email = :email order by CreatedDate desc limit 1');
+                contacts = (List<Contact>)Database.query('select Id, fr_ID__c, LastName from Contact where Email = :email order by CreatedDate desc limit 1');
                 if(contacts != null && contacts.size() > 0) {
                     supporterContact = contacts.get(0);
                     supporterContact.fr_ID__c = frId;
@@ -94,7 +94,7 @@ public class frDonor extends frModel {
             String lastName = String.valueOf(request.get('lastName'));
 
             //try to match by address, in case we sync an offline donation over with no email.
-            String byAddress = 'select Id, fr_ID__c from Contact where MailingStreet = :address1' +
+            String byAddress = 'select Id, fr_ID__c, LastName from Contact where MailingStreet = :address1' +
                                ' and MailingCity = :city' +
                                ' and MailingState = :state' +
                                ' and MailingPostalCode = :postalCode' +

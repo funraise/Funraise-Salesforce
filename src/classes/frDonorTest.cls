@@ -89,7 +89,6 @@ public class frDonorTest {
         RestContext.response = res;
         
         createMapping('firstName', 'FirstName');
-        createMapping('lastName', 'LastName');
         createMapping('email', 'email');
         createMapping('address1', 'MailingStreet');
         createMapping('city', 'MailingCity');
@@ -110,6 +109,50 @@ public class frDonorTest {
                       'There was not an contact Id in the response as expected');
         Contact newContact = [SELECT Id, fr_ID__c, LastName FROM Contact WHERE Id = :contactId];
         System.assertEquals('856', newContact.fr_ID__c, 'The funraise donor id was not populated to the contact field');
+        System.assertEquals(String.valueOf(requestBody.get('institutionName')), newContact.LastName, 'We expected a fallback so that the contact would still get created');
+    }
+    
+    //Sync to an existing contact that once the mappings are applied, LastName is empty so Salesforce will throw an exception
+    //confirm our fallback works as expected to prevent that exception
+    static testMethod void syncEntity_contactLastNameFallback_existing() {
+		Contact existingSupporter = getTestContact();
+        insert existingSupporter;
+        
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donor';
+        req.httpMethod = 'POST';
+        Map<String, Object> requestBody = getTestRequest();
+        requestBody.put('id', existingSupporter.fr_Id__c);
+        requestBody.put('lastName', null);
+        requestBody.put('institutionName', 'Test Inst Name');
+        req.requestBody = Blob.valueOf(Json.serialize(requestBody));
+        RestContext.request = req;
+        RestContext.response = res;
+        
+        createMapping('firstName', 'FirstName');
+        createMapping('lastName', 'LastName');
+        createMapping('email', 'email');
+        createMapping('address1', 'MailingStreet');
+        createMapping('city', 'MailingCity');
+        createMapping('state', 'MailingState');
+        createMapping('postalCode', 'MailingPostalCode');
+        createMapping('country', 'MailingCountry');
+        createMapping('donor_cretime', 'BirthDate');
+        Test.startTest();
+        
+        frWSDonorController.syncEntity();
+        
+        Test.stopTest();
+        
+        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
+
+        Id contactId = response.id;
+        System.assert(String.isNotBlank(contactId), 
+                      'There was not an contact Id in the response as expected');
+        Contact newContact = [SELECT Id, fr_ID__c, LastName FROM Contact WHERE Id = :contactId];
+        System.assertEquals(existingSupporter.fr_Id__c, newContact.fr_ID__c, 'The funraise donor id was not populated to the contact field');
         System.assertEquals(String.valueOf(requestBody.get('institutionName')), newContact.LastName, 'We expected a fallback so that the contact would still get created');
     }
     
