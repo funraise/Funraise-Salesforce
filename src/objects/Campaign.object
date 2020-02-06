@@ -2,6 +2,8 @@
 <CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
     <fields>
         <fullName>fr_ID__c</fullName>
+        <caseSensitive>false</caseSensitive>
+        <deprecated>false</deprecated>
         <description>Funraise ID for campaigns in platform</description>
         <externalId>true</externalId>
         <label>Funraise ID</label>
