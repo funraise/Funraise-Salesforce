@@ -53,7 +53,8 @@ global with sharing class frWSTaskController {
         String donorId = String.valueOf(frTask.get('donorId'));
         List<Contact> contacts = (List<Contact>)Database.query('select Id, fr_ID__c from Contact where fr_ID__c = :donorId');
         if(contacts.isEmpty()){
-            setResponse('Contact not found for donorId:  ' + donorId, false);
+            frUtil.logRelationshipError(frUtil.Entity.TASK, frTaskId, 
+                                        frUtil.Entity.SUPPORTER, donorId);
             return;
         }
         
@@ -121,8 +122,9 @@ global with sharing class frWSTaskController {
         
         try {
             upsert sfTask Task.Fields.fr_Task_ID__c;
-        } catch (DMLException e) {
-            setResponse(e.getMessage(), false);
+        } catch (DMLException ex) {
+            frUtil.logException(frUtil.Entity.TASK, frTaskId, ex);
+            setResponse(ex.getMessage(), false);
             return;
         }
         
@@ -133,10 +135,6 @@ global with sharing class frWSTaskController {
         Map<String,Object> resp = new Map<String,Object>();
         resp.put('success', success);
         resp.put('message', message);
-        
-        if(!success){
-            insert new Error__c(Error__c = message);
-        }
         
         RestContext.response.responseBody = Blob.valueOf(JSON.serialize(resp));
     }

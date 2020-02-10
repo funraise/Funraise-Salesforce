@@ -63,6 +63,70 @@
         <type>LongTextArea</type>
         <visibleLines>3</visibleLines>
     </fields>
+    <fields>
+        <fullName>Funraise_Object_Id__c</fullName>
+        <externalId>false</externalId>
+        <label>Funraise Object Id</label>
+        <length>255</length>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Funraise_Object__c</fullName>
+        <externalId>false</externalId>
+        <label>Funraise Object</label>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Picklist</type>
+        <valueSet>
+            <restricted>true</restricted>
+            <valueSetDefinition>
+                <sorted>false</sorted>
+                <value>
+                    <fullName>Transaction</fullName>
+                    <default>false</default>
+                    <label>Transaction</label>
+                </value>
+                <value>
+                    <fullName>Supporter</fullName>
+                    <default>false</default>
+                    <label>Supporter</label>
+                </value>
+                <value>
+                    <fullName>Fundraising Event</fullName>
+                    <default>false</default>
+                    <label>Fundraising Event</label>
+                </value>
+                <value>
+                    <fullName>Fundraising Event Registration</fullName>
+                    <default>false</default>
+                    <label>Fundraising Event Registration</label>
+                </value>
+                <value>
+                    <fullName>Subscription</fullName>
+                    <default>false</default>
+                    <label>Subscription</label>
+                </value>
+                <value>
+                    <fullName>Campaign</fullName>
+                    <default>false</default>
+                    <label>Campaign</label>
+                </value>
+                <value>
+                    <fullName>Email</fullName>
+                    <default>false</default>
+                    <label>Email</label>
+                </value>
+                <value>
+                    <fullName>Task/Interaction</fullName>
+                    <default>false</default>
+                    <label>Task/Interaction</label>
+                </value>
+            </valueSetDefinition>
+        </valueSet>
+    </fields>
     <label>Funraise Error</label>
     <listViews>
         <fullName>All</fullName>

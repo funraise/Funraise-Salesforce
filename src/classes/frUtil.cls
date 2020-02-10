@@ -31,19 +31,14 @@ public class frUtil {
     }
     
     public static void write(SObject record, Schema.SObjectField field, String fieldName, Object value, String funraiseId) {
-        if (fieldName.toLowerCase() == 'id') {
-            if (value != null && ((String)value) != '') {
-                record.put(field, Id.valueOf((String)value));
-            }
-        } else if (field.getDescribe().getType() == Schema.DisplayType.DateTime) {
-            try {
+        try {
+            if (fieldName.toLowerCase() == 'id') {
+                if (value != null && ((String)value) != '') {
+                    record.put(field, Id.valueOf((String)value));
+                }
+            } else if (field.getDescribe().getType() == Schema.DisplayType.DateTime) {
                 record.put(field, DateTime.newInstance((Long)value));
-            }
-            catch (Exception e) {
-                write(record, field, value, funraiseId);
-            }
-        } else if (field.getDescribe().getType() == Schema.DisplayType.Date) {
-            try {
+            } else if (field.getDescribe().getType() == Schema.DisplayType.Date) {
                 if(value instanceof List<Object>) {
                     List<Object> localDate = (List<Object>)value;
                     if(localDate.size() > 3) {
@@ -53,36 +48,21 @@ public class frUtil {
                         Date sfLocalDate = convertFromLocalDate(localDate);
                         record.put(field, sfLocalDate);                        
                     }
-
+                    
                 } else {
                     record.put(field, DateTime.newInstance((Long)value).dateGMT());
                 }
-                
-            } catch (Exception ex) {
-                write(record, field, value, funraiseId);
-            }
-        } else if(field.getDescribe().getType() == Schema.DisplayType.Double) {
-            try {
+            } else if(field.getDescribe().getType() == Schema.DisplayType.Double) {
                 record.put(field, Double.valueOf(value));
-            }
-            catch (Exception e) {
-                write(record, field, value, funraiseId);
-            }
-        } else if(field.getDescribe().getType() == Schema.DisplayType.Integer) {
-            try {
+            } else if(field.getDescribe().getType() == Schema.DisplayType.Integer) {
                 record.put(field, Integer.valueOf(value));
-            }
-            catch (Exception e) {
-                write(record, field, value, funraiseId);
-            }
-        } else if(field.getDescribe().getType() == Schema.DisplayType.Percent) {
-            try {
+            } else if(field.getDescribe().getType() == Schema.DisplayType.Percent) {
                 record.put(field, Decimal.valueOf(String.valueOf(value)));
-            }
-            catch (Exception e) {
+            } else {
                 write(record, field, value, funraiseId);
             }
-        } else {
+        }
+        catch (Exception e) {
             write(record, field, value, funraiseId);
         }
     }
@@ -99,6 +79,66 @@ public class frUtil {
                 +' Exception: '+ex
             );
         }
+    }
+    
+    public static void logRelationshipError(Entity errObject, String recordId, Entity missingRelationship, String relationshipId) {
+        logRelationshipError(errObject, recordId, missingRelationship, relationshipId, null);
+    }
+    
+    public static void logRelationshipError(Entity errObject, String recordId, Entity missingRelationship, String relationshipId, String optionalError) {
+        String relationshipObject = getErrorObjectFromEnum(missingRelationship);
+        String error = 'Failed to find related record ' + 
+                 relationshipObject + ' with Funraise Id: ' + relationshipId;
+        if(optionalError != null) {
+            error += '. ' + optionalError;
+        }
+        logError(errObject, recordId, error);
+    }
+    
+    public static void logException(Entity errObject, String recordId, Exception ex) {
+        logError(errObject, recordId, 'Operation failed. Exception: '+ex.getMessage());
+    }
+    
+    public static void logError(Entity errObject, String recordId, String error) {
+		String funraiseObject = getErrorObjectFromEnum(errObject);
+        insert new Error__c(
+        	Error__c = error,
+            Funraise_Object__c = funraiseObject,
+            Funraise_Object_Id__c = recordId
+        );
+    }
+    
+    private static String getErrorObjectFromEnum(Entity frObject) {
+        String funraiseObject = null;
+        if(frObject == Entity.DONATION) {
+            funraiseObject = 'Transaction';
+        } else if (frObject == Entity.SUPPORTER) {
+            funraiseObject = 'Supporter';
+        } else if (frObject == Entity.EVENT) {
+            funraiseObject = 'Fundraising Event';
+        } else if (frObject == Entity.REGISTRATION) {
+            funraiseObject = 'Fundraising Event Registration';
+        } else if (frObject == Entity.SUBSCRIPTION) {
+            funraiseObject = 'Subscription';
+        } else if (frObject == Entity.CAMPAIGN) {
+            funraiseObject = 'Campaign';
+        } else if (frObject == Entity.EMAIL) {
+            funraiseObject = 'Email';
+        } else if (frObject == Entity.TASK) {
+            funraiseObject = 'Task/Interaction';
+        }
+        return funraiseObject;
+    }
+    
+    public enum Entity {
+        DONATION,
+        SUPPORTER,
+        EVENT,
+        REGISTRATION,
+        SUBSCRIPTION,
+        CAMPAIGN,
+        EMAIL,
+        TASK
     }
     
 }

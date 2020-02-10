@@ -40,13 +40,8 @@ public abstract class frModel {
         getObject().put('fr_ID__c', funraiseId);
     }
     
-    public static void handleException(Exception ex) {
-        insert new Error__c(Error__c = ex.getMessage());
-    }
-
-    
     public static void flushLogs() {
-        if([SELECT COUNT() FROM Error__c] > 100) {
+        if([SELECT COUNT() FROM Error__c] > 200) {
             deleteLogs();
         }
     }

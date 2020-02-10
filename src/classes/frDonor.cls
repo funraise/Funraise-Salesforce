@@ -66,7 +66,7 @@ public class frDonor extends frModel {
         Contact supporterContact = null;
         String frId = String.valueOf(request.get('id'));
         //try to find a donor that's already been integrated, use their funraise ID
-        List<Contact> contacts = (List<Contact>)Database.query('select Id, fr_ID__c, LastName from Contact where fr_ID__c = :frId');
+        List<Contact> contacts = (List<Contact>)Database.query('select Id, fr_ID__c, LastName from Contact where fr_ID__c = :frId FOR UPDATE');
         if(contacts != null && contacts.size() > 0) {
             supporterContact = contacts.get(0);
         }
@@ -75,7 +75,7 @@ public class frDonor extends frModel {
             String email = String.valueOf(request.get('email'));
             //next try email, dont try to match on blank emails
             if(!String.isBlank(email)) {
-                contacts = (List<Contact>)Database.query('select Id, fr_ID__c, LastName from Contact where Email = :email order by CreatedDate desc limit 1');
+                contacts = (List<Contact>)Database.query('select Id, fr_ID__c, LastName from Contact where Email = :email limit 1 FOR UPDATE');
                 if(contacts != null && contacts.size() > 0) {
                     supporterContact = contacts.get(0);
                     supporterContact.fr_ID__c = frId;
@@ -101,7 +101,7 @@ public class frDonor extends frModel {
                                ' and MailingCountry = :country' +
                                ' and FirstName = :firstName' +
                                ' and LastName = :lastName' +
-                               ' order by CreatedDate desc limit 1';
+                               ' limit 1 FOR UPDATE';
 
             contacts = (List<Contact>)Database.query(byAddress);
             if(contacts != null && contacts.size() > 0) {
@@ -125,7 +125,7 @@ public class frDonor extends frModel {
         try {
             Database.upsert(supporterContact, Contact.Fields.fr_ID__c, true);
         } catch (Exception ex) {
-            handleException(ex);
+            frUtil.logException(frUtil.Entity.SUPPORTER, frId, ex);
         }
     }
     
