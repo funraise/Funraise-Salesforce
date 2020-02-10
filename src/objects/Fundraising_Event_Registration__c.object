@@ -104,6 +104,16 @@
         <writeRequiresMasterRead>false</writeRequiresMasterRead>
     </fields>
     <fields>
+        <fullName>Ticket_Amount__c</fullName>
+        <externalId>false</externalId>
+        <label>Ticket Amount</label>
+        <precision>18</precision>
+        <required>false</required>
+        <scale>2</scale>
+        <trackTrending>false</trackTrending>
+        <type>Currency</type>
+    </fields>
+    <fields>
         <fullName>Ticket_Name__c</fullName>
         <deprecated>false</deprecated>
         <externalId>false</externalId>
@@ -113,6 +123,28 @@
         <trackTrending>false</trackTrending>
         <type>Text</type>
         <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Ticket_Tax_Deductible_Amount__c</fullName>
+        <externalId>false</externalId>
+        <label>Ticket Tax Deductible Amount</label>
+        <precision>18</precision>
+        <required>false</required>
+        <scale>2</scale>
+        <trackTrending>false</trackTrending>
+        <type>Currency</type>
+    </fields>
+    <fields>
+        <fullName>Transaction__c</fullName>
+        <deleteConstraint>SetNull</deleteConstraint>
+        <externalId>false</externalId>
+        <label>Transaction</label>
+        <referenceTo>Opportunity</referenceTo>
+        <relationshipLabel>Funraise Event Registrations</relationshipLabel>
+        <relationshipName>Funraise_Event_Registrations</relationshipName>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Lookup</type>
     </fields>
     <fields>
         <fullName>fr_ID__c</fullName>

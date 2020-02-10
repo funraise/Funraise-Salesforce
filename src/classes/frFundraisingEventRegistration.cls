@@ -81,6 +81,15 @@ public class frFundraisingEventRegistration {
                                         frUtil.Entity.SUPPORTER, funraiseSupporterId,
                                         'Registration guest of, not supporter');
         }
+        
+        String funraiseTransactionId = String.valueOf(request.get('transactionId'));
+        List<Opportunity> transactions = [SELECT Id FROM Opportunity WHERE fr_Id__c = :funraiseTransactionId];
+        if(transactions.isEmpty() && String.isNotBlank(funraiseTransactionId)) {
+            //if it wasn't found, log an error but continue
+            frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
+                                        frUtil.Entity.DONATION, funraiseTransactionId);
+        }
+
     
         Fundraising_Event_Registration__c registration = new Fundraising_Event_Registration__c(
         	fr_ID__c = funraiseId,
@@ -95,7 +104,22 @@ public class frFundraisingEventRegistration {
             Attended__c = Boolean.valueOf(request.get('attended')),
             Fundraising_Event__c = event.get(0).Id,
             Supporter__c = supporter.get(0).Id,
-            Guest_Of__c = guestOf.isEmpty() ?  null : guestOf.get(0).Id
+            Guest_Of__c = guestOf.isEmpty() ?  null : guestOf.get(0).Id,
+            Transaction__c = transactions.isEmpty() ? null : transactions.get(0).Id
+        );
+        frUtil.write(
+            registration, 
+            Fundraising_Event_Registration__c.Ticket_Amount__c, 
+            'Ticket_Amount__c',
+            request.get('ticketAmount'),
+            funraiseId
+        );
+        frUtil.write(
+            registration, 
+            Fundraising_Event_Registration__c.Ticket_Tax_Deductible_Amount__c, 
+            'Ticket_Tax_Deductible_Amount__c',
+            request.get('ticketTaxDeductibleAmount'),
+            funraiseId
         );
         
         try {

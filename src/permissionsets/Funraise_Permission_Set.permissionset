@@ -164,7 +164,22 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
+        <field>Fundraising_Event_Registration__c.Ticket_Amount__c</field>
+        <readable>false</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
         <field>Fundraising_Event_Registration__c.Ticket_Name__c</field>
+        <readable>false</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Fundraising_Event_Registration__c.Ticket_Tax_Deductible_Amount__c</field>
+        <readable>false</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Fundraising_Event_Registration__c.Transaction__c</field>
         <readable>false</readable>
     </fieldPermissions>
     <fieldPermissions>
