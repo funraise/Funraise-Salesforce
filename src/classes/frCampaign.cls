@@ -69,7 +69,7 @@ public class frCampaign {
             delete campaignToDelete;
             return;
         } catch (DMLException e) {
-            insert new Error__c(Error__c ='Failed to delete funraise campaign for campaign id ' + goalId + '. Exception: ' + e.getMessage());
+            frUtil.logException(frUtil.Entity.CAMPAIGN, goalId, e);
         }
     }
     
@@ -89,16 +89,16 @@ public class frCampaign {
             if(parentCampaigns.size() > 0) {
                 newCampaign.ParentId = parentCampaigns.get(0).Id;                
             } else {
-                insert new Error__c(Error__c = 'Failed to find related record: Campaign (parent campaign) with funraise id ' + parentId+' for campaign with funraise id '+ goalId);
+                frUtil.logRelationshipError(frUtil.Entity.CAMPAIGN, goalId, 
+                                            frUtil.Entity.CAMPAIGN, parentId);
             }
         }
         try {
             Database.upsert(newCampaign, Campaign.Field.fr_ID__c, true);
         } catch (DMLException e) {
-            insert new Error__c(Error__c = 'Failed to insert funraise campaign for campaign id ' + goalId + '. Exception: ' + e.getMessage());
-            return;
+            frUtil.logException(frUtil.Entity.CAMPAIGN, goalId, e);
+			return;
         }
-        
         
         String supporterFunraiseId = String.valueOf(request.get('supporterId'));        
         if (String.isNotBlank(supporterFunraiseId)) {
@@ -113,13 +113,14 @@ public class frCampaign {
                     );
                     try {
                         insert fundraiserMember;
-                    } catch (DMLException e) {
-                        insert new Error__c(Error__c = 'Failed to insert funraise campaign member for campaign id ' + goalId +' supporter id: ' + supporterFunraiseId + '. Exception: ' + e.getMessage());
+                    } catch (DMLException ex) {
+                        frUtil.logException(frUtil.Entity.CAMPAIGN, goalId, ex);
                         return;
                     }
                 }
             } else {
-                insert new Error__c(Error__c = 'Failed to find related record required for creating CampaignMember: Contact (fundraiser) with funraise id ' + supporterFunraiseId+' for Campaign with funraise id '+ goalId);
+                frUtil.logRelationshipError(frUtil.Entity.CAMPAIGN, goalId, 
+                                            frUtil.Entity.SUPPORTER, supporterFunraiseId);
             }
         }
     }

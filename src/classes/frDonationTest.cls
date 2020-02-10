@@ -70,7 +70,7 @@ public class frDonationTest {
 		List<Error__c> errors = [SELECT Id, Name, Error__c from Error__c];
         System.assertEquals(1, errors.size(), 
             'They were unexpected errors. Errors: '+errors);
-        System.assert(errors.get(0).Error__c.contains('Failed to find related record: Contact (donor)'), 
+        System.assert(errors.get(0).Error__c.contains('Failed to find related record'), 
             'The error message was not the expected one');
         
         Id oppId = response.id;
@@ -152,8 +152,7 @@ public class frDonationTest {
         Opportunity newOpportunity = [SELECT Id, fr_ID__c, fr_Donor__c, CampaignId FROM Opportunity WHERE Id = :oppId];
         System.assertEquals(testContact.Id, newOpportunity.fr_Donor__c, 
             'The funraise sf donor id was not populated to the opportunity\'s contact lookup field');
-        Campaign newCampaign = [SELECT Id FROM Campaign WHERE fr_ID__c = '10'];
-        System.assertEquals(newCampaign.Id, newOpportunity.CampaignId, 
+        System.assertEquals(testCampaign.Id, newOpportunity.CampaignId, 
             'The campaign Id was not added to the donation');
     }
     
@@ -346,6 +345,7 @@ public class frDonationTest {
     private static String getTestPayloadCampaign() {
         Map<String, Object> testRequest = getTestRequest();
         testRequest.put('campaignGoalId', 10);
+        testRequest.put('campaignMappingDisabled', false);
         return Json.serialize(testRequest);
     }
     

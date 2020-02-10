@@ -51,9 +51,7 @@ public class frFundraisingEventRegistration {
         try {
             delete [SELECT id FROM Fundraising_Event_Registration__c WHERE fr_ID__c = :funraiseId];
         } catch (DMLException e) {
-            insert new Error__c(Error__c =
-                                'Failed to delete funraise registration for registration id ' + funraiseId +
-                                '. Exception: ' + e.getMessage());
+            frUtil.logException(frUtil.Entity.REGISTRATION, funraiseId, e);
         }
     }
     
@@ -62,24 +60,26 @@ public class frFundraisingEventRegistration {
         String funraiseEventId = String.valueOf(request.get('eventId'));
         List<Fundraising_Event__c> event = [SELECT Id from Fundraising_Event__c WHERE fr_Id__c = :funraiseEventId];
         if(event.isEmpty()) {
-            insert new Error__c(Error__c =
-                                'Failed to find related record: Event with id ' + funraiseEventId+ ' for registration id ' + funraiseId);
+            frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
+                                        frUtil.Entity.EVENT, funraiseEventId);
             return;
         }
         
         String funraiseSupporterId = String.valueOf(request.get('supporterId'));
         List<Contact> supporter = [SELECT Id from Contact WHERE fr_Id__c = :funraiseSupporterId];
         if(supporter.isEmpty()) {
-            insert new Error__c(Error__c =
-                                'Failed to find related record: Supporter with id ' + funraiseSupporterId+ ' for registration id ' + funraiseId);
+            frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
+                                        frUtil.Entity.SUPPORTER, funraiseSupporterId,
+                                       'Registration supporter, not guest of');
             return;
         }
         String funraiseGuestOfId = String.valueOf(request.get('guestOfId'));
         List<Contact> guestOf = [SELECT Id from Contact WHERE fr_Id__c = :funraiseGuestOfId];
-        if(guestOf.isEmpty() && funraiseGuestOfId != null) {
+        if(guestOf.isEmpty() && String.isNotBlank(funraiseGuestOfId)) {
             //if it wasn't found, log an error but continue
-            insert new Error__c(Error__c =
-                                'Failed to find related record: Guest Of supporter with id ' + funraiseGuestOfId+ ' for registration id ' + funraiseId);
+            frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
+                                        frUtil.Entity.SUPPORTER, funraiseSupporterId,
+                                        'Registration guest of, not supporter');
         }
     
         Fundraising_Event_Registration__c registration = new Fundraising_Event_Registration__c(
@@ -100,10 +100,8 @@ public class frFundraisingEventRegistration {
         
         try {
             Database.upsert(registration, Fundraising_Event_Registration__c.Field.fr_ID__c, true);
-        } catch (DMLException e) {
-            insert new Error__c(Error__c =
-                                'Failed to insert funraise registration for registration id ' + funraiseId +
-                                '. Exception: ' + e.getMessage());
+        } catch (DMLException ex) {
+            frUtil.logException(frUtil.Entity.REGISTRATION, funraiseId, ex);
             return;
         }
     }

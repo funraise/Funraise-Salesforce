@@ -53,9 +53,7 @@ public class frSubscription {
         try {
             delete [SELECT id FROM Subscription__c WHERE fr_ID__c = :funraiseId];
         } catch (DMLException e) {
-            insert new Error__c(Error__c =
-                                'Failed to delete funraise registration for registration id ' + funraiseId +
-                                '. Exception: ' + e.getMessage());
+            frUtil.logException(frUtil.Entity.SUBSCRIPTION, funraiseId, e);
         }
     }
     
@@ -65,8 +63,8 @@ public class frSubscription {
         String funraiseSupporterId = String.valueOf(request.get('supporterId'));
         List<Contact> contacts = [SELECT Id from Contact WHERE fr_Id__c = :funraiseSupporterId];
         if(contacts.isEmpty()) {
-            insert new Error__c(Error__c =
-                                'Failed to find related record: Supporter with id ' + funraiseSupporterId+ ' for subscription id ' + funraiseId);
+            frUtil.logRelationshipError(frUtil.Entity.SUBSCRIPTION, funraiseId, 
+                                        frUtil.Entity.SUPPORTER, funraiseSupporterId);
             return;
         }
         
@@ -85,8 +83,8 @@ public class frSubscription {
             if (campaigns.size() > 0) {
                 subscription.Campaign_Goal__c = campaigns.get(0).Id;
             } else {
-                insert new Error__c(Error__c =
-                'Failed to find related record: campaign with id ' + goalId+ ' for subscription id ' + funraiseId);
+                frUtil.logRelationshipError(frUtil.Entity.SUBSCRIPTION, funraiseId, 
+                                            frUtil.Entity.CAMPAIGN, goalId);
             }
         }
         
@@ -108,10 +106,8 @@ public class frSubscription {
         
         try {
             Database.upsert(subscription, Subscription__c.Field.fr_ID__c, true);
-        } catch (DMLException e) {
-            insert new Error__c(Error__c =
-                                'Failed to insert funraise subscription id ' + funraiseId +
-                                '. Exception: ' + e.getMessage());
+        } catch (DMLException ex) {
+            frUtil.logException(frUtil.Entity.SUBSCRIPTION, funraiseId, ex);
             return;
         }
     }

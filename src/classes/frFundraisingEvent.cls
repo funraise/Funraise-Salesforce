@@ -51,9 +51,7 @@ public class frFundraisingEvent {
         try {
             delete [SELECT id FROM Fundraising_Event__c WHERE fr_ID__c = :funraiseId];
         } catch (DMLException e) {
-            insert new Error__c(Error__c =
-                                'Failed to delete funraise event for event id ' + funraiseId +
-                                '. Exception: ' + e.getMessage());
+            frUtil.logException(frUtil.Entity.EVENT, funraiseId, e);
         }
     }
     
@@ -67,14 +65,10 @@ public class frFundraisingEvent {
             End_Date__c = convertFromLocalDateTime((List<Object>)request.get('eventEndDate'), funraiseId)
         );
 
-        
         try {
             Database.upsert(event, Fundraising_Event__c.Field.fr_ID__c, true);
         } catch (DMLException e) {
-            insert new Error__c(Error__c =
-                                'Failed to insert funraise event for event id ' + funraiseId +
-                                '. Exception: ' + e.getMessage());
-            return;
+            frUtil.logException(frUtil.Entity.EVENT, funraiseId, e);
         }
     }
     
@@ -83,9 +77,7 @@ public class frFundraisingEvent {
             try {
                 return frUtil.convertFromLocalDateTime(localDate);
             } catch (Exception ex) {
-                insert new Error__c(Error__c =
-                                    'Could not parse event date.  Event created without this data. Event Id: ' + recordId +
-                                    '. Exception: ' + ex.getMessage());
+                frUtil.logError(frUtil.Entity.EVENT, recordId, 'Could not parse event date.  Event created without this data');
             }
         }
         return null;

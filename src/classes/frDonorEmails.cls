@@ -18,10 +18,8 @@ public class frDonorEmails {
             emr.RelationType = 'ToAddress';
             insert emr;
             return email.Id;
-        } catch (DMLException e) {
-            insert new Error__c(Error__c =
-            'Failed to insert funraise email for contact id ' + contactId +
-            '. Exception: ' + e.getMessage() + ' -- funraise email id: ' + funraiseId);
+        } catch (DMLException ex) {
+            frUtil.logException(frUtil.Entity.EMAIL, funraiseId, ex);
         }
         return null;
     }
@@ -34,7 +32,8 @@ public class frDonorEmails {
             if (contacts.size() > 0) {
                 return frDonorEmails.parseEmails(request, funraiseId, contacts.get(0).Id);
             } else {
-                insert new Error__c(Error__c = 'Failed to find related record: Contact (supporter) with funraise id ' + supporterFunraiseId+' for email with funraise id '+ funraiseId);
+                frUtil.logRelationshipError(frUtil.Entity.EMAIL, funraiseId, 
+                                            frUtil.Entity.SUPPORTER, supporterFunraiseId);
             }
         }
         return null;
