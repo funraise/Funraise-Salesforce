@@ -47,15 +47,11 @@ public class frFundraisingEventRegistrationTest {
         insert testSupporter;
                 
         String funraiseId = '25';
-        Map<String, Object> request = new Map<String, Object>();
-        request.put('name', '000001');
-        request.put('attended', true);
-        request.put('ticketName', 'Test Ticket');
+        Map<String, Object> request = getTestRequest();
         request.put('eventId', testEvent.fr_ID__c);
         request.put('supporterId', testSupporter.fr_ID__c);
         request.put('guestOfId', testSupporter.fr_ID__c);
         request.put('id', funraiseId);
-        request.put('deleted', false);
         
         RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
@@ -71,12 +67,16 @@ public class frFundraisingEventRegistrationTest {
 
         Test.stopTest();
         
-        Fundraising_Event_Registration__c registration = [SELECT Id, fr_ID__c, Name, Attended__c, Ticket_Name__c, 
+        Fundraising_Event_Registration__c registration = [SELECT Id, fr_ID__c, Name, Attended__c, Ticket_Name__c, Ticket_Amount__c,
+                                                          Ticket_Tax_Deductible_Amount__c,
                                                           Supporter__c, Fundraising_Event__c, 
                                                           Guest_Of__c 
                                                           FROM Fundraising_Event_Registration__c WHERE fr_ID__c = :funraiseId];
+        
         System.assertEquals(String.valueOf(request.get('name')), registration.Name, 'The registration name should be the property included in the request');
         System.assertEquals(String.valueOf(request.get('ticketName')), registration.Ticket_Name__c, 'The registration ticket name should be the property included in the request');
+        System.assertEquals(Decimal.valueOf(String.valueOf(request.get('ticketAmount'))), registration.Ticket_Amount__c, 'The registrations amount should be the property included in the request');
+        System.assertEquals(Decimal.valueOf(String.valueOf(request.get('ticketTaxDeductibleAmount'))), registration.Ticket_Tax_Deductible_Amount__c, 'The registrations tax deductible amount should be the property included in the request');
         System.assertEquals(Boolean.valueOf(request.get('attended')), registration.Attended__c, 'The registration attended flag should be the property included in the request');
         System.assertEquals(testEvent.Id, registration.Fundraising_Event__c, 'The lookup for event should have been populated with the event that has the funraise id referenced in the request');
         System.assertEquals(testSupporter.Id, registration.Supporter__c, 'The lookup for supporter should have been populated with the contact that has the funraise id referenced in the request');
@@ -88,15 +88,11 @@ public class frFundraisingEventRegistrationTest {
         insert testSupporter;
         
         String funraiseId = '25';
-        Map<String, Object> request = new Map<String, Object>();
-        request.put('name', '000001');
-        request.put('attended', true);
-        request.put('ticketName', 'Test Ticket');
+        Map<String, Object> request = getTestRequest();
         request.put('eventId', 'nonexistent');
         request.put('supporterId', testSupporter.Id);
         request.put('guestOfId', testSupporter.Id);
         request.put('id', funraiseId);
-        request.put('deleted', false);
 
         Test.startTest();
         Integer errorsBefore = [SELECT COUNT() FROM Error__c];
@@ -118,15 +114,11 @@ public class frFundraisingEventRegistrationTest {
         insert testEvent;
         
         String funraiseId = '25';
-        Map<String, Object> request = new Map<String, Object>();
-        request.put('name', '000001');
-        request.put('attended', true);
-        request.put('ticketName', 'Test Ticket');
+        Map<String, Object> request = getTestRequest();
         request.put('eventId', testEvent.fr_ID__c);
         request.put('supporterId', 'nonexistent');
         request.put('guestOfId', 'nonexistent');
         request.put('id', funraiseId);
-        request.put('deleted', false);
 
         Test.startTest();
         Integer errorsBefore = [SELECT COUNT() FROM Error__c];
@@ -151,15 +143,11 @@ public class frFundraisingEventRegistrationTest {
         insert testSupporter;
         
         String funraiseId = '25';
-        Map<String, Object> request = new Map<String, Object>();
-        request.put('name', '000001');
-        request.put('attended', false);
-        request.put('ticketName', 'Test Ticket');
+        Map<String, Object> request = getTestRequest();
         request.put('eventId', testEvent.fr_ID__c);
         request.put('supporterId', testSupporter.fr_ID__c);
         request.put('guestOfId', 'nonexistent'); //not matching on guestOf is ok, we will create anyway
         request.put('id', funraiseId);
-        request.put('deleted', false);
 
         Test.startTest();
         Integer errorsBefore = [SELECT COUNT() FROM Error__c];
@@ -200,10 +188,7 @@ public class frFundraisingEventRegistrationTest {
         );
         insert existingRegistration;
         
-        Map<String, Object> request = new Map<String, Object>();
-        request.put('name', '000001');
-        request.put('attended', true);
-        request.put('ticketName', 'Test Ticket');
+        Map<String, Object> request = getTestRequest();
         request.put('eventId', testEvent.fr_ID__c);
         request.put('supporterId', 'nonexistent');
         request.put('guestOfId', 'nonexistent');
@@ -223,6 +208,21 @@ public class frFundraisingEventRegistrationTest {
         System.assertEquals(0, registrations.size(), 'Registration should have been deleted and therefore not returned');
         System.assertEquals(0, errorsBefore, 'Precondition');
         System.assertEquals(0, errorsAfter, 'Did not expect any errors on a delete request');
+    }
+
+    private static Map<String, Object> getTestRequest() {
+        Map<String, Object> request = new Map<String, Object>();
+        request.put('name', '000001');
+        request.put('attended', true);
+        request.put('ticketName', 'Test Ticket');
+        request.put('ticketAmount', 99.99);
+        request.put('ticketTaxDeductibleAmount', 49.99);
+        request.put('eventId', 'changeme');
+        request.put('supporterId', 'changeme');
+        request.put('guestOfId', 'changeme');
+        request.put('id', 'changeme');
+        request.put('deleted', false);
+        return request;
     }
     
 }
