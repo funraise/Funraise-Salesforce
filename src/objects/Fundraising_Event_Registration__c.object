@@ -105,6 +105,7 @@
     </fields>
     <fields>
         <fullName>Ticket_Amount__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Ticket Amount</label>
         <precision>18</precision>
@@ -126,6 +127,7 @@
     </fields>
     <fields>
         <fullName>Ticket_Tax_Deductible_Amount__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Ticket Tax Deductible Amount</label>
         <precision>18</precision>
@@ -137,6 +139,7 @@
     <fields>
         <fullName>Transaction__c</fullName>
         <deleteConstraint>SetNull</deleteConstraint>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Transaction</label>
         <referenceTo>Opportunity</referenceTo>

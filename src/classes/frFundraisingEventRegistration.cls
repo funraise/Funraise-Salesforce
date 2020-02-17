@@ -73,21 +73,29 @@ public class frFundraisingEventRegistration {
                                        'Registration supporter, not guest of');
             return;
         }
+        
         String funraiseGuestOfId = String.valueOf(request.get('guestOfId'));
-        List<Contact> guestOf = [SELECT Id from Contact WHERE fr_Id__c = :funraiseGuestOfId];
-        if(guestOf.isEmpty() && String.isNotBlank(funraiseGuestOfId)) {
-            //if it wasn't found, log an error but continue
-            frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
-                                        frUtil.Entity.SUPPORTER, funraiseSupporterId,
-                                        'Registration guest of, not supporter');
+        List<Contact> guestOf = new List<Contact>();
+        if(String.isNotBlank(funraiseGuestOfId)) {
+            guestOf = [SELECT Id from Contact WHERE fr_Id__c = :funraiseGuestOfId];
+            if(guestOf.isEmpty()) {
+                //if it wasn't found, log an error but continue
+                frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
+                                            frUtil.Entity.SUPPORTER, funraiseSupporterId,
+                                            'Registration guest of');
+                
+            }
         }
         
         String funraiseTransactionId = String.valueOf(request.get('transactionId'));
-        List<Opportunity> transactions = [SELECT Id FROM Opportunity WHERE fr_Id__c = :funraiseTransactionId];
-        if(transactions.isEmpty() && String.isNotBlank(funraiseTransactionId)) {
-            //if it wasn't found, log an error but continue
-            frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
-                                        frUtil.Entity.DONATION, funraiseTransactionId);
+        List<Opportunity> transactions = new List<Opportunity>();
+        if(String.isNotBlank(funraiseTransactionId)) {
+            transactions = [SELECT Id FROM Opportunity WHERE fr_Id__c = :funraiseTransactionId];
+            if(transactions.isEmpty()) {
+                //if it wasn't found, log an error but continue
+                frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
+                                            frUtil.Entity.DONATION, funraiseTransactionId);                
+            }
         }
 
     
