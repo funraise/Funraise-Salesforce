@@ -65,6 +65,7 @@
     </fields>
     <fields>
         <fullName>Funraise_Object_Id__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Funraise Object Id</label>
         <length>255</length>
@@ -75,6 +76,7 @@
     </fields>
     <fields>
         <fullName>Funraise_Object__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Funraise Object</label>
         <required>false</required>
