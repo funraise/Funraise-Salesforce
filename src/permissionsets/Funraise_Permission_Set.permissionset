@@ -119,6 +119,11 @@
     <description>Permission set for new funraise apex classes</description>
     <fieldPermissions>
         <editable>false</editable>
+        <field>Campaign.fr_ID__c</field>
+        <readable>false</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
         <field>Contact.fr_ID__c</field>
         <readable>false</readable>
     </fieldPermissions>

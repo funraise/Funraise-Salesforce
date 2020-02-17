@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (c) 2018, Funraise Inc
+ *  Copyright (c) 2020, Funraise Inc
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
