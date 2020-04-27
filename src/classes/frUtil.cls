@@ -50,7 +50,7 @@ public class frUtil {
                     }
                     
                 } else {
-                    record.put(field, DateTime.newInstance((Long)value).dateGMT());
+                    record.put(field, DateTime.newInstance((Long)value).date());
                 }
             } else if(field.getDescribe().getType() == Schema.DisplayType.Double) {
                 record.put(field, Double.valueOf(value));
