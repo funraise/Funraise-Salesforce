@@ -77,8 +77,8 @@ public class frCampaign {
         String goalId = String.valueOf(request.get('goalId'));
         
         Campaign newCampaign = new Campaign();
-        newCampaign.Name = String.valueOf(request.get('name'));
-        newCampaign.Description = String.valueOf(request.get('reason'));
+        newCampaign.Name = frUtil.truncateToFieldLength(Campaign.Name.getDescribe(), String.valueOf(request.get('name')));
+        newCampaign.Description = frUtil.truncateToFieldLength(Campaign.Description.getDescribe(), String.valueOf(request.get('reason')));
         newCampaign.Status = String.valueOf(request.get('status'));
         newCampaign.ExpectedRevenue = Decimal.valueOf(String.valueOf(request.get('goalAmount')));
         newCampaign.fr_ID__c = goalId;
