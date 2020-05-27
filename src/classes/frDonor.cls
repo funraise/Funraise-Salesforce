@@ -71,16 +71,27 @@ public class frDonor extends frModel {
             supporterContact = contacts.get(0);
         }
 
+        String firstName = String.valueOf(request.get('firstName'));
+        String lastName = String.valueOf(request.get('lastName'));
+        String email = String.valueOf(request.get('email'));
         if(supporterContact == null) {
-            String email = String.valueOf(request.get('email'));
-            //next try email, dont try to match on blank emails
             if(!String.isBlank(email)) {
-                contacts = (List<Contact>)Database.query('select Id, fr_ID__c, LastName from Contact where Email = :email limit 1 FOR UPDATE');
-                if(contacts != null && contacts.size() > 0) {
-                    supporterContact = contacts.get(0);
-                    supporterContact.fr_ID__c = frId;
-                    update supporterContact;
+                //try to match on email + name, since not all orgs treat email as unique
+                if(!String.isBlank(firstName) && !String.isBlank(lastName)) {
+                    contacts = (List<Contact>)Database.query(
+                        'select Id, fr_ID__c, LastName from Contact where '+
+                        'Email = :email AND FirstName = :firstName AND LastName = :lastName '+
+                        'limit 1 FOR UPDATE'
+                    );
+                    supporterContact = applyMatch(contacts, frId);
                 }
+                
+                //if name wasn't present or no match was found, try on email only
+                if(supporterContact == null) {
+                    contacts = (List<Contact>)Database.query('select Id, fr_ID__c, LastName from Contact where Email = :email limit 1 FOR UPDATE');
+                    supporterContact = applyMatch(contacts, frId);                 
+                }
+
             }
         }
 
@@ -90,9 +101,7 @@ public class frDonor extends frModel {
             String state = String.valueOf(request.get('state'));
             String postalCode = String.valueOf(request.get('postalCode'));
             String country = String.valueOf(request.get('country'));
-            String firstName = String.valueOf(request.get('firstName'));
-            String lastName = String.valueOf(request.get('lastName'));
-
+            
             //try to match by address, in case we sync an offline donation over with no email.
             String byAddress = 'select Id, fr_ID__c, LastName from Contact where MailingStreet = :address1' +
                                ' and MailingCity = :city' +
@@ -104,11 +113,7 @@ public class frDonor extends frModel {
                                ' limit 1 FOR UPDATE';
 
             contacts = (List<Contact>)Database.query(byAddress);
-            if(contacts != null && contacts.size() > 0) {
-                supporterContact = contacts.get(0);
-                supporterContact.fr_ID__c = frId;
-                update supporterContact;
-            }
+            supporterContact = applyMatch(contacts, frId);
         }
 
         if(supporterContact == null) {
@@ -127,6 +132,16 @@ public class frDonor extends frModel {
         } catch (Exception ex) {
             frUtil.logException(frUtil.Entity.SUPPORTER, frId, ex);
         }
+    }
+    
+    private Contact applyMatch(List<Contact> matchResults, String frId) {
+        if(matchResults != null && matchResults.size() > 0) {
+            Contact donor = matchResults.get(0);
+            donor.fr_ID__c = frId;
+            update donor;
+            return donor;
+        }
+        return null;
     }
     
     private void setContact(Contact contact) {
