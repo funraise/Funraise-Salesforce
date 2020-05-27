@@ -1,4 +1,5 @@
 public class frUtil {
+    private static String FUNRAISE_ID_FIELD = 'fr_Id__c';
     public static String truncateToFieldLength(DescribeFieldResult describe, String value) { 
         return String.isNotBlank(value) && value.length() > describe.getLength() ? value.substring(0, describe.getLength()) : value;
     }
@@ -103,7 +104,7 @@ public class frUtil {
             DMLException dmlEx = (DMLException)ex;
             //If it's the race condition on fr_Id__c duplicate value, then ignore it.  Else, log it
             for(Integer i = 0; i < dmlEx.getNumDml(); i++) {
-                if(!(dmlEx.getDmlMessage(i).contains('fr_Id__c') && duplicateValueStatusCodes.contains(dmlEx.getDmlType(i)))) {
+                if(!(dmlEx.getDmlMessage(i).containsIgnoreCase(FUNRAISE_ID_FIELD) && duplicateValueStatusCodes.contains(dmlEx.getDmlType(i)))) {
                     logError(errObject, recordId, 'Operation failed. Exception: '+ex.getMessage());
                 }
             }
