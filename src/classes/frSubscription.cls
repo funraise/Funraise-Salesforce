@@ -94,6 +94,9 @@ public class frSubscription {
         request.remove('supporterId');
         request.remove('campaignGoalId');
         request.remove('deleted');
+        String strPledgeAmount = String.valueOf(request.get('pledgeAmount'));
+        Decimal pledgeAmount = String.isNotBlank(strPledgeAmount) ? Decimal.valueOf(strPledgeAmount) : null;
+        request.remove('pledgeAmount');
         
         String regex = '([a-z])([A-Z]+)';
         String replacement = '$1_$2';
@@ -109,6 +112,10 @@ public class frSubscription {
         } catch (DMLException ex) {
             frUtil.logException(frUtil.Entity.SUBSCRIPTION, funraiseId, ex);
             return;
+        }
+        
+        if(pledgeAmount != null) {
+            frPledge.create(subscription, pledgeAmount);
         }
     }
     

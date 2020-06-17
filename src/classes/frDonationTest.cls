@@ -330,6 +330,90 @@ public class frDonationTest {
         System.assertEquals(subscription.Id, newOpportunity.Subscription__c, 'The new donation should be pointing at the subscription corresponding to the id provided in the request');
     }
     
+    static testMethod void syncEntity_LinkToPledge() {  
+        Contact testSupporter = frDonorTest.getTestContact();
+        insert testSupporter;
+        
+        Pledge__c pledge = new Pledge__c(
+        	Supporter__c = testSupporter.Id,
+            Pledge_Amount__c = 500
+        );
+        insert pledge;
+        
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
+        req.httpMethod = 'POST';
+
+        Map<String, Object> request = getTestRequest();
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+
+        RestContext.request = req;
+        RestContext.response = res;
+
+        createMapping('name', 'Name');
+        createMapping('donation_cretime', 'CloseDate');
+
+        Test.startTest();
+
+        frWSDonationController.syncEntity();
+
+        Test.stopTest();
+
+        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
+        frTestUtil.assertNoErrors();
+        
+        Id oppId = response.id;
+        System.assert(String.isNotBlank(oppId), 
+            'There was not an opportunity Id in the response as expected');
+        Opportunity newOpportunity = [SELECT Id, fr_ID__c, Funraise_Pledge__c FROM Opportunity WHERE Id = :oppId];
+        System.assertEquals(pledge.Id, newOpportunity.Funraise_Pledge__c, 'The new donation should be pointing at the pledge that the supporter had active');
+    }
+    
+    static testMethod void syncEntity_PledgeCreatesPledge() {  
+        Contact testSupporter = frDonorTest.getTestContact();
+        insert testSupporter;
+        
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
+        req.httpMethod = 'POST';
+
+        Map<String, Object> request = getTestRequest();
+        request.put('pledge', true);
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+
+        RestContext.request = req;
+        RestContext.response = res;
+
+        createMapping('name', 'Name');
+        createMapping('amount', 'amount');
+        createMapping('donation_cretime', 'CloseDate');
+
+        Test.startTest();
+
+        frWSDonationController.syncEntity();
+
+        Test.stopTest();
+
+        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
+        frTestUtil.assertNoErrors();
+        
+        Id oppId = response.id;
+        System.assert(String.isNotBlank(oppId), 
+            'There was not an opportunity Id in the response as expected');
+        Opportunity opp = [SELECT Id, Amount, fr_ID__c, Funraise_Pledge__c FROM Opportunity WHERE Id = :oppId];
+        System.assertNotEquals(null, opp.Funraise_Pledge__c, 'The new donation should have created a new pledge');
+        Pledge__c pledge = [SELECT Pledge_Donation_uq__c , Pledge_Donation__c, Pledge_Amount__c, Received_Amount__c from Pledge__c
+                                    WHERE Id = :opp.Funraise_Pledge__c];
+		System.assertEquals(pledge.Pledge_Donation_uq__c, opp.Id, 'The one-time pledge should have a reference to the one-time donation that created it');
+		System.assertEquals(pledge.Pledge_Donation__c, opp.Id, 'The one-time pledge should have a reference to the one-time donation that created it');
+        System.assertEquals(pledge.Pledge_Amount__c, opp.Amount, 'The pledged amount should be the same as the opportunity amount');
+        System.assertEquals(pledge.Received_Amount__c, opp.Amount, 'The receive amount should be the same as the opportunity amount since the opp is Closed Won');
+    }
+    
     private static void createMapping(String frField, String sfField) {
         insert new frMapping__c(Name = frField+sfField, fr_Name__c = frField, sf_Name__c = sfField, Type__c = frDonation.TYPE);
     }
@@ -378,5 +462,13 @@ public class frDonationTest {
         request.put('fundraiserId', null);
         request.put('teamCaptainId', null);
         return request;
+    }
+    
+    public static Opportunity getTestOpp() {
+        return new Opportunity(
+            CloseDate = Date.today(), 
+            StageName = 'Closed Won', 
+            Name = 'Unit Test Opportunity'
+        );
     }
 }

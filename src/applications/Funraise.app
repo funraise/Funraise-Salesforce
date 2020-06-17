@@ -12,4 +12,5 @@
     <tabs>Fundraising_Event_Registration__c</tabs>
     <tabs>Error__c</tabs>
     <tabs>Subscription__c</tabs>
+    <tabs>Pledge__c</tabs>
 </CustomApplication>

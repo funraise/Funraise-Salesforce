@@ -188,6 +188,38 @@ public class frSubscriptionTest {
         System.assertEquals(0, [SELECT COUNT() FROM Error__c], 'No errors were expected');
     }
     
+    static testMethod void createSubscription_createPledge() {
+        Contact testSupporter = frDonorTest.getTestContact();
+        insert testSupporter;
+                
+        String funraiseId = '25';
+        Map<String, Object> request = getTestRequest();
+        request.put('supporterId', testSupporter.fr_ID__c);
+        request.put('id', funraiseId);
+        request.put('pledgeAmount', 500);
+        
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        RestContext.request = req;
+        RestContext.response = res;
+        Test.startTest();
+
+        frWSSubscriptionController.syncEntity();
+
+        Test.stopTest();
+        
+        Subscription__c subscription = [SELECT Id, Supporter__c FROM Subscription__c WHERE fr_ID__c = :funraiseId];
+        System.assertEquals(testSupporter.Id, subscription.Supporter__c, 'The lookup for supporter should have been populated with the contact that has the funraise id referenced in the request');
+        System.assertEquals(0, [SELECT COUNT() FROM Error__c], 'No errors were expected');
+		Pledge__c pledge = [SELECT Id, Pledge_Amount__c, Supporter__c FROM Pledge__c WHERE Pledge_Subscription__c = :subscription.Id];
+        System.assertEquals(testSupporter.Id, pledge.Supporter__c, 'The pledge should have been created with the same supporter as the subscription');
+        System.assertEquals(500, pledge.Pledge_Amount__c, 'The pledge amount should have been what was received in the request');
+    }
+    
     private static Map<String, Object> getTestRequest() {
         Map<String, Object> request = new Map<String, Object>();
         request.put('name', '000001');
@@ -216,6 +248,7 @@ public class frSubscriptionTest {
         request.put('operationsTip', true);
         request.put('imported', false);
         request.put('deleted', false);
+        request.put('pledgeAmount', null);
         return request;
     }
     

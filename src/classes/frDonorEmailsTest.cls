@@ -86,32 +86,6 @@ public class frDonorEmailsTest {
         System.assertEquals(null, responseEmailId, 'We did not expect the email to be created created when the supporter could not be found');
         System.assertEquals(1, [SELECT COUNT() FROM Error__c], 'There should be an error for not being able to find the related supporter');
     }
-
-    static testMethod void createEmailNoEmailId_test() {
-        String funraiseId = '123456';
-        Contact testContact = frDonorTest.getTestContact();
-        testContact.fr_ID__c = funraiseId;
-        insert testContact;
-
-        Map<String, Object> request = new Map<String, Object>();
-        request.put('donorId', funraiseId);
-        request.put('messageId', 'db92570b-766b-46b9-8b7a-a0c7efa92053');
-        request.put('correlationId', '4aeeCRcARIamde0uiZAr6Q');
-        request.put('fromAddress', 'test111@funraise.io');
-        request.put('fromName', 'Bob Hope');
-        request.put('toAddress', 'notfunraise111@funraise.io');
-        request.put('statusCode', 202);
-        request.put('sentDate', 1536184380L);
-        request.put('subject', 'Hello there!');
-
-        Test.startTest();
-        String responseEmailId = frDonorEmails.create(request);
-        Test.stopTest();
-
-        frTestUtil.assertNoErrors();
-        EmailMessage newEmail = [SELECT fromAddress FROM EmailMessage WHERE Id = :responseEmailId];
-        System.assertEquals('test111@funraise.io', newEmail.fromAddress, 'The fromAddress was not correct');
-    }
     
     static testMethod void syncEntity_test() {
         Contact testContact = frDonorTest.getTestContact();

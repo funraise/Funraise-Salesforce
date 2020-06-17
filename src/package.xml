@@ -15,6 +15,7 @@
         <members>frFundraisingEventRegistrationTest</members>
         <members>frFundraisingEventTest</members>
         <members>frModel</members>
+        <members>frOpportunityPledgeCalculatorTriggerTest</members>
         <members>frSchemaUtil</members>
         <members>frSetupController</members>
         <members>frSetupControllerTest</members>
@@ -37,6 +38,10 @@
         <name>ApexPage</name>
     </types>
     <types>
+        <members>frOpportunityPledgeCalculator</members>
+        <name>ApexTrigger</name>
+    </types>
+    <types>
         <members>Funraise</members>
         <name>CustomApplication</name>
     </types>
@@ -45,6 +50,7 @@
         <members>Campaign.fr_ID__c</members>
         <members>Contact.fr_ID__c</members>
         <members>EmailMessage.fr_Email_ID__c</members>
+        <members>Opportunity.Funraise_Pledge__c</members>
         <members>Opportunity.Subscription__c</members>
         <members>Opportunity.fr_Donor__c</members>
         <members>Opportunity.fr_ID__c</members>
@@ -58,6 +64,7 @@
         <members>Error__c</members>
         <members>Fundraising_Event_Registration__c</members>
         <members>Fundraising_Event__c</members>
+        <members>Pledge__c</members>
         <members>Subscription__c</members>
         <members>frField__mdt</members>
         <members>frMapping__c</members>
@@ -68,12 +75,17 @@
         <members>Fundraising_Event_Registration__c</members>
         <members>Fundraising_Event__c</members>
         <members>Funraise_Setup</members>
+        <members>Pledge__c</members>
         <members>Subscription__c</members>
         <name>CustomTab</name>
     </types>
     <types>
         <members>Funraise_Permission_Set</members>
         <name>PermissionSet</name>
+    </types>
+    <types>
+        <members>Pledge__c</members>
+        <name>Workflow</name>
     </types>
     <version>43.0</version>
 </Package>
