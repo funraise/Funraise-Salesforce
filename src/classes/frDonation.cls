@@ -82,7 +82,7 @@ public class frDonation extends frModel {
         o = new Opportunity();
         super.populateFromRequest(request);
         String funraiseId = String.valueOf(request.get('id'));
-
+        
         String status = String.valueOf(request.get('status'));
         
         if(String.isBlank(o.StageName)) {
@@ -121,7 +121,7 @@ public class frDonation extends frModel {
                     o.CampaignId = campaigns[0].Id;
                 } else {
                     frUtil.logRelationshipError(frUtil.Entity.DONATION, funraiseId, 
-                                            frUtil.Entity.CAMPAIGN, campaignId);
+                                                frUtil.Entity.CAMPAIGN, campaignId);
                 }
             }
         }
@@ -144,7 +144,7 @@ public class frDonation extends frModel {
             Pledge__c pledge = frPledge.findActive(opp.fr_Donor__c);
             opp.Funraise_Pledge__c = pledge != null ? pledge.Id : null;
         }
-
+        
         try {
             Database.upsert(opp, Opportunity.Fields.fr_Id__c, true);
         } catch (Exception ex) {
@@ -167,7 +167,7 @@ public class frDonation extends frModel {
         String supporterId = String.valueOf(request.get('donorId'));
         
         Set<String> relatedSupporterFunraiseIds = new Set<String>{supporterId};
-        
+            
         String fundraiserId = request.containsKey('fundraiserId') ? String.valueOf(request.get('fundraiserId')) : null;
         if(String.isNotBlank(fundraiserId)) {
             relatedSupporterFunraiseIds.add(fundraiserId);
@@ -185,8 +185,8 @@ public class frDonation extends frModel {
         for(Contact relatedContact : [SELECT Id, fr_Id__c, 
                                       (SELECT Id, Role, ContactId FROM OpportunityContactRoles WHERE OpportunityId = :getOpportunityId()) 
                                       from Contact WHERE fr_Id__c IN :relatedSupporterFunraiseIds]) {
-			relatedContacts.put(relatedContact.fr_Id__c, relatedContact);
-        }
+                                          relatedContacts.put(relatedContact.fr_Id__c, relatedContact);
+                                      }
         
         List<OpportunityContactRole> newContactRoles = new List<OpportunityContactRole>();
         OpportunityContactRole donorRole = createRole(OPP_ROLE_DONOR, supporterId, relatedContacts, funraiseId);
@@ -223,7 +223,7 @@ public class frDonation extends frModel {
         if(!contactsByFunraiseId.containsKey(funraiseSupporterId)) {
             frUtil.logRelationshipError(frUtil.Entity.DONATION, funraiseDonationId, 
                                         frUtil.Entity.SUPPORTER, funraiseSupporterId,
-                                       'Opportunity Contact Role: '+ role);
+                                        'Opportunity Contact Role: '+ role);
             return null;
         }
         

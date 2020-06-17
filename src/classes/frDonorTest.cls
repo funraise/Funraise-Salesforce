@@ -65,7 +65,7 @@ public class frDonorTest {
         Test.stopTest();
         
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-
+        
         Id contactId = response.id;
         System.assert(String.isNotBlank(contactId), 
                       'There was not an contact Id in the response as expected');
@@ -103,7 +103,7 @@ public class frDonorTest {
         Test.stopTest();
         
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-
+        
         Id contactId = response.id;
         System.assert(String.isNotBlank(contactId), 
                       'There was not an contact Id in the response as expected');
@@ -115,7 +115,7 @@ public class frDonorTest {
     //Sync to an existing contact that once the mappings are applied, LastName is empty so Salesforce will throw an exception
     //confirm our fallback works as expected to prevent that exception
     static testMethod void syncEntity_contactLastNameFallback_existing() {
-		Contact existingSupporter = getTestContact();
+        Contact existingSupporter = getTestContact();
         insert existingSupporter;
         
         RestRequest req = new RestRequest();
@@ -147,7 +147,7 @@ public class frDonorTest {
         Test.stopTest();
         
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-
+        
         Id contactId = response.id;
         System.assert(String.isNotBlank(contactId), 
                       'There was not an contact Id in the response as expected');
@@ -185,9 +185,9 @@ public class frDonorTest {
         frWSDonorController.syncEntity();
         
         Test.stopTest();
-
+        
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-
+        
         Id contactId = response.id;
         System.assert(String.isNotBlank(contactId), 
                       'There was not an contact Id in the response as expected');
@@ -201,8 +201,8 @@ public class frDonorTest {
         Contact existing = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'alextest02221503@example.com');
         Contact noMatch = new Contact(LastName = 'nomatch', FirstName = 'nomatch', Email = 'nomatch@example.com', fr_ID__c = '111');
         insert new List<Contact>{existing, noMatch};
-        
-        Integer countBeforeSync = [SELECT COUNT() FROM Contact];
+            
+            Integer countBeforeSync = [SELECT COUNT() FROM Contact];
         
         RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
@@ -226,7 +226,7 @@ public class frDonorTest {
         frWSDonorController.syncEntity();
         
         Test.stopTest();
-
+        
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
         
         Id contactId = response.id;

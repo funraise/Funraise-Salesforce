@@ -16,6 +16,7 @@
         <members>frFundraisingEventTest</members>
         <members>frModel</members>
         <members>frOpportunityPledgeCalculatorTriggerTest</members>
+        <members>frPledge</members>
         <members>frSchemaUtil</members>
         <members>frSetupController</members>
         <members>frSetupControllerTest</members>
