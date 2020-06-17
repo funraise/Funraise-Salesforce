@@ -51,6 +51,9 @@ public class frDonation extends frModel {
     @TestVisible private static final String OPP_ROLE_TEAM_CAPTAIN = 'Team Captain';
     @TestVisible private static final String OPP_ROLE_SOFT_CREDIT = 'Soft Credit';
     
+    private static final String META_OPP_CONTACT_MAPPING_KEY = 'opportunityContactMappingDisabled';
+    private static final String META_CAMPAIGN_MAPPING_KEY = 'campaignMappingDisabled';
+    
     public static List<frMapping__c> mappings {
         get {
             if(mappings == null) {
@@ -108,8 +111,8 @@ public class frDonation extends frModel {
             }
         }
         
-        Boolean campaignMappingDisabled = request.containsKey('campaignMappingDisabled') ?
-            Boolean.valueOf(request.get('campaignMappingDisabled')): true;
+        Boolean campaignMappingDisabled = request.containsKey(META_CAMPAIGN_MAPPING_KEY) ?
+            Boolean.valueOf(request.get(META_CAMPAIGN_MAPPING_KEY)): true;
         if(!campaignMappingDisabled) {
             String campaignId = String.valueOf(request.get('campaignGoalId'));
             if (String.isNotBlank(campaignId)) {
@@ -133,18 +136,29 @@ public class frDonation extends frModel {
                                             frUtil.Entity.SUBSCRIPTION, subscriptionId);
             }
         }
+        Opportunity opp = getOpportunity();
         
+        
+        Boolean isPledge = Boolean.valueOf(request.get('pledge'));
+        if(!isPledge) {
+            Pledge__c pledge = frPledge.findActive(opp.fr_Donor__c);
+            opp.Funraise_Pledge__c = pledge != null ? pledge.Id : null;
+        }
+
         try {
-            Opportunity opp = getOpportunity();
             Database.upsert(opp, Opportunity.Fields.fr_Id__c, true);
         } catch (Exception ex) {
             frUtil.logException(frUtil.Entity.DONATION, funraiseId, ex);
         }
+        
+        if(isPledge) {
+            frPledge.create(opp);
+        }
     }
     
     public void createOpportunityMapping(Map<String, Object> request) {
-        Boolean mappingDisabled = request.containsKey('opportunityContactMappingDisabled') ?
-            Boolean.valueOf(request.get('opportunityContactMappingDisabled')): true;
+        Boolean mappingDisabled = request.containsKey(META_OPP_CONTACT_MAPPING_KEY) ?
+            Boolean.valueOf(request.get(META_OPP_CONTACT_MAPPING_KEY)): true;
         if(mappingDisabled) {
             return;
         }

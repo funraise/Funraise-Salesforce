@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionOverrides>
+        <actionName>Accept</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>CancelEdit</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>Clone</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>Delete</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>Edit</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>List</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>New</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>SaveEdit</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>Tab</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>View</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <allowInChatterGroups>false</allowInChatterGroups>
+    <compactLayoutAssignment>SYSTEM</compactLayoutAssignment>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <enableActivities>false</enableActivities>
+    <enableBulkApi>true</enableBulkApi>
+    <enableChangeDataCapture>false</enableChangeDataCapture>
+    <enableFeeds>false</enableFeeds>
+    <enableHistory>false</enableHistory>
+    <enableReports>false</enableReports>
+    <enableSearch>true</enableSearch>
+    <enableSharing>true</enableSharing>
+    <enableStreamingApi>true</enableStreamingApi>
+    <fields>
+        <fullName>Active__c</fullName>
+        <description>A checkbox formula field that denotes if the pledged amount has been met or exceeded and that the StartDate is after today and EndDate is before today</description>
+        <externalId>false</externalId>
+        <formula>(ISBLANK(Received_Amount__c) || Received_Amount__c &lt;= Pledge_Amount__c)
+&amp;&amp;
+(ISBLANK(Start_Date__c) || Start_Date__c &gt;= TODAY())
+&amp;&amp; 
+(ISBLANK(End_Date__c) || End_Date__c &lt;= TODAY())</formula>
+        <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+        <inlineHelpText>A checkbox formula field that denotes if the pledged amount has been met or exceeded and that the StartDate is after today and EndDate is before today</inlineHelpText>
+        <label>Is Active</label>
+        <trackTrending>false</trackTrending>
+        <type>Checkbox</type>
+    </fields>
+    <fields>
+        <fullName>End_Date__c</fullName>
+        <description>The date on which this pledge should be considered inactive and donations will stop automatically counting towards fulfilling it</description>
+        <externalId>false</externalId>
+        <label>End Date</label>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Date</type>
+    </fields>
+    <fields>
+        <fullName>Percent_Complete__c</fullName>
+        <externalId>false</externalId>
+        <formula>Received_Amount__c/Pledge_Amount__c</formula>
+        <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+        <label>Percent Complete</label>
+        <precision>18</precision>
+        <required>false</required>
+        <scale>2</scale>
+        <trackTrending>false</trackTrending>
+        <type>Percent</type>
+    </fields>
+    <fields>
+        <fullName>Pledge_Amount__c</fullName>
+        <description>The total amount for this pledge</description>
+        <externalId>false</externalId>
+        <label>Pledge Amount</label>
+        <precision>18</precision>
+        <required>true</required>
+        <scale>2</scale>
+        <trackTrending>false</trackTrending>
+        <type>Currency</type>
+    </fields>
+    <fields>
+        <fullName>Pledge_Donation__c</fullName>
+        <deleteConstraint>SetNull</deleteConstraint>
+        <description>Note: This field will only be filled out for pledges that are created directly from Funraise.  These pledges don&apos;t get fulfilled by multiple donations, only a single donation represented by this lookup field</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Note: This field will only be filled out for pledges that are created directly from Funraise.  These pledges don&apos;t get fulfilled by multiple donations, only a single donation represented by this lookup field</inlineHelpText>
+        <label>Pledge Donation</label>
+        <referenceTo>Opportunity</referenceTo>
+        <relationshipLabel>Funraise Pledges</relationshipLabel>
+        <relationshipName>Funraise_Pledges</relationshipName>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Lookup</type>
+    </fields>
+    <fields>
+        <fullName>Pledge_Donation_uq__c</fullName>
+        <caseSensitive>false</caseSensitive>
+        <description>Only one pledge may reference an given opportunity as it&apos;s sole pledge donation.  This field enforces that since we can&apos;t make the lookup field unique</description>
+        <externalId>true</externalId>
+        <label>Pledge Donation (unique)</label>
+        <length>255</length>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Text</type>
+        <unique>true</unique>
+    </fields>
+    <fields>
+        <fullName>Pledge_Subscription__c</fullName>
+        <deleteConstraint>SetNull</deleteConstraint>
+        <description>The subscription that created this pledge</description>
+        <externalId>false</externalId>
+        <inlineHelpText>The subscription that created this pledge</inlineHelpText>
+        <label>Pledge Subscription</label>
+        <referenceTo>Subscription__c</referenceTo>
+        <relationshipLabel>Funraise Pledges</relationshipLabel>
+        <relationshipName>Funraise_Pledges</relationshipName>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Lookup</type>
+    </fields>
+    <fields>
+        <fullName>Pledge_Subscription_uq__c</fullName>
+        <caseSensitive>false</caseSensitive>
+        <externalId>true</externalId>
+        <label>Pledge Subscription (unique)</label>
+        <length>255</length>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Text</type>
+        <unique>true</unique>
+    </fields>
+    <fields>
+        <fullName>Received_Amount__c</fullName>
+        <description>Summed opportunity amounts related to this pledge.  Calculation of this value is handled by a trigger whenever opportunities related to this pledge are added or updated</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Calculation of this value is handled by a trigger whenever opportunities related to this pledge are added or updated</inlineHelpText>
+        <label>Received Amount</label>
+        <precision>18</precision>
+        <required>false</required>
+        <scale>2</scale>
+        <trackTrending>false</trackTrending>
+        <type>Currency</type>
+    </fields>
+    <fields>
+        <fullName>Start_Date__c</fullName>
+        <description>The date at which this pledge should be considered active and have donations automatically count towards fulfilling the pledge</description>
+        <externalId>false</externalId>
+        <label>Start Date</label>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Date</type>
+    </fields>
+    <fields>
+        <fullName>Supporter__c</fullName>
+        <description>The contact that represents the Funraise supporter that owns this pledge</description>
+        <externalId>false</externalId>
+        <label>Funraise Supporter</label>
+        <referenceTo>Contact</referenceTo>
+        <relationshipLabel>Funraise Pledges</relationshipLabel>
+        <relationshipName>Funraise_Pledges</relationshipName>
+        <relationshipOrder>0</relationshipOrder>
+        <reparentableMasterDetail>false</reparentableMasterDetail>
+        <trackTrending>false</trackTrending>
+        <type>MasterDetail</type>
+        <writeRequiresMasterRead>false</writeRequiresMasterRead>
+    </fields>
+    <label>Funraise Pledge</label>
+    <listViews>
+        <fullName>All</fullName>
+        <filterScope>Everything</filterScope>
+        <label>All</label>
+    </listViews>
+    <nameField>
+        <label>Funraise Pledge Name</label>
+        <type>Text</type>
+    </nameField>
+    <pluralLabel>Funraise Pledges</pluralLabel>
+    <searchLayouts/>
+    <sharingModel>ControlledByParent</sharingModel>
+    <visibility>Public</visibility>
+</CustomObject>

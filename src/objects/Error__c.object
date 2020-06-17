@@ -126,6 +126,11 @@
                     <default>false</default>
                     <label>Task/Interaction</label>
                 </value>
+                <value>
+                    <fullName>Pledge</fullName>
+                    <default>false</default>
+                    <label>Pledge</label>
+                </value>
             </valueSetDefinition>
         </valueSet>
     </fields>
