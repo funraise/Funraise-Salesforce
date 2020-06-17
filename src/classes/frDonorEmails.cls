@@ -10,7 +10,7 @@ public class frDonorEmails {
             email.subject = 'Funraise Email - ' + String.valueOf(request.get('subject'));
             email.MessageDate = DateTime.newInstance((Long)request.get('sentDate')).dateGMT();
             email.fr_Email_ID__c = funraiseId;
-            insert email;
+            Database.upsert(email, EmailMessage.Fields.fr_Email_ID__c, true);
             
             EmailMessageRelation emr = new EmailMessageRelation();
             emr.EmailMessageId = email.Id;
