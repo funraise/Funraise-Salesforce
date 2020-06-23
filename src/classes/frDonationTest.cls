@@ -334,10 +334,7 @@ public class frDonationTest {
         Contact testSupporter = frDonorTest.getTestContact();
         insert testSupporter;
         
-        Pledge__c pledge = new Pledge__c(
-            Supporter__c = testSupporter.Id,
-            Pledge_Amount__c = 500
-        );
+        Pledge__c pledge = getTestPledge(testSupporter);
         insert pledge;
         
         RestRequest req = new RestRequest();
@@ -414,6 +411,57 @@ public class frDonationTest {
         System.assertEquals(pledge.Received_Amount__c, opp.Amount, 'The receive amount should be the same as the opportunity amount since the opp is Closed Won');
     }
     
+    /*
+    * Ensure that if a donation is already linked with a pledge
+    * it does not get overwritten by subsequent syncs when there may not 
+    * be an active pledge
+    */
+    static testMethod void syncEntity_existing_alreadyLinkedToPledge() {  
+        Contact testSupporter = frDonorTest.getTestContact();
+        insert testSupporter;
+        Pledge__c pledge = getTestPledge(testSupporter);
+        pledge.End_Date__c = Date.today().addDays(-1); //so it's no longer active
+        insert pledge;
+        Opportunity existingOpp = getTestOpp();
+        existingOpp.fr_Id__c = '2048';
+        existingOpp.Funraise_Pledge__c = pledge.Id;
+        insert existingOpp;
+        
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
+        req.httpMethod = 'POST';
+        
+        Map<String, Object> request = getTestRequest();
+        request.put('id', existingOpp.fr_Id__c);
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        
+        RestContext.request = req;
+        RestContext.response = res;
+        
+        createMapping('name', 'Name');
+        createMapping('amount', 'amount');
+        createMapping('donation_cretime', 'CloseDate');
+        
+        Test.startTest();
+        
+        frWSDonationController.syncEntity();
+        
+        Test.stopTest();
+        
+        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
+        frTestUtil.assertNoErrors();
+        
+        Id oppId = response.id;
+        System.assert(String.isNotBlank(oppId), 
+                      'There was not an opportunity Id in the response as expected');
+        Opportunity opp = [SELECT Id, Funraise_Pledge__c FROM Opportunity WHERE Id = :oppId];
+        System.assertEquals(pledge.Id, opp.Funraise_Pledge__c, 'The pledge value should remain unchanged');
+        System.assertNotEquals(null, opp.Funraise_Pledge__c, 'The new donation should have created a new pledge');
+        
+    }
+    
     private static void createMapping(String frField, String sfField) {
         insert new frMapping__c(Name = frField+sfField, fr_Name__c = frField, sf_Name__c = sfField, Type__c = frDonation.TYPE);
     }
@@ -470,5 +518,13 @@ public class frDonationTest {
             StageName = 'Closed Won', 
             Name = 'Unit Test Opportunity'
         );
+    }
+    
+    public static Pledge__c getTestPledge(Contact supporter) {
+        Pledge__c pledge = new Pledge__c(
+            Supporter__c = supporter.Id,
+            Pledge_Amount__c = 500
+        );
+		return pledge;
     }
 }

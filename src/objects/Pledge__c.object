@@ -56,11 +56,11 @@
         <fullName>Active__c</fullName>
         <description>A checkbox formula field that denotes if the pledged amount has been met or exceeded and that the StartDate is after today and EndDate is before today</description>
         <externalId>false</externalId>
-        <formula>(ISBLANK(Received_Amount__c) || Received_Amount__c &lt;= Pledge_Amount__c)
+        <formula>(ISBLANK(Received_Amount__c) || Received_Amount__c &lt; Pledge_Amount__c)
 &amp;&amp;
-(ISBLANK(Start_Date__c) || Start_Date__c &gt;= TODAY())
+(ISBLANK(Start_Date__c) || Start_Date__c &lt;= TODAY())
 &amp;&amp; 
-(ISBLANK(End_Date__c) || End_Date__c &lt;= TODAY())</formula>
+(ISBLANK(End_Date__c) || End_Date__c &gt;= TODAY())</formula>
         <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
         <inlineHelpText>A checkbox formula field that denotes if the pledged amount has been met or exceeded and that the StartDate is after today and EndDate is before today</inlineHelpText>
         <label>Is Active</label>

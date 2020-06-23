@@ -140,7 +140,9 @@ public class frDonation extends frModel {
         
         
         Boolean isPledge = Boolean.valueOf(request.get('pledge'));
-        if(!isPledge) {
+        Boolean alreadyMappedToPledge = [SELECT COUNT() FROM Opportunity 
+                                         WHERE fr_Id__c = :funraiseId AND Funraise_Pledge__c != null] > 0;
+        if(!isPledge && !alreadyMappedToPledge) {
             Pledge__c pledge = frPledge.findActive(opp.fr_Donor__c);
             opp.Funraise_Pledge__c = pledge != null ? pledge.Id : null;
         }
