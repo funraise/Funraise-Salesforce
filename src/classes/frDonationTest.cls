@@ -411,6 +411,65 @@ public class frDonationTest {
         System.assertEquals(pledge.Received_Amount__c, opp.Amount, 'The receive amount should be the same as the opportunity amount since the opp is Closed Won');
     }
     
+    static testMethod void syncEntity_PledgeUpdatesPledge() {  
+        Contact testSupporter = frDonorTest.getTestContact();
+        insert testSupporter;
+    	
+        Opportunity existingOpp = getTestOpp();
+        existingOpp.fr_Id__c = '2048';
+        insert existingOpp;
+        
+        Pledge__c pledge = getTestPledge(testSupporter);
+        pledge.Pledge_Donation__c = existingOpp.Id;
+        insert pledge;
+        
+        existingOpp.Funraise_Pledge__c = pledge.Id;
+        update existingOpp;
+	
+        //requery to get the workflow rule update on pledge_donation_uq__c
+        pledge = [SELECT Id, Pledge_Donation__c, Pledge_Donation_uq__c FROM Pledge__c WHERE Id = :pledge.Id];
+        System.assertEquals(pledge.Pledge_Donation__c +'', pledge.Pledge_Donation_uq__c+'',
+                            'The external id unique field should have been updated with the value from the lookup field');
+        
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
+        req.httpMethod = 'POST';
+        
+        Map<String, Object> request = getTestRequest();
+        request.put('pledge', true);
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        
+        RestContext.request = req;
+        RestContext.response = res;
+        
+        createMapping('name', 'Name');
+        createMapping('amount', 'amount');
+        createMapping('donation_cretime', 'CloseDate');
+        
+        Test.startTest();
+        
+        frWSDonationController.syncEntity();
+        
+        Test.stopTest();
+        
+        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
+        frTestUtil.assertNoErrors();
+        
+        Id oppId = response.id;
+        System.assert(String.isNotBlank(oppId), 
+                      'There was not an opportunity Id in the response as expected');
+        Opportunity opp = [SELECT Id, Amount, fr_ID__c, Funraise_Pledge__c FROM Opportunity WHERE Id = :oppId];
+        System.assertNotEquals(null, opp.Funraise_Pledge__c, 'The new donation should have created a new pledge');
+        pledge = [SELECT Pledge_Donation_uq__c , Pledge_Donation__c, Pledge_Amount__c, Received_Amount__c from Pledge__c
+                            WHERE Id = :opp.Funraise_Pledge__c];
+        System.assertEquals(pledge.Pledge_Donation_uq__c, opp.Id, 'The one-time pledge should have a reference to the one-time donation that created it');
+        System.assertEquals(pledge.Pledge_Donation__c, opp.Id, 'The one-time pledge should have a reference to the one-time donation that created it');
+        System.assertEquals(pledge.Pledge_Amount__c, opp.Amount, 'The pledged amount should be the same as the opportunity amount');
+        System.assertEquals(pledge.Received_Amount__c, opp.Amount, 'The receive amount should be the same as the opportunity amount since the opp is Closed Won');
+    }
+    
     /*
     * Ensure that if a donation is already linked with a pledge
     * it does not get overwritten by subsequent syncs when there may not 
