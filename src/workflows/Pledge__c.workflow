@@ -4,7 +4,7 @@
         <fullName>Sync_Pledge_donation_fields</fullName>
         <description>See workflow description</description>
         <field>Pledge_Donation_uq__c</field>
-        <formula>Pledge_Donation__c</formula>
+        <formula>CASESAFEID(Pledge_Donation__c)</formula>
         <name>Sync Pledge donation fields</name>
         <notifyAssignee>false</notifyAssignee>
         <operation>Formula</operation>
@@ -13,7 +13,7 @@
     <fieldUpdates>
         <fullName>Sync_Pledge_subscription_fields</fullName>
         <field>Pledge_Subscription_uq__c</field>
-        <formula>Pledge_Subscription__c</formula>
+        <formula>CASESAFEID(Pledge_Subscription__c)</formula>
         <name>Sync Pledge subscription fields</name>
         <notifyAssignee>false</notifyAssignee>
         <operation>Formula</operation>

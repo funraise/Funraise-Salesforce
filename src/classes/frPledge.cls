@@ -58,8 +58,9 @@ public class frPledge {
             Pledge_Donation__c = opp.Id,
             Pledge_Donation_uq__c = opp.Id
         );
+
         try {
-            Database.upsert(pledge, Pledge__c.Pledge_Donation_uq__c , true);
+            Database.upsert(pledge, Pledge__c.Fields.Pledge_Donation_uq__c, true);
             opp.Funraise_Pledge__c = pledge.Id;
             update opp;
         } catch (Exception ex) {
