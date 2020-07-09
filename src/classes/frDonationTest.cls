@@ -204,7 +204,7 @@ public class frDonationTest {
         teamCaptain.Email = 'teamCaptain@example.com';
         insert new List<Contact>{donor, fundraiser, teamCaptain};
             
-        RestRequest req = new RestRequest();
+            RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
         
         req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
@@ -259,7 +259,7 @@ public class frDonationTest {
         teamCaptain.Email = 'teamCaptain@example.com';
         insert new List<Contact>{donor, fundraiser, teamCaptain};
             
-        RestRequest req = new RestRequest();
+            RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
         
         req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
@@ -414,7 +414,7 @@ public class frDonationTest {
     static testMethod void syncEntity_PledgeUpdatesPledge() {  
         Contact testSupporter = frDonorTest.getTestContact();
         insert testSupporter;
-    	
+        
         Opportunity existingOpp = getTestOpp();
         existingOpp.fr_Id__c = '2048';
         insert existingOpp;
@@ -425,7 +425,7 @@ public class frDonationTest {
         
         existingOpp.Funraise_Pledge__c = pledge.Id;
         update existingOpp;
-	
+        
         //requery to get the workflow rule update on pledge_donation_uq__c
         pledge = [SELECT Id, Pledge_Donation__c, Pledge_Donation_uq__c FROM Pledge__c WHERE Id = :pledge.Id];
         System.assertEquals(pledge.Pledge_Donation__c +'', pledge.Pledge_Donation_uq__c+'',
@@ -463,7 +463,7 @@ public class frDonationTest {
         Opportunity opp = [SELECT Id, Amount, fr_ID__c, Funraise_Pledge__c FROM Opportunity WHERE Id = :oppId];
         System.assertNotEquals(null, opp.Funraise_Pledge__c, 'The new donation should have created a new pledge');
         pledge = [SELECT Pledge_Donation_uq__c , Pledge_Donation__c, Pledge_Amount__c, Received_Amount__c from Pledge__c
-                            WHERE Id = :opp.Funraise_Pledge__c];
+                  WHERE Id = :opp.Funraise_Pledge__c];
         System.assertEquals(pledge.Pledge_Donation_uq__c, opp.Id, 'The one-time pledge should have a reference to the one-time donation that created it');
         System.assertEquals(pledge.Pledge_Donation__c, opp.Id, 'The one-time pledge should have a reference to the one-time donation that created it');
         System.assertEquals(pledge.Pledge_Amount__c, opp.Amount, 'The pledged amount should be the same as the opportunity amount');
@@ -471,10 +471,10 @@ public class frDonationTest {
     }
     
     /*
-    * Ensure that if a donation is already linked with a pledge
-    * it does not get overwritten by subsequent syncs when there may not 
-    * be an active pledge
-    */
+* Ensure that if a donation is already linked with a pledge
+* it does not get overwritten by subsequent syncs when there may not 
+* be an active pledge
+*/
     static testMethod void syncEntity_existing_alreadyLinkedToPledge() {  
         Contact testSupporter = frDonorTest.getTestContact();
         insert testSupporter;
@@ -517,8 +517,102 @@ public class frDonationTest {
                       'There was not an opportunity Id in the response as expected');
         Opportunity opp = [SELECT Id, Funraise_Pledge__c FROM Opportunity WHERE Id = :oppId];
         System.assertEquals(pledge.Id, opp.Funraise_Pledge__c, 'The pledge value should remain unchanged');
-        System.assertNotEquals(null, opp.Funraise_Pledge__c, 'The new donation should have created a new pledge');
+    }
+    
+    /*
+* Ensure that if a donation is from a long time ago
+* and it falls within a pledges start_date and end_date bounds (and the pledge is not complete)
+* then they should get matched together
+*/
+    static testMethod void syncEntity_oldDonation_matchesInactivePledge() {  
+        Contact testSupporter = frDonorTest.getTestContact();
+        insert testSupporter;
+        //get a pledge that is inactive according to dates
+        //but is unfulfilled in amount
+        Pledge__c pledge = getTestPledge(testSupporter);
+        pledge.Start_Date__c = Date.today().addDays(-5);
+        pledge.End_Date__c = Date.today().addDays(-1); 
+        insert pledge;
         
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
+        req.httpMethod = 'POST';
+        
+        Map<String, Object> request = getTestRequest();
+        request.put('donation_cretime', DateTime.now().addDays(-3).getTime());
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        
+        RestContext.request = req;
+        RestContext.response = res;
+        
+        createMapping('name', 'Name');
+        createMapping('amount', 'amount');
+        createMapping('donation_cretime', 'CloseDate');
+        
+        Test.startTest();
+        
+        frWSDonationController.syncEntity();
+        
+        Test.stopTest();
+        
+        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
+        frTestUtil.assertNoErrors();
+        
+        Id oppId = response.id;
+        System.assert(String.isNotBlank(oppId), 
+                      'There was not an opportunity Id in the response as expected');
+        Opportunity opp = [SELECT Id, Funraise_Pledge__c FROM Opportunity WHERE Id = :oppId];
+        System.assertEquals(pledge.Id, opp.Funraise_Pledge__c, 'The donation should have matched to a previously active unfulfilled pledge');
+    }
+    
+    /*
+* Ensure that if a donation is from a long time ago
+* and but is barely outside a pledges start_date and end_date bounds
+* then it should not be connected to the pledge
+*/
+    static testMethod void syncEntity_oldDonation_doesNotMatchInactivePledge() {  
+        Contact testSupporter = frDonorTest.getTestContact();
+        insert testSupporter;
+        //get a pledge that is inactive according to dates
+        //but is unfulfilled in amount
+        Pledge__c pledge = getTestPledge(testSupporter);
+        pledge.Start_Date__c = Date.today().addDays(-5);
+        pledge.End_Date__c = Date.today().addDays(-1); 
+        insert pledge;
+        
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
+        req.httpMethod = 'POST';
+        
+        Map<String, Object> request = getTestRequest();
+        request.put('donation_cretime', DateTime.now().getTime());
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        
+        RestContext.request = req;
+        RestContext.response = res;
+        
+        createMapping('name', 'Name');
+        createMapping('amount', 'amount');
+        createMapping('donation_cretime', 'CloseDate');
+        
+        Test.startTest();
+        
+        frWSDonationController.syncEntity();
+        
+        Test.stopTest();
+        
+        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
+        frTestUtil.assertNoErrors();
+        
+        Id oppId = response.id;
+        System.assert(String.isNotBlank(oppId), 
+                      'There was not an opportunity Id in the response as expected');
+        Opportunity opp = [SELECT Id, Funraise_Pledge__c FROM Opportunity WHERE Id = :oppId];
+        System.assertEquals(null, opp.Funraise_Pledge__c, 'The donation should not have matched to a previously active unfulfilled pledge');
     }
     
     private static void createMapping(String frField, String sfField) {
@@ -584,6 +678,6 @@ public class frDonationTest {
             Supporter__c = supporter.Id,
             Pledge_Amount__c = 500
         );
-		return pledge;
+        return pledge;
     }
 }
