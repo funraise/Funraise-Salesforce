@@ -41,8 +41,6 @@ public class frPledge {
     public static Pledge__c findActive(Id contactId) {
         List<Pledge__c> activePledges = [SELECT Id FROM Pledge__c 
                                          WHERE Supporter__c = :contactId 
-                                         AND (Start_Date__c = null OR Start_Date__c >= TODAY)
-                                         AND (End_Date__c = null OR End_Date__c <= TODAY)
                                          AND Active__c = true
                                          AND Pledge_Donation__c = null
                                          ORDER BY CreatedDate ASC LIMIT 1
