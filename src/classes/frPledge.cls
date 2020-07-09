@@ -38,14 +38,16 @@
 * AUTHOR: Alex Molina
 */
 public class frPledge {
-    public static Pledge__c findActive(Id contactId) {
-        List<Pledge__c> activePledges = [SELECT Id FROM Pledge__c 
+    public static Pledge__c findActive(Id contactId, Date closeDate) {
+        List<Pledge__c> possiblePledges = [SELECT Id FROM Pledge__c 
                                          WHERE Supporter__c = :contactId 
-                                         AND Active__c = true
+                                         AND (Start_Date__c = null OR Start_Date__c <= :closeDate)
+                                         AND (End_Date__c = null OR End_Date__c >= :closeDate)
+                                         AND Percent_Complete__c < 100
                                          AND Pledge_Donation__c = null
                                          ORDER BY CreatedDate ASC LIMIT 1
                                         ];
-        return activePledges.size() > 0 ? activePledges.get(0) : null;
+        return possiblePledges.size() > 0 ? possiblePledges.get(0) : null;
     }
     
     public static Pledge__c create(Opportunity opp) {
