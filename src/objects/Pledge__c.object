@@ -43,6 +43,7 @@
     <allowInChatterGroups>false</allowInChatterGroups>
     <compactLayoutAssignment>SYSTEM</compactLayoutAssignment>
     <deploymentStatus>Deployed</deploymentStatus>
+    <deprecated>false</deprecated>
     <enableActivities>false</enableActivities>
     <enableBulkApi>true</enableBulkApi>
     <enableChangeDataCapture>false</enableChangeDataCapture>
@@ -54,6 +55,7 @@
     <enableStreamingApi>true</enableStreamingApi>
     <fields>
         <fullName>Active__c</fullName>
+        <deprecated>false</deprecated>
         <description>A checkbox formula field that denotes if the pledged amount has been met or exceeded and that the StartDate is after today and EndDate is before today</description>
         <externalId>false</externalId>
         <formula>(ISBLANK(Received_Amount__c) || Received_Amount__c &lt; Pledge_Amount__c)
@@ -69,6 +71,7 @@
     </fields>
     <fields>
         <fullName>End_Date__c</fullName>
+        <deprecated>false</deprecated>
         <description>The date on which this pledge should be considered inactive and donations will stop automatically counting towards fulfilling it</description>
         <externalId>false</externalId>
         <label>End Date</label>
@@ -78,6 +81,7 @@
     </fields>
     <fields>
         <fullName>Percent_Complete__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <formula>Received_Amount__c/Pledge_Amount__c</formula>
         <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
@@ -90,6 +94,7 @@
     </fields>
     <fields>
         <fullName>Pledge_Amount__c</fullName>
+        <deprecated>false</deprecated>
         <description>The total amount for this pledge</description>
         <externalId>false</externalId>
         <label>Pledge Amount</label>
@@ -102,6 +107,7 @@
     <fields>
         <fullName>Pledge_Donation__c</fullName>
         <deleteConstraint>SetNull</deleteConstraint>
+        <deprecated>false</deprecated>
         <description>Note: This field will only be filled out for pledges that are created directly from Funraise.  These pledges don&apos;t get fulfilled by multiple donations, only a single donation represented by this lookup field</description>
         <externalId>false</externalId>
         <inlineHelpText>Note: This field will only be filled out for pledges that are created directly from Funraise.  These pledges don&apos;t get fulfilled by multiple donations, only a single donation represented by this lookup field</inlineHelpText>
@@ -116,6 +122,7 @@
     <fields>
         <fullName>Pledge_Donation_uq__c</fullName>
         <caseSensitive>false</caseSensitive>
+        <deprecated>false</deprecated>
         <description>Only one pledge may reference an given opportunity as it&apos;s sole pledge donation.  This field enforces that since we can&apos;t make the lookup field unique</description>
         <externalId>true</externalId>
         <label>Pledge Donation (unique)</label>
@@ -128,6 +135,7 @@
     <fields>
         <fullName>Pledge_Subscription__c</fullName>
         <deleteConstraint>SetNull</deleteConstraint>
+        <deprecated>false</deprecated>
         <description>The subscription that created this pledge</description>
         <externalId>false</externalId>
         <inlineHelpText>The subscription that created this pledge</inlineHelpText>
@@ -142,6 +150,7 @@
     <fields>
         <fullName>Pledge_Subscription_uq__c</fullName>
         <caseSensitive>false</caseSensitive>
+        <deprecated>false</deprecated>
         <externalId>true</externalId>
         <label>Pledge Subscription (unique)</label>
         <length>255</length>
@@ -152,9 +161,10 @@
     </fields>
     <fields>
         <fullName>Received_Amount__c</fullName>
+        <deprecated>false</deprecated>
         <description>Summed opportunity amounts related to this pledge.  Calculation of this value is handled by a trigger whenever opportunities related to this pledge are added or updated</description>
         <externalId>false</externalId>
-        <inlineHelpText>Calculation of this value is handled by a trigger whenever opportunities related to this pledge are added or updated</inlineHelpText>
+        <inlineHelpText>This value is calculated automatically by a trigger whenever opportunities related to this pledge are added or updated</inlineHelpText>
         <label>Received Amount</label>
         <precision>18</precision>
         <required>false</required>
@@ -164,6 +174,7 @@
     </fields>
     <fields>
         <fullName>Start_Date__c</fullName>
+        <deprecated>false</deprecated>
         <description>The date at which this pledge should be considered active and have donations automatically count towards fulfilling the pledge</description>
         <externalId>false</externalId>
         <label>Start Date</label>
@@ -173,6 +184,7 @@
     </fields>
     <fields>
         <fullName>Supporter__c</fullName>
+        <deprecated>false</deprecated>
         <description>The contact that represents the Funraise supporter that owns this pledge</description>
         <externalId>false</externalId>
         <label>Funraise Supporter</label>

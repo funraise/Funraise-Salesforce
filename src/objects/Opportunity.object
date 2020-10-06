@@ -3,6 +3,7 @@
     <fields>
         <fullName>Funraise_Pledge__c</fullName>
         <deleteConstraint>SetNull</deleteConstraint>
+        <deprecated>false</deprecated>
         <description>The Funraise pledge this opportunity should count towards</description>
         <externalId>false</externalId>
         <label>Funraise Pledge</label>
