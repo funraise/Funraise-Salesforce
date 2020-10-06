@@ -98,7 +98,7 @@
         <relationshipLabel>Funraise Event Registrations</relationshipLabel>
         <relationshipName>Funraise_Event_Registrations</relationshipName>
         <relationshipOrder>1</relationshipOrder>
-        <reparentableMasterDetail>false</reparentableMasterDetail>
+        <reparentableMasterDetail>true</reparentableMasterDetail>
         <trackTrending>false</trackTrending>
         <type>MasterDetail</type>
         <writeRequiresMasterRead>false</writeRequiresMasterRead>
@@ -163,6 +163,10 @@
     <label>Funraise Event Registration</label>
     <listViews>
         <fullName>All</fullName>
+        <columns>NAME</columns>
+        <columns>Ticket_Amount__c</columns>
+        <columns>Ticket_Name__c</columns>
+        <columns>Fundraising_Event__c</columns>
         <filterScope>Everything</filterScope>
         <label>All</label>
     </listViews>

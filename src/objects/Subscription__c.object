@@ -316,7 +316,7 @@
         <relationshipLabel>Funraise Subscriptions</relationshipLabel>
         <relationshipName>Funraise_Subscriptions</relationshipName>
         <relationshipOrder>0</relationshipOrder>
-        <reparentableMasterDetail>false</reparentableMasterDetail>
+        <reparentableMasterDetail>true</reparentableMasterDetail>
         <trackTrending>false</trackTrending>
         <type>MasterDetail</type>
         <writeRequiresMasterRead>false</writeRequiresMasterRead>
