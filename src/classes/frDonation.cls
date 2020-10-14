@@ -184,31 +184,49 @@ public class frDonation extends frModel {
         }
         
         Map<String, Contact> relatedContacts = new Map<String, Contact>();
+        Set<String> supportersWithContactRoles = new Set<String>();
         for(Contact relatedContact : [SELECT Id, fr_Id__c, 
                                       (SELECT Id, Role, ContactId FROM OpportunityContactRoles WHERE OpportunityId = :getOpportunityId()) 
                                       from Contact WHERE fr_Id__c IN :relatedSupporterFunraiseIds]) {
                                           relatedContacts.put(relatedContact.fr_Id__c, relatedContact);
+                                          if(relatedContact.OpportunityContactRoles.size() > 0) {
+                                              supportersWithContactRoles.add(relatedContact.fr_Id__c);
+                                          }
                                       }
         
         List<OpportunityContactRole> newContactRoles = new List<OpportunityContactRole>();
-        OpportunityContactRole donorRole = createRole(OPP_ROLE_DONOR, supporterId, relatedContacts, funraiseId);
-        if(donorRole != null) {
-            newContactRoles.add(donorRole);
+
+        
+        if(!supportersWithContactRoles.contains(supporterId)) {
+            OpportunityContactRole donorRole = createRole(OPP_ROLE_DONOR, supporterId, relatedContacts, funraiseId);
+            if(donorRole != null) {
+                newContactRoles.add(donorRole);
+                supportersWithContactRoles.add(supporterId);
+            }
         }
         
-        OpportunityContactRole fundraiserRole = createRole(OPP_ROLE_FUNDRAISER, fundraiserId, relatedContacts, funraiseId);
-        if(fundraiserRole != null) {
-            newContactRoles.add(fundraiserRole);
+        if(!supportersWithContactRoles.contains(fundraiserId)) {
+            OpportunityContactRole fundraiserRole = createRole(OPP_ROLE_FUNDRAISER, fundraiserId, relatedContacts, funraiseId);
+            if(fundraiserRole != null) {
+                newContactRoles.add(fundraiserRole);
+                supportersWithContactRoles.add(fundraiserId);
+            }
         }
         
-        OpportunityContactRole teamCaptainRole = createRole(OPP_ROLE_TEAM_CAPTAIN, teamCaptainId, relatedContacts, funraiseId);
-        if(teamCaptainRole != null) {
-            newContactRoles.add(teamCaptainRole);
+        
+        if(!supportersWithContactRoles.contains(softCreditSupporterId)) {
+            OpportunityContactRole softCreditRole = createRole(OPP_ROLE_SOFT_CREDIT, softCreditSupporterId, relatedContacts, funraiseId);
+            if(softCreditRole != null) {
+                newContactRoles.add(softCreditRole);
+                supportersWithContactRoles.add(softCreditSupporterId);
+            }
         }
         
-        OpportunityContactRole softCreditRole = createRole(OPP_ROLE_SOFT_CREDIT, softCreditSupporterId, relatedContacts, funraiseId);
-        if(softCreditRole != null) {
-            newContactRoles.add(softCreditRole);
+        if(!supportersWithContactRoles.contains(teamCaptainId)) {
+            OpportunityContactRole teamCaptainRole = createRole(OPP_ROLE_TEAM_CAPTAIN, teamCaptainId, relatedContacts, funraiseId);
+            if(teamCaptainRole != null) {
+                newContactRoles.add(teamCaptainRole);
+            }
         }
         
         try {
@@ -230,18 +248,11 @@ public class frDonation extends frModel {
         }
         
         Contact supporter = contactsByFunraiseId.get(funraiseSupporterId);
-        Set<String> existingRoles = new Set<String>();
-        for(OpportunityContactRole contactRole : supporter.OpportunityContactRoles) {
-            existingRoles.add(contactRole.Role);
-        }
-        if(!existingRoles.contains(role)) {
-            OpportunityContactRole newRole = new OpportunityContactRole();
-            newRole.ContactId = supporter.Id;
-            newRole.OpportunityId = getOpportunityId();
-            newRole.Role = role;
-            return newRole;
-        }
-        return null;
+        OpportunityContactRole newRole = new OpportunityContactRole();
+        newRole.ContactId = supporter.Id;
+        newRole.OpportunityId = getOpportunityId();
+        newRole.Role = role;
+        return newRole;
     }
     
     public Boolean hasDonor() {

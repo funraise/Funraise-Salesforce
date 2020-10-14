@@ -615,6 +615,64 @@ public class frDonationTest {
         System.assertEquals(null, opp.Funraise_Pledge__c, 'The donation should not have matched to a previously active unfulfilled pledge');
     }
     
+    /*
+* Ensure that the same supporter is the opportunity contact role for {donor, team captain, fundraiser, soft credit}
+* only one role will be created, because multiple roles with the same contact can cause issues with reporting
+*/
+    static testMethod void syncEntity_oppContactRoles_sameSupporter() {  
+        Contact testSupporter = frDonorTest.getTestContact();
+        insert testSupporter;
+        
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
+        req.httpMethod = 'POST';
+        
+        Map<String, Object> request = getTestRequest();
+        request.put('opportunityContactMappingDisabled', false);
+        request.put('donorId', testSupporter.fr_Id__c);
+        request.put('fundraiserId', testSupporter.fr_Id__c);
+        request.put('teamCaptainId', testSupporter.fr_Id__c);
+        request.put('softCreditSupporterId', testSupporter.fr_Id__c);
+                
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        
+        RestContext.request = req;
+        RestContext.response = res;
+        
+        createMapping('name', 'Name');
+        createMapping('amount', 'amount');
+        createMapping('donation_cretime', 'CloseDate');
+        
+        Test.startTest();
+        
+        frWSDonationController.syncEntity();
+        
+        Test.stopTest();
+        
+        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
+        frTestUtil.assertNoErrors();
+        
+        Id oppId = response.id;
+        System.assert(String.isNotBlank(oppId), 
+                      'There was not an opportunity Id in the response as expected');
+        
+        Set<String> funraiseRoles = new Set<String>{
+            frDonation.OPP_ROLE_DONOR, 
+            frDonation.OPP_ROLE_FUNDRAISER, 
+            frDonation.OPP_ROLE_SOFT_CREDIT, 
+            frDonation.OPP_ROLE_TEAM_CAPTAIN
+        };
+        Opportunity opp = [SELECT Id, Funraise_Pledge__c, 
+                           (SELECT Id, Role FROM OpportunityContactRoles WHERE ContactId = :testSupporter.Id AND role IN :funraiseRoles) 
+                           FROM Opportunity WHERE Id = :oppId];
+        System.assertEquals(1, opp.OpportunityContactRoles.size(), 
+                            'There should be a single opp contact role for the supporter');
+        System.assertEquals(frDonation.OPP_ROLE_DONOR, opp.OpportunityContactRoles.get(0).role,
+                           'The single opp contact role should be the donor role');
+    }
+    
     private static void createMapping(String frField, String sfField) {
         insert new frMapping__c(Name = frField+sfField, fr_Name__c = frField, sf_Name__c = sfField, Type__c = frDonation.TYPE);
     }
@@ -662,6 +720,7 @@ public class frDonationTest {
         request.put('opportunityContactMappingDisabled', 'true');
         request.put('fundraiserId', null);
         request.put('teamCaptainId', null);
+        request.put('softCreditSupporterId', null);
         return request;
     }
     
