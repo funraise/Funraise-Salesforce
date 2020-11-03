@@ -63,6 +63,52 @@
         <type>Checkbox</type>
     </fields>
     <fields>
+        <fullName>Email_Display__c</fullName>
+        <externalId>false</externalId>
+        <formula>IF(ISBLANK(Registrant__c), 
+Email__c,
+Registrant__r.Email)</formula>
+        <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+        <label>Email</label>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Email__c</fullName>
+        <externalId>false</externalId>
+        <label>Email</label>
+        <length>255</length>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>First_Name_Display__c</fullName>
+        <externalId>false</externalId>
+        <formula>IF(ISBLANK(Registrant__c), 
+First_Name__c,
+Registrant__r.FirstName)</formula>
+        <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+        <label>First Name</label>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>First_Name__c</fullName>
+        <externalId>false</externalId>
+        <label>First Name</label>
+        <length>255</length>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
         <fullName>Fundraising_Event__c</fullName>
         <deprecated>false</deprecated>
         <externalId>false</externalId>
@@ -85,6 +131,62 @@
         <referenceTo>Contact</referenceTo>
         <relationshipLabel>Funraise Event Registrations (Guest Of)</relationshipLabel>
         <relationshipName>Funraise_Event_Registrations1</relationshipName>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Lookup</type>
+    </fields>
+    <fields>
+        <fullName>Last_Name_Display__c</fullName>
+        <externalId>false</externalId>
+        <formula>IF(ISBLANK(Registrant__c), 
+Last_Name__c,
+Registrant__r.LastName)</formula>
+        <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+        <label>Last Name</label>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Last_Name__c</fullName>
+        <externalId>false</externalId>
+        <label>Last Name</label>
+        <length>255</length>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Phone_Display__c</fullName>
+        <externalId>false</externalId>
+        <formula>IF(ISBLANK(Registrant__c), 
+Phone__c,
+Registrant__r.Phone)</formula>
+        <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+        <label>Phone</label>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Phone__c</fullName>
+        <externalId>false</externalId>
+        <label>Phone</label>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Phone</type>
+    </fields>
+    <fields>
+        <fullName>Registrant__c</fullName>
+        <deleteConstraint>SetNull</deleteConstraint>
+        <externalId>false</externalId>
+        <label>Registrant</label>
+        <referenceTo>Contact</referenceTo>
+        <relationshipLabel>Funraise Event Registrations (Registrant)</relationshipLabel>
+        <relationshipName>Funraise_Event_Registrations2</relationshipName>
         <required>false</required>
         <trackTrending>false</trackTrending>
         <type>Lookup</type>

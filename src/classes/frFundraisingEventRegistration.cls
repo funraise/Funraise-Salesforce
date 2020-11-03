@@ -66,12 +66,16 @@ public class frFundraisingEventRegistration {
         }
         
         String funraiseSupporterId = String.valueOf(request.get('supporterId'));
-        List<Contact> supporter = [SELECT Id from Contact WHERE fr_Id__c = :funraiseSupporterId];
-        if(supporter.isEmpty()) {
-            frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
-                                        frUtil.Entity.SUPPORTER, funraiseSupporterId,
-                                       'Registration supporter, not guest of');
-            return;
+        List<Contact> supporter = new List<Contact>();
+        if(String.isNotBlank(funraiseSupporterId)) {
+            supporter = [SELECT Id from Contact WHERE fr_Id__c = :funraiseSupporterId];
+            if(supporter.isEmpty()) {
+                //if it wasn't found, log an error but continue
+                frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
+                                            frUtil.Entity.SUPPORTER, funraiseSupporterId,
+                                            'Registration registrant');
+                return; //TODO: remove this early return once the master-detail field is replaced with the lookup
+            }
         }
         
         String funraiseGuestOfId = String.valueOf(request.get('guestOfId'));
@@ -111,9 +115,26 @@ public class frFundraisingEventRegistration {
             ),
             Attended__c = Boolean.valueOf(request.get('attended')),
             Fundraising_Event__c = event.get(0).Id,
-            Supporter__c = supporter.get(0).Id,
+            Supporter__c = supporter.isEmpty() ?  null : supporter.get(0).Id, //TODO: Remove this line once we remove the master-detail field
+            Registrant__c = supporter.isEmpty() ?  null : supporter.get(0).Id,
             Guest_Of__c = guestOf.isEmpty() ?  null : guestOf.get(0).Id,
-            Transaction__c = transactions.isEmpty() ? null : transactions.get(0).Id
+            Transaction__c = transactions.isEmpty() ? null : transactions.get(0).Id,
+            First_Name__c = frUtil.truncateToFieldLength(
+                Fundraising_Event_Registration__c.First_Name__c.getDescribe(), 
+                String.valueOf(request.get('firstName'))
+            ),
+            Last_Name__c = frUtil.truncateToFieldLength(
+                Fundraising_Event_Registration__c.Last_Name__c.getDescribe(), 
+                String.valueOf(request.get('lastName'))
+            ),
+            Phone__c = frUtil.truncateToFieldLength(
+                Fundraising_Event_Registration__c.Phone__c.getDescribe(), 
+                String.valueOf(request.get('phone'))
+            ),
+            Email__c = frUtil.truncateToFieldLength(
+                Fundraising_Event_Registration__c.Email__c.getDescribe(), 
+                String.valueOf(request.get('email'))
+            )
         );
         frUtil.write(
             registration, 
