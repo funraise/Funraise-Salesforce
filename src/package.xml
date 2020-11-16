@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
+        <members>frAnswer</members>
+        <members>frAnswerTest</members>
         <members>frCampaign</members>
         <members>frCampaignTest</members>
         <members>frDataMigration</members>
@@ -19,6 +21,8 @@
         <members>frModel</members>
         <members>frOpportunityPledgeCalculatorTriggerTest</members>
         <members>frPledge</members>
+        <members>frQuestion</members>
+        <members>frQuestionTest</members>
         <members>frSchemaUtil</members>
         <members>frSetupController</members>
         <members>frSetupControllerTest</members>
@@ -26,6 +30,8 @@
         <members>frSubscriptionTest</members>
         <members>frUtil</members>
         <members>frWSCampaignController</members>
+        <members>frWSCustomQuestionAnswerController</members>
+        <members>frWSCustomQuestionController</members>
         <members>frWSDonationController</members>
         <members>frWSDonorController</members>
         <members>frWSDonorEmailController</members>
@@ -64,21 +70,25 @@
         <name>CustomMetadata</name>
     </types>
     <types>
+        <members>Answer__c</members>
         <members>Error__c</members>
         <members>Fundraising_Event_Registration__c</members>
         <members>Fundraising_Event__c</members>
         <members>Pledge__c</members>
+        <members>Question__c</members>
         <members>Subscription__c</members>
         <members>frField__mdt</members>
         <members>frMapping__c</members>
         <name>CustomObject</name>
     </types>
     <types>
+        <members>Answer__c</members>
         <members>Error__c</members>
         <members>Fundraising_Event_Registration__c</members>
         <members>Fundraising_Event__c</members>
         <members>Funraise_Setup</members>
         <members>Pledge__c</members>
+        <members>Question__c</members>
         <members>Subscription__c</members>
         <name>CustomTab</name>
     </types>

@@ -30,38 +30,57 @@
 *
 *
 *
-* PURPOSE: Test class for migration class used for post-package-install execution
+* PURPOSE:
+*
 *
 *
 * CREATED: 2020 Funraise Inc - https://funraise.io
 * AUTHOR: Alex Molina
 */
-@isTest
-public class frDataMigrationTest {
-    @isTest
-    static void testRegistrationLookupMigration() {
-        Fundraising_Event__c testEvent = frFundraisingEventTest.getTestEvent();
-        insert testEvent;
-        
-        Contact testSupporter = frDonorTest.getTestContact();
-        
-        Fundraising_Event_Registration__c registration = new Fundraising_Event_Registration__c(
-            Attended__c = false,
-            Fundraising_Event__c = testEvent.Id,
-            fr_Id__c = '1234',
-            Guest_Of__c = testSupporter.Id,
-            Supporter__c = testSupporter.Id,
-            Ticket_Name__c = 'Test Ticket'
-        );
-        insert registration;
-        
-        Test.startTest();
-        new frDataMigration().onInstall(null);
-        Test.stopTest();
-        
-        Fundraising_Event_Registration__c requeryRegistration = [SELECT Id, Registrant__c FROM Fundraising_Event_Registration__c
-                                                                WHERE Id = :registration.Id];
-        System.assertEquals(registration.Supporter__c, requeryRegistration.Registrant__c, 'The contact id from the master-detail relationship was not copied properly to the lookup field');
-        
+
+public class frQuestion {
+    public static final Map<String, Schema.SObjectField> fields = 
+        frSchemaUtil.getFields(Question__c.getSObjectType().getDescribe().getName());
+    
+    public frQuestion(Map<String, Object> request) {
+        if (Boolean.valueOf(request.get('deleted'))) {
+            deleteQuestion(String.valueOf(request.get('id')));
+        } else {
+            create(request);
+        }
     }
+    
+    public void deleteQuestion(String funraiseId) {
+        try {
+            delete [SELECT id FROM Question__c WHERE fr_ID__c = :funraiseId];
+        } catch (DMLException e) {
+            frUtil.logException(frUtil.Entity.SUBSCRIPTION, funraiseId, e);
+        }
+    }
+    
+    public void create(Map<String, Object> request) {
+        String funraiseId = String.valueOf(request.get('id'));
+		Question__c question = new Question__c(
+			fr_Id__c = funraiseId,
+            Name__c = frUtil.truncateToFieldLength(
+                Question__c.Name__c.getDescribe(), 
+                String.valueOf(request.get('name'))
+            ),
+            Description__c = frUtil.truncateToFieldLength(
+                Question__c.Description__c.getDescribe(), 
+                String.valueOf(request.get('description'))
+            ),
+            Type__c = frUtil.truncateToFieldLength(
+                Question__c.Type__c.getDescribe(), 
+                String.valueOf(request.get('questionType'))
+            )
+        );
+        
+        try {
+            Database.upsert(question, Question__c.Field.fr_ID__c, true);
+        } catch (DMLException ex) {
+            frUtil.logException(frUtil.Entity.QUESTION, funraiseId, ex);
+            return;
+        }
+    } 
 }

@@ -131,6 +131,16 @@
                     <default>false</default>
                     <label>Pledge</label>
                 </value>
+                <value>
+                    <fullName>Question</fullName>
+                    <default>false</default>
+                    <label>Question</label>
+                </value>
+                <value>
+                    <fullName>Question Answer</fullName>
+                    <default>false</default>
+                    <label>Question Answer</label>
+                </value>
             </valueSetDefinition>
         </valueSet>
     </fields>

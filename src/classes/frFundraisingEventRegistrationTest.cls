@@ -44,14 +44,9 @@ public class frFundraisingEventRegistrationTest {
         insert testEvent;
         
         Contact testSupporter = frDonorTest.getTestContact();
-        insert testSupporter;
         
-        Opportunity testTransaction = new Opportunity(
-        	Name = 'Test Opportunity',
-            fr_ID__c = '34509',
-            StageName = 'Closed Won',
-            CloseDate = Date.today()
-        );
+        Opportunity testTransaction = frDonationTest.getTestOpp();
+        testTransaction.fr_Id__c = '34509';
         insert testTransaction;
                 
         String funraiseId = '25';
@@ -100,13 +95,12 @@ public class frFundraisingEventRegistrationTest {
     
     static testMethod void createRegistration_eventMissing() {	
         Contact testSupporter = frDonorTest.getTestContact();
-        insert testSupporter;
         
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
         request.put('eventId', 'nonexistent');
-        request.put('supporterId', testSupporter.Id);
-        request.put('guestOfId', testSupporter.Id);
+        request.put('supporterId', testSupporter.fr_Id__c);
+        request.put('guestOfId', testSupporter.fr_Id__c);
         request.put('id', funraiseId);
 
         Test.startTest();
@@ -157,7 +151,6 @@ public class frFundraisingEventRegistrationTest {
         insert testEvent;
         
         Contact testSupporter = frDonorTest.getTestContact();
-        insert testSupporter;
         
         Opportunity nullStringFrIdOpp = new Opportunity(
             Name = 'Test Opportunity with null string fr_id__c',
@@ -212,7 +205,6 @@ public class frFundraisingEventRegistrationTest {
         insert testEvent;
         
         Contact testSupporter = frDonorTest.getTestContact();
-        insert testSupporter;
         
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
@@ -236,44 +228,21 @@ public class frFundraisingEventRegistrationTest {
     }
     
     static testMethod void deleteRegistration() {	
-        Fundraising_Event__c testEvent = frFundraisingEventTest.getTestEvent();
-        insert testEvent;
-        
-        Contact testSupporter = frDonorTest.getTestContact();
-        insert testSupporter;
-        
-        String funraiseId = '25';
-        Fundraising_Event_Registration__c existingRegistration = new Fundraising_Event_Registration__c(
-            fr_ID__c = funraiseId,
-            Name = 'Test Name',
-            Ticket_Name__c = 'Test Ticket Name',
-            Fundraising_Event__c = testEvent.Id,
-            Supporter__c = testSupporter.Id,
-            Guest_Of__c = testSupporter.Id,
-            Attended__c = false
-        );
-        insert existingRegistration;
+        Fundraising_Event_Registration__c existingRegistration = getTestRegistration();
         
         Map<String, Object> request = getTestRequest();
-        request.put('eventId', testEvent.fr_ID__c);
-        request.put('supporterId', 'nonexistent');
-        request.put('guestOfId', 'nonexistent');
-        request.put('id', funraiseId);
+        request.put('eventId', existingRegistration.Fundraising_Event__r.fr_ID__c);
+        request.put('supporterId', existingRegistration.Supporter__r.fr_ID__c);
+        request.put('guestOfId', existingRegistration.Guest_Of__r.fr_ID__c);
+        request.put('id', existingRegistration.fr_Id__c);
         request.put('deleted', true);
 
         Test.startTest();
-        Integer errorsBefore = [SELECT COUNT() FROM Error__c];
         new frFundraisingEventRegistration(request);
-        Integer errorsAfter = [SELECT COUNT() FROM Error__c];
         Test.stopTest();
 
-        List<Fundraising_Event_Registration__c> registrations = [SELECT Id, fr_ID__c, Name, Attended__c, Ticket_Name__c, 
-                                                                 Supporter__c, Fundraising_Event__c, 
-                                                                 Guest_Of__c 
-                                                                 FROM Fundraising_Event_Registration__c WHERE fr_ID__c = :funraiseId];
-        System.assertEquals(0, registrations.size(), 'Registration should have been deleted and therefore not returned');
-        System.assertEquals(0, errorsBefore, 'Precondition');
-        System.assertEquals(0, errorsAfter, 'Did not expect any errors on a delete request');
+        frTestUtil.assertNoErrors();
+        System.assertEquals(0, [SELECT COUNT() FROM Fundraising_Event_Registration__c], 'Registration should have been deleted and therefore not returned');
     }
 
     private static Map<String, Object> getTestRequest() {
@@ -294,6 +263,28 @@ public class frFundraisingEventRegistrationTest {
         request.put('email', 'test@example.com');
         request.put('phone', '1234567890');
         return request;
+    }
+    
+    public static Fundraising_Event_Registration__c getTestRegistration() {
+        Fundraising_Event__c testEvent = frFundraisingEventTest.getTestEvent();
+        insert testEvent;
+        
+        Contact testSupporter = frDonorTest.getTestContact();
+        
+        Fundraising_Event_Registration__c registration = new Fundraising_Event_Registration__c(
+            fr_ID__c = '25',
+            Name = 'Test Name',
+            Ticket_Name__c = 'Test Ticket Name',
+            Fundraising_Event__c = testEvent.Id,
+            Fundraising_Event__r = testEvent,
+            Supporter__c = testSupporter.Id,
+            Supporter__r = testSupporter,
+            Guest_Of__c = testSupporter.Id,
+            Guest_Of__r = testSupporter,
+            Attended__c = false
+        );
+        insert registration;
+        return registration;
     }
     
 }

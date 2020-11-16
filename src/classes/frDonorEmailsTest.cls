@@ -39,14 +39,11 @@
  */
 @isTest
 public class frDonorEmailsTest {
-    static testMethod void createExistingContact_test() {
-        String funraiseId = '123456';
+    static testMethod void create_ExistingContact_test() {
         Contact testContact = frDonorTest.getTestContact();
-        testContact.fr_ID__c = funraiseId;
-        insert testContact;
 
         Map<String, Object> request = new Map<String, Object>();
-        request.put('donorId', funraiseId);
+        request.put('donorId', testContact.fr_Id__c);
         request.put('id', 4);
         request.put('messageId', 'db92570b-766b-46b9-8b7a-a0c7efa92053');
         request.put('correlationId', '4aeeCRcARIamde0uiZAr6Q');
@@ -88,7 +85,7 @@ public class frDonorEmailsTest {
     }
     
     static testMethod void syncEntity_test() {
-        Contact testContact = frDonorTest.getTestContact();
+        Contact testContact = frDonorTest.getTestContact(false);
         testContact.fr_ID__c = '856';
         insert testContact;
         

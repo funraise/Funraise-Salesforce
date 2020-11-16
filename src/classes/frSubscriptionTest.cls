@@ -41,7 +41,6 @@
 public class frSubscriptionTest {  
     static testMethod void createSubscription_noCampaign() {
         Contact testSupporter = frDonorTest.getTestContact();
-        insert testSupporter;
                 
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
@@ -105,7 +104,6 @@ public class frSubscriptionTest {
     
     static testMethod void createSubscription_withCampaignGoal() {	
         Contact testSupporter = frDonorTest.getTestContact();
-        insert testSupporter;
         
         Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
@@ -128,7 +126,6 @@ public class frSubscriptionTest {
     
     static testMethod void createSubscription_missingSupporter() {	
         Contact testSupporter = frDonorTest.getTestContact();
-        insert testSupporter;
         
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
@@ -146,7 +143,6 @@ public class frSubscriptionTest {
     
     static testMethod void createSubscription_missingCampaignGoal() {	
         Contact testSupporter = frDonorTest.getTestContact();
-        insert testSupporter;
         
         Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
@@ -169,7 +165,6 @@ public class frSubscriptionTest {
     
     static testMethod void deleteSubscription() {	      
         Contact testSupporter = frDonorTest.getTestContact();
-        insert testSupporter;
         
         insert new Subscription__c(Name = 'Test Sub', fr_ID__c = '25', Supporter__c = testSupporter.Id);
         
@@ -190,7 +185,6 @@ public class frSubscriptionTest {
     
     static testMethod void createSubscription_createPledge() {
         Contact testSupporter = frDonorTest.getTestContact();
-        insert testSupporter;
                 
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();

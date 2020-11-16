@@ -55,7 +55,7 @@ public class frDonor extends frModel {
         return mappings;
     }
     protected override SObject getObject() {
-        return c;
+        return getContact();
     }
     
     private String contactId;
@@ -75,9 +75,9 @@ public class frDonor extends frModel {
         String lastName = String.valueOf(request.get('lastName'));
         String email = String.valueOf(request.get('email'));
         if(supporterContact == null) {
-            if(!String.isBlank(email)) {
+            if(String.isNotBlank(email)) {
                 //try to match on email + name, since not all orgs treat email as unique
-                if(!String.isBlank(firstName) && !String.isBlank(lastName)) {
+                if(String.isNotBlank(firstName) && String.isNotBlank(lastName)) {
                     contacts = (List<Contact>)Database.query(
                         'select Id, fr_ID__c, LastName from Contact where '+
                         'Email = :email AND FirstName = :firstName AND LastName = :lastName '+
@@ -102,22 +102,27 @@ public class frDonor extends frModel {
             String postalCode = String.valueOf(request.get('postalCode'));
             String country = String.valueOf(request.get('country'));
             
-            //try to match by address, in case we sync an offline donation over with no email.
-            String byAddress = 'select Id, fr_ID__c, LastName from Contact where MailingStreet = :address1' +
-                ' and MailingCity = :city' +
-                ' and MailingState = :state' +
-                ' and MailingPostalCode = :postalCode' +
-                ' and MailingCountry = :country' +
-                ' and FirstName = :firstName' +
-                ' and LastName = :lastName' +
-                ' limit 1 FOR UPDATE';
-            
-            contacts = (List<Contact>)Database.query(byAddress);
-            supporterContact = applyMatch(contacts, frId);
+            //name AND street address AND (cityAndState or postalCode) 
+            //need to be populated for us to match
+            Boolean namePresent = String.isNotBlank(firstName) && String.isNotBlank(lastName);
+            Boolean cityAndState = String.isNotBlank(city) && String.isNotBlank(state);
+            if(namePresent && String.isNotBlank(address1) && (cityAndState || String.isNotBlank(postalCode))) {
+                String byAddress = 'select Id, fr_ID__c, LastName from Contact where MailingStreet = :address1' +
+                    ' and MailingCity = :city' +
+                    ' and MailingState = :state' +
+                    ' and MailingPostalCode = :postalCode' +
+                    ' and MailingCountry = :country' +
+                    ' and FirstName = :firstName' +
+                    ' and LastName = :lastName' +
+                    ' limit 1 FOR UPDATE';
+                
+                contacts = (List<Contact>)Database.query(byAddress);
+                supporterContact = applyMatch(contacts, frId);
+            }
         }
         
         if(supporterContact == null) {
-            supporterContact = new Contact();
+            supporterContact = new Contact(fr_Id__c = frId);
         }
         setContact(supporterContact);
         populateFromRequest(request);
@@ -128,7 +133,13 @@ public class frDonor extends frModel {
         }
         
         try {
-            Database.upsert(supporterContact, Contact.Fields.fr_ID__c, true);
+            //if we try the upsert using an external id when the contact has an id, 
+            //an exception is thrown
+            if(supporterContact.Id != null) {
+                Database.update(supporterContact, true);
+            } else { 
+                Database.upsert(supporterContact, Contact.Fields.fr_ID__c, true);
+            }
         } catch (Exception ex) {
             frUtil.logException(frUtil.Entity.SUPPORTER, frId, ex);
         }
@@ -138,7 +149,6 @@ public class frDonor extends frModel {
         if(matchResults != null && matchResults.size() > 0) {
             Contact donor = matchResults.get(0);
             donor.fr_ID__c = frId;
-            update donor;
             return donor;
         }
         return null;
