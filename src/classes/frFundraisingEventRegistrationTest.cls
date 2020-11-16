@@ -79,7 +79,8 @@ public class frFundraisingEventRegistrationTest {
         Fundraising_Event_Registration__c registration = [SELECT Id, fr_ID__c, Name, Attended__c, Ticket_Name__c, Ticket_Amount__c,
                                                           Ticket_Tax_Deductible_Amount__c,
                                                           Supporter__c, Fundraising_Event__c, 
-                                                          Guest_Of__c, Transaction__c
+                                                          Guest_Of__c, Transaction__c, First_Name__c,
+                                                          Last_Name__c, Phone__c, Email__c
                                                           FROM Fundraising_Event_Registration__c WHERE fr_ID__c = :funraiseId];
         
         System.assertEquals(String.valueOf(request.get('name')), registration.Name, 'The registration name should be the property included in the request');
@@ -91,6 +92,10 @@ public class frFundraisingEventRegistrationTest {
         System.assertEquals(testSupporter.Id, registration.Supporter__c, 'The lookup for supporter should have been populated with the contact that has the funraise id referenced in the request');
         System.assertEquals(testSupporter.Id, registration.Guest_Of__c, 'The lookup for guest of should have been populated with the contact that has the funraise id referenced in the request');
         System.assertEquals(testTransaction.Id, registration.Transaction__c, 'The lookup for transaction should have been populated with the opportunity that has the funraise id referenced in the request');
+        System.assertEquals(String.valueOf(request.get('firstName')), registration.First_Name__c, 'The first name should have been populated with the contact info first name in the request');
+        System.assertEquals(String.valueOf(request.get('lastName')), registration.Last_Name__c, 'The last name should have been populated with the contact info last name in the request');
+        System.assertEquals(String.valueOf(request.get('email')), registration.Email__c, 'The email should have been populated with the contact info email in the request');
+        System.assertEquals(String.valueOf(request.get('phone')), registration.Phone__c, 'The phone should have been populated with the contact info phone in the request');
     }
     
     static testMethod void createRegistration_eventMissing() {	
@@ -140,6 +145,8 @@ public class frFundraisingEventRegistrationTest {
                                                                  Supporter__c, Fundraising_Event__c, 
                                                                  Guest_Of__c 
                                                                  FROM Fundraising_Event_Registration__c WHERE fr_ID__c = :funraiseId];
+        //TODO: remove below assert and uncomment this one once it's valid (a.k.a the master-detail field is removed)
+        //System.assertEquals(1, registrations.size(), 'A registration should have been created even if a supporter id could not be matched'); 
         System.assertEquals(0, registrations.size(), 'No registrations should have been created if a supporter id could not be matched');
         System.assertEquals(0, errorsBefore, 'Precondition');
         System.assertEquals(1, errorsAfter, 'An error log should have been created to record that a supporter id could not be matched');
@@ -282,6 +289,10 @@ public class frFundraisingEventRegistrationTest {
         request.put('transactionId', null);
         request.put('id', 'changeme');
         request.put('deleted', false);
+        request.put('firstName', 'testFirstName');
+        request.put('lastName', 'testLastName');
+        request.put('email', 'test@example.com');
+        request.put('phone', '1234567890');
         return request;
     }
     

@@ -3,6 +3,8 @@
     <types>
         <members>frCampaign</members>
         <members>frCampaignTest</members>
+        <members>frDataMigration</members>
+        <members>frDataMigrationTest</members>
         <members>frDonation</members>
         <members>frDonationTest</members>
         <members>frDonor</members>
