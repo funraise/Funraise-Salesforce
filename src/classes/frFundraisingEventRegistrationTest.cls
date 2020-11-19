@@ -73,9 +73,8 @@ public class frFundraisingEventRegistrationTest {
         
         Fundraising_Event_Registration__c registration = [SELECT Id, fr_ID__c, Name, Attended__c, Ticket_Name__c, Ticket_Amount__c,
                                                           Ticket_Tax_Deductible_Amount__c,
-                                                          Supporter__c, Fundraising_Event__c, 
-                                                          Guest_Of__c, Transaction__c, First_Name__c,
-                                                          Last_Name__c, Phone__c, Email__c
+                                                          Fundraising_Event__c, Guest_Of__c, Transaction__c, 
+                                                          First_Name__c, Last_Name__c, Phone__c, Email__c
                                                           FROM Fundraising_Event_Registration__c WHERE fr_ID__c = :funraiseId];
         
         System.assertEquals(String.valueOf(request.get('name')), registration.Name, 'The registration name should be the property included in the request');
@@ -84,7 +83,6 @@ public class frFundraisingEventRegistrationTest {
         System.assertEquals(Decimal.valueOf(String.valueOf(request.get('ticketTaxDeductibleAmount'))), registration.Ticket_Tax_Deductible_Amount__c, 'The registrations tax deductible amount should be the property included in the request');
         System.assertEquals(Boolean.valueOf(request.get('attended')), registration.Attended__c, 'The registration attended flag should be the property included in the request');
         System.assertEquals(testEvent.Id, registration.Fundraising_Event__c, 'The lookup for event should have been populated with the event that has the funraise id referenced in the request');
-        System.assertEquals(testSupporter.Id, registration.Supporter__c, 'The lookup for supporter should have been populated with the contact that has the funraise id referenced in the request');
         System.assertEquals(testSupporter.Id, registration.Guest_Of__c, 'The lookup for guest of should have been populated with the contact that has the funraise id referenced in the request');
         System.assertEquals(testTransaction.Id, registration.Transaction__c, 'The lookup for transaction should have been populated with the opportunity that has the funraise id referenced in the request');
         System.assertEquals(String.valueOf(request.get('firstName')), registration.First_Name__c, 'The first name should have been populated with the contact info first name in the request');
@@ -109,9 +107,7 @@ public class frFundraisingEventRegistrationTest {
         Integer errorsAfter = [SELECT COUNT() FROM Error__c];
         Test.stopTest();
 
-        List<Fundraising_Event_Registration__c> registrations = [SELECT Id, fr_ID__c, Name, Attended__c, Ticket_Name__c, 
-                                                                 Supporter__c, Fundraising_Event__c, 
-                                                                 Guest_Of__c 
+        List<Fundraising_Event_Registration__c> registrations = [SELECT Id, fr_ID__c, Name, Attended__c, Ticket_Name__c, Fundraising_Event__c, Guest_Of__c 
                                                                  FROM Fundraising_Event_Registration__c WHERE fr_ID__c = :funraiseId];
         System.assertEquals(0, registrations.size(), 'No registrations should have been created if an event id could not be matched');
         System.assertEquals(0, errorsBefore, 'Precondition');
@@ -122,11 +118,13 @@ public class frFundraisingEventRegistrationTest {
         Fundraising_Event__c testEvent = frFundraisingEventTest.getTestEvent();
         insert testEvent;
         
+        Contact guestOf = frDonorTest.getTestContact();
+        
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
         request.put('eventId', testEvent.fr_ID__c);
         request.put('supporterId', 'nonexistent');
-        request.put('guestOfId', 'nonexistent');
+        request.put('guestOfId', guestOf.fr_Id__c);
         request.put('id', funraiseId);
 
         Test.startTest();
@@ -136,12 +134,9 @@ public class frFundraisingEventRegistrationTest {
         Test.stopTest();
 
         List<Fundraising_Event_Registration__c> registrations = [SELECT Id, fr_ID__c, Name, Attended__c, Ticket_Name__c, 
-                                                                 Supporter__c, Fundraising_Event__c, 
-                                                                 Guest_Of__c 
+                                                                 Fundraising_Event__c, Guest_Of__c 
                                                                  FROM Fundraising_Event_Registration__c WHERE fr_ID__c = :funraiseId];
-        //TODO: remove below assert and uncomment this one once it's valid (a.k.a the master-detail field is removed)
-        //System.assertEquals(1, registrations.size(), 'A registration should have been created even if a supporter id could not be matched'); 
-        System.assertEquals(0, registrations.size(), 'No registrations should have been created if a supporter id could not be matched');
+        System.assertEquals(1, registrations.size(), 'A registration should have been created even if a supporter id could not be matched'); 
         System.assertEquals(0, errorsBefore, 'Precondition');
         System.assertEquals(1, errorsAfter, 'An error log should have been created to record that a supporter id could not be matched');
     }
@@ -185,15 +180,14 @@ public class frFundraisingEventRegistrationTest {
         Integer errorsAfter = [SELECT COUNT() FROM Error__c];
         Test.stopTest();
 
-        Fundraising_Event_Registration__c registration = [SELECT Id, fr_ID__c, Name, Attended__c, Ticket_Name__c, 
-                                                          Supporter__c, Fundraising_Event__c, 
-                                                          Guest_Of__c, Transaction__c
+        Fundraising_Event_Registration__c registration = [SELECT Id, fr_ID__c, Name, Attended__c, Ticket_Name__c, Registrant__c,
+                                                          Fundraising_Event__c, Guest_Of__c, Transaction__c
                                                           FROM Fundraising_Event_Registration__c WHERE fr_ID__c = :funraiseId];
         System.assertEquals(String.valueOf(request.get('name')), registration.Name, 'The registration name should be the property included in the request');
         System.assertEquals(String.valueOf(request.get('ticketName')), registration.Ticket_Name__c, 'The registration ticket name should be the property included in the request');
         System.assertEquals(Boolean.valueOf(request.get('attended')), registration.Attended__c, 'The registration attended flag should be the property included in the request');
         System.assertEquals(testEvent.Id, registration.Fundraising_Event__c, 'The lookup for event should have been populated with the event that has the funraise id referenced in the request');
-        System.assertEquals(testSupporter.Id, registration.Supporter__c, 'The lookup for supporter should have been populated with the contact that has the funraise id referenced in the request');
+        System.assertEquals(testSupporter.Id, registration.Registrant__c, 'The lookup for supporter should have been populated with the contact that has the funraise id referenced in the request');
         System.assertEquals(null, registration.Guest_Of__c, 'The lookup for guest of should not have been populated since the request did not specify a valid id');
         System.assertEquals(null, registration.Transaction__c, 'The lookup for transaction__c should not have been populated with an opportunity');
         System.assertEquals(0, errorsBefore, 'Precondition');
@@ -232,7 +226,7 @@ public class frFundraisingEventRegistrationTest {
         
         Map<String, Object> request = getTestRequest();
         request.put('eventId', existingRegistration.Fundraising_Event__r.fr_ID__c);
-        request.put('supporterId', existingRegistration.Supporter__r.fr_ID__c);
+        request.put('supporterId', existingRegistration.Registrant__r.fr_ID__c);
         request.put('guestOfId', existingRegistration.Guest_Of__r.fr_ID__c);
         request.put('id', existingRegistration.fr_Id__c);
         request.put('deleted', true);
@@ -277,8 +271,8 @@ public class frFundraisingEventRegistrationTest {
             Ticket_Name__c = 'Test Ticket Name',
             Fundraising_Event__c = testEvent.Id,
             Fundraising_Event__r = testEvent,
-            Supporter__c = testSupporter.Id,
-            Supporter__r = testSupporter,
+            Registrant__c = testSupporter.Id,
+            Registrant__r = testSupporter,
             Guest_Of__c = testSupporter.Id,
             Guest_Of__r = testSupporter,
             Attended__c = false

@@ -74,7 +74,6 @@ public class frFundraisingEventRegistration {
                 frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
                                             frUtil.Entity.SUPPORTER, funraiseSupporterId,
                                             'Registration registrant');
-                return; //TODO: remove this early return once the master-detail field is replaced with the lookup
             }
         }
         
@@ -115,7 +114,6 @@ public class frFundraisingEventRegistration {
             ),
             Attended__c = Boolean.valueOf(request.get('attended')),
             Fundraising_Event__c = event.get(0).Id,
-            Supporter__c = supporter.isEmpty() ?  null : supporter.get(0).Id, //TODO: Remove this line once we remove the master-detail field
             Registrant__c = supporter.isEmpty() ?  null : supporter.get(0).Id,
             Guest_Of__c = guestOf.isEmpty() ?  null : guestOf.get(0).Id,
             Transaction__c = transactions.isEmpty() ? null : transactions.get(0).Id,

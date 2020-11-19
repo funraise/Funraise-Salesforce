@@ -39,29 +39,9 @@
 @isTest
 public class frDataMigrationTest {
     @isTest
-    static void testRegistrationLookupMigration() {
-        Fundraising_Event__c testEvent = frFundraisingEventTest.getTestEvent();
-        insert testEvent;
-        
-        Contact testSupporter = frDonorTest.getTestContact();
-        
-        Fundraising_Event_Registration__c registration = new Fundraising_Event_Registration__c(
-            Attended__c = false,
-            Fundraising_Event__c = testEvent.Id,
-            fr_Id__c = '1234',
-            Guest_Of__c = testSupporter.Id,
-            Supporter__c = testSupporter.Id,
-            Ticket_Name__c = 'Test Ticket'
-        );
-        insert registration;
-        
+    static void test() {
         Test.startTest();
         new frDataMigration().onInstall(null);
-        Test.stopTest();
-        
-        Fundraising_Event_Registration__c requeryRegistration = [SELECT Id, Registrant__c FROM Fundraising_Event_Registration__c
-                                                                WHERE Id = :registration.Id];
-        System.assertEquals(registration.Supporter__c, requeryRegistration.Registrant__c, 'The contact id from the master-detail relationship was not copied properly to the lookup field');
-        
+        Test.stopTest();        
     }
 }
