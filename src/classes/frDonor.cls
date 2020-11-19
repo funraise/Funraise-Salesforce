@@ -108,13 +108,16 @@ public class frDonor extends frModel {
             Boolean cityAndState = String.isNotBlank(city) && String.isNotBlank(state);
             if(namePresent && String.isNotBlank(address1) && (cityAndState || String.isNotBlank(postalCode))) {
                 String byAddress = 'select Id, fr_ID__c, LastName from Contact where MailingStreet = :address1' +
-                    ' and MailingCity = :city' +
-                    ' and MailingState = :state' +
-                    ' and MailingPostalCode = :postalCode' +
-                    ' and MailingCountry = :country' +
                     ' and FirstName = :firstName' +
-                    ' and LastName = :lastName' +
-                    ' limit 1 FOR UPDATE';
+                    ' and LastName = :lastName';
+                if(cityAndState) {
+                    byAddress += ' and MailingCity = :city' +
+                    ' and MailingState = :state';
+                }
+                if(String.isNotBlank(postalCode)) {
+                    byAddress += ' and MailingPostalCode = :postalCode';
+                }
+                byAddress += ' limit 1 FOR UPDATE';
                 
                 contacts = (List<Contact>)Database.query(byAddress);
                 supporterContact = applyMatch(contacts, frId);

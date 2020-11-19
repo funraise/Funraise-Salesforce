@@ -57,7 +57,7 @@ public class frAnswer {
     
     public void create(Map<String, Object> request) {
         String funraiseId = String.valueOf(request.get('id'));
-
+        
         String questionId = String.valueOf(request.get('questionId'));
         List<Question__c> questions = [SELECT Id from Question__c WHERE fr_Id__c = :questionId];
         if(questions.isEmpty()) {
@@ -65,7 +65,7 @@ public class frAnswer {
                                         frUtil.Entity.QUESTION, questionId);
             return;
         }
-            
+        
         Contact supporter = null;
         String funraiseSupporterId = String.valueOf(request.get('supporterId'));
         if(String.isNotBlank(funraiseSupporterId)) {
@@ -115,7 +115,7 @@ public class frAnswer {
         }
         
         Answer__c answer = new Answer__c(
-        	fr_Id__c = funraiseId,
+            fr_Id__c = funraiseId,
             Answer__c = frUtil.truncateToFieldLength(
                 Answer__c.Answer__c.getDescribe(), 
                 String.valueOf(request.get('answer'))
@@ -124,7 +124,7 @@ public class frAnswer {
             Supporter__c = supporter != null ? supporter.Id : null,
             Transaction__c = opp != null ? opp.Id : null,
             Campaign_Page__c = page != null ? page.Id : null,
-			Registration__c = registration != null ? registration.Id : null
+            Registration__c = registration != null ? registration.Id : null
         );
         
         try {
