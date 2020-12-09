@@ -41,7 +41,6 @@
 public class frOpportunityPledgeCalculatorTriggerTest {
     static testMethod void newOpp_withPledge() {  
         Contact supporter = frDonorTest.getTestContact();
-        insert supporter;
         Pledge__c pledge = createPledge(supporter);
         insert pledge;
         
@@ -57,7 +56,6 @@ public class frOpportunityPledgeCalculatorTriggerTest {
     
     static testMethod void existingOpp_withNewPledge() {  
         Contact supporter = frDonorTest.getTestContact();
-        insert supporter;
         Pledge__c pledge = createPledge(supporter);
         insert pledge;
         
@@ -77,7 +75,6 @@ public class frOpportunityPledgeCalculatorTriggerTest {
     
     static testMethod void existingOpp_withNewAndOldPledge() {  
         Contact supporter = frDonorTest.getTestContact();
-        insert supporter;
         Pledge__c oldPledge = createPledge(supporter);
         Pledge__c newPledge = createPledge(supporter);
         insert new List<Pledge__c>{newPledge, oldPledge};
@@ -105,7 +102,6 @@ public class frOpportunityPledgeCalculatorTriggerTest {
     
     static testMethod void existingOpp_delete() {  
         Contact supporter = frDonorTest.getTestContact();
-        insert supporter;
         Pledge__c pledge = createPledge(supporter);
         insert pledge;
         

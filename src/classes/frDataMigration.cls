@@ -39,20 +39,6 @@
 */
 public class frDataMigration implements InstallHandler {
     public void onInstall(InstallContext context) {
-        migrateRegistration_masterDetail_to_lookup();
-    }
-    
-    private void migrateRegistration_masterDetail_to_lookup() {
-        if([SELECT COUNT() FROM Fundraising_Event_Registration__c WHERE Supporter__c != null AND Registrant__c = null] > 0) {
-            List<Fundraising_Event_Registration__c> records = [SELECT Id, Supporter__c, Registrant__c 
-                                                               FROM Fundraising_Event_Registration__c
-                                                               WHERE Supporter__c != null AND Registrant__c = null
-                                                              ];
-            for(Fundraising_Event_Registration__c record : records) {
-                record.Registrant__c = record.Supporter__c;
-            }
-            update records;
-            
-        }
+        //no migrations currently
     }
 }

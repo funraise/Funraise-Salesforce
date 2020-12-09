@@ -64,6 +64,7 @@
     </fields>
     <fields>
         <fullName>Email_Display__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <formula>IF(ISBLANK(Registrant__c), 
 Email__c,
@@ -77,6 +78,7 @@ Registrant__r.Email)</formula>
     </fields>
     <fields>
         <fullName>Email__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Email</label>
         <length>255</length>
@@ -87,6 +89,7 @@ Registrant__r.Email)</formula>
     </fields>
     <fields>
         <fullName>First_Name_Display__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <formula>IF(ISBLANK(Registrant__c), 
 First_Name__c,
@@ -100,6 +103,7 @@ Registrant__r.FirstName)</formula>
     </fields>
     <fields>
         <fullName>First_Name__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>First Name</label>
         <length>255</length>
@@ -137,6 +141,7 @@ Registrant__r.FirstName)</formula>
     </fields>
     <fields>
         <fullName>Last_Name_Display__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <formula>IF(ISBLANK(Registrant__c), 
 Last_Name__c,
@@ -150,6 +155,7 @@ Registrant__r.LastName)</formula>
     </fields>
     <fields>
         <fullName>Last_Name__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Last Name</label>
         <length>255</length>
@@ -160,6 +166,7 @@ Registrant__r.LastName)</formula>
     </fields>
     <fields>
         <fullName>Phone_Display__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <formula>IF(ISBLANK(Registrant__c), 
 Phone__c,
@@ -173,6 +180,7 @@ Registrant__r.Phone)</formula>
     </fields>
     <fields>
         <fullName>Phone__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Phone</label>
         <required>false</required>
@@ -182,6 +190,7 @@ Registrant__r.Phone)</formula>
     <fields>
         <fullName>Registrant__c</fullName>
         <deleteConstraint>SetNull</deleteConstraint>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Registrant</label>
         <referenceTo>Contact</referenceTo>
@@ -190,20 +199,6 @@ Registrant__r.Phone)</formula>
         <required>false</required>
         <trackTrending>false</trackTrending>
         <type>Lookup</type>
-    </fields>
-    <fields>
-        <fullName>Supporter__c</fullName>
-        <deprecated>false</deprecated>
-        <externalId>false</externalId>
-        <label>Supporter</label>
-        <referenceTo>Contact</referenceTo>
-        <relationshipLabel>Funraise Event Registrations</relationshipLabel>
-        <relationshipName>Funraise_Event_Registrations</relationshipName>
-        <relationshipOrder>1</relationshipOrder>
-        <reparentableMasterDetail>true</reparentableMasterDetail>
-        <trackTrending>false</trackTrending>
-        <type>MasterDetail</type>
-        <writeRequiresMasterRead>false</writeRequiresMasterRead>
     </fields>
     <fields>
         <fullName>Ticket_Amount__c</fullName>

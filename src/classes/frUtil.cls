@@ -143,6 +143,10 @@ public class frUtil {
             funraiseObject = 'Task/Interaction';
         } else if (frObject == Entity.PLEDGE) {
             funraiseObject = 'Pledge';
+        } else if (frObject == Entity.QUESTION) {
+            funraiseObject = 'Question';
+        } else if (frObject == Entity.ANSWER) {
+            funraiseObject = 'Question Answer';
         }
         return funraiseObject;
     }
@@ -156,7 +160,9 @@ public class frUtil {
         CAMPAIGN,
         EMAIL,
         TASK,
-        PLEDGE
+        PLEDGE,
+        QUESTION,
+        ANSWER
     }
     
 }

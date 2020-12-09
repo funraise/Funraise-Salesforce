@@ -241,8 +241,6 @@ public class frCampaignTest {
     
     static testMethod void testCampaignMember() {
         Contact fundraiser = frDonorTest.getTestContact();
-        fundraiser.fr_Id__c = '1432';
-        insert fundraiser;
         
 		String goalId = '10';
         String campaignName = 'New Campaign';
@@ -316,5 +314,16 @@ public class frCampaignTest {
         new frCampaign(childCampaign);
         new frCampaign(grandchildCampaign1);
         new frCampaign(grandchildCampaign2);
+    }
+    
+    public static Campaign getTestCampaign() {
+        Campaign campaign = new Campaign();
+        campaign.Name = 'Test Campaign';
+        campaign.Description = 'Test Campaign Description';
+        campaign.Status = 'Published';
+        campaign.ExpectedRevenue = 1000;
+        campaign.fr_ID__c = '19920602';
+        insert campaign;
+        return campaign;
     }
 }

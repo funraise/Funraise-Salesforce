@@ -116,7 +116,6 @@ public class frDonorTest {
     //confirm our fallback works as expected to prevent that exception
     static testMethod void syncEntity_contactLastNameFallback_existing() {
         Contact existingSupporter = getTestContact();
-        insert existingSupporter;
         
         RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
@@ -202,7 +201,7 @@ public class frDonorTest {
         Contact noMatch = new Contact(LastName = 'nomatch', FirstName = 'nomatch', Email = 'nomatch@example.com', fr_ID__c = '111');
         insert new List<Contact>{existing, noMatch};
             
-            Integer countBeforeSync = [SELECT COUNT() FROM Contact];
+        Integer countBeforeSync = [SELECT COUNT() FROM Contact];
         
         RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
@@ -226,7 +225,7 @@ public class frDonorTest {
         frWSDonorController.syncEntity();
         
         Test.stopTest();
-        
+        frTestUtil.assertNoErrors();
         MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
         
         Id contactId = response.id;
@@ -342,13 +341,21 @@ public class frDonorTest {
     public class MockResponse {
         String id;
     }
-    
-    public static Contact getTestContact() {
-        return new Contact(
+
+    public static Contact getTestContact(Boolean save) {
+        Contact contact = new Contact(
             FirstName = 'Bruce', LastName = 'Wayne', Email = 'bruce@wayne.example.com',
             MailingStreet = '1007 Mountain Drive', MailingCity = 'Gotham', MailingState = 'NJ', 
             MailingPostalCode = '12345', MailingCountry = 'United States', fr_ID__c = '123456'
         );
+        if(save) {
+            insert contact;
+        }
+        return contact;
+    }
+    
+    public static Contact getTestContact() {
+        return getTestContact(true);
     }
     
     private static String getTestPayload() {

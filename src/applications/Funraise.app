@@ -8,9 +8,11 @@
     <tabs>Funraise_Setup</tabs>
     <tabs>standard-Contact</tabs>
     <tabs>standard-Opportunity</tabs>
+    <tabs>Subscription__c</tabs>
+    <tabs>Question__c</tabs>
+    <tabs>Answer__c</tabs>
     <tabs>Fundraising_Event__c</tabs>
     <tabs>Fundraising_Event_Registration__c</tabs>
     <tabs>Error__c</tabs>
-    <tabs>Subscription__c</tabs>
     <tabs>Pledge__c</tabs>
 </CustomApplication>

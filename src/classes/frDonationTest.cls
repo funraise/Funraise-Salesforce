@@ -89,7 +89,6 @@ public class frDonationTest {
     
     static testMethod void syncEntity_existingDonor() { 
         Contact testContact = frDonorTest.getTestContact();
-        insert testContact;
         
         RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
@@ -121,7 +120,6 @@ public class frDonationTest {
     
     static testMethod void syncEntity_CampaignDonation() { 
         Contact testContact = frDonorTest.getTestContact();
-        insert testContact;
         
         Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
@@ -158,7 +156,6 @@ public class frDonationTest {
     
     static testMethod void syncEntity_donationStatusDefaulting() { 
         Contact testContact = frDonorTest.getTestContact();
-        insert testContact;
         
         Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
@@ -193,18 +190,18 @@ public class frDonationTest {
     }
     
     static testMethod void syncEntity_newOpportunityRoleMappings() { 
-        Contact donor = frDonorTest.getTestContact();
+        Contact donor = frDonorTest.getTestContact(false);
         donor.fr_Id__c = '1';
         donor.Email = 'donor@example.com';
-        Contact fundraiser = frDonorTest.getTestContact();
+        Contact fundraiser = frDonorTest.getTestContact(false);
         fundraiser.fr_Id__c = '2';
         fundraiser.Email = 'fundraiser@example.com';
-        Contact teamCaptain = frDonorTest.getTestContact();
+        Contact teamCaptain = frDonorTest.getTestContact(false);
         teamCaptain.fr_Id__c = '3';
         teamCaptain.Email = 'teamCaptain@example.com';
         insert new List<Contact>{donor, fundraiser, teamCaptain};
             
-            RestRequest req = new RestRequest();
+        RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
         
         req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
@@ -248,18 +245,18 @@ public class frDonationTest {
     }
     
     static testMethod void syncEntity_newOpportunityRoleMappings_missingContacts() { 
-        Contact donor = frDonorTest.getTestContact();
+        Contact donor = frDonorTest.getTestContact(false);
         donor.fr_Id__c = '1';
         donor.Email = 'donor@example.com';
-        Contact fundraiser = frDonorTest.getTestContact();
+        Contact fundraiser = frDonorTest.getTestContact(false);
         fundraiser.fr_Id__c = '2';
         fundraiser.Email = 'fundraiser@example.com';
-        Contact teamCaptain = frDonorTest.getTestContact();
+        Contact teamCaptain = frDonorTest.getTestContact(false);
         teamCaptain.fr_Id__c = '3';
         teamCaptain.Email = 'teamCaptain@example.com';
         insert new List<Contact>{donor, fundraiser, teamCaptain};
             
-            RestRequest req = new RestRequest();
+        RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
         
         req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
@@ -293,7 +290,6 @@ public class frDonationTest {
     
     static testMethod void syncEntity_LinkToSubscription() {  
         Contact testSupporter = frDonorTest.getTestContact();
-        insert testSupporter;
         
         Subscription__c subscription = new Subscription__c(Name = 'Test Sub', fr_ID__c = '1234', Supporter__c = testSupporter.Id);
         insert subscription;
@@ -332,7 +328,6 @@ public class frDonationTest {
     
     static testMethod void syncEntity_LinkToPledge() {  
         Contact testSupporter = frDonorTest.getTestContact();
-        insert testSupporter;
         
         Pledge__c pledge = getTestPledge(testSupporter);
         insert pledge;
@@ -370,7 +365,6 @@ public class frDonationTest {
     
     static testMethod void syncEntity_PledgeCreatesPledge() {  
         Contact testSupporter = frDonorTest.getTestContact();
-        insert testSupporter;
         
         RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
@@ -413,7 +407,6 @@ public class frDonationTest {
     
     static testMethod void syncEntity_PledgeUpdatesPledge() {  
         Contact testSupporter = frDonorTest.getTestContact();
-        insert testSupporter;
         
         Opportunity existingOpp = getTestOpp();
         existingOpp.fr_Id__c = '2048';
@@ -477,7 +470,6 @@ public class frDonationTest {
 */
     static testMethod void syncEntity_existing_alreadyLinkedToPledge() {  
         Contact testSupporter = frDonorTest.getTestContact();
-        insert testSupporter;
         Pledge__c pledge = getTestPledge(testSupporter);
         pledge.End_Date__c = Date.today().addDays(-1); //so it's no longer active
         insert pledge;
@@ -526,7 +518,6 @@ public class frDonationTest {
 */
     static testMethod void syncEntity_oldDonation_matchesInactivePledge() {  
         Contact testSupporter = frDonorTest.getTestContact();
-        insert testSupporter;
         //get a pledge that is inactive according to dates
         //but is unfulfilled in amount
         Pledge__c pledge = getTestPledge(testSupporter);
@@ -574,7 +565,6 @@ public class frDonationTest {
 */
     static testMethod void syncEntity_oldDonation_doesNotMatchInactivePledge() {  
         Contact testSupporter = frDonorTest.getTestContact();
-        insert testSupporter;
         //get a pledge that is inactive according to dates
         //but is unfulfilled in amount
         Pledge__c pledge = getTestPledge(testSupporter);
@@ -621,7 +611,6 @@ public class frDonationTest {
 */
     static testMethod void syncEntity_oppContactRoles_sameSupporter() {  
         Contact testSupporter = frDonorTest.getTestContact();
-        insert testSupporter;
         
         RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
@@ -728,7 +717,8 @@ public class frDonationTest {
         return new Opportunity(
             CloseDate = Date.today(), 
             StageName = 'Closed Won', 
-            Name = 'Unit Test Opportunity'
+            Name = 'Unit Test Opportunity',
+            fr_Id__c = '19931107'
         );
     }
     
