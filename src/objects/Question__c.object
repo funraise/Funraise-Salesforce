@@ -43,6 +43,7 @@
     <allowInChatterGroups>false</allowInChatterGroups>
     <compactLayoutAssignment>SYSTEM</compactLayoutAssignment>
     <deploymentStatus>Deployed</deploymentStatus>
+    <deprecated>false</deprecated>
     <enableActivities>false</enableActivities>
     <enableBulkApi>true</enableBulkApi>
     <enableChangeDataCapture>false</enableChangeDataCapture>
@@ -54,6 +55,7 @@
     <enableStreamingApi>true</enableStreamingApi>
     <fields>
         <fullName>Description__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Description</label>
         <length>255</length>
@@ -64,6 +66,7 @@
     </fields>
     <fields>
         <fullName>Name__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Name</label>
         <length>255</length>
@@ -74,6 +77,7 @@
     </fields>
     <fields>
         <fullName>Type__c</fullName>
+        <deprecated>false</deprecated>
         <description>Defines the type of the custom question, such as Text, Date, or Picklist</description>
         <externalId>false</externalId>
         <label>Type</label>
@@ -86,6 +90,7 @@
     <fields>
         <fullName>fr_Id__c</fullName>
         <caseSensitive>false</caseSensitive>
+        <deprecated>false</deprecated>
         <externalId>true</externalId>
         <label>Funraise ID</label>
         <length>255</length>

@@ -43,6 +43,7 @@
     <allowInChatterGroups>false</allowInChatterGroups>
     <compactLayoutAssignment>SYSTEM</compactLayoutAssignment>
     <deploymentStatus>Deployed</deploymentStatus>
+    <deprecated>false</deprecated>
     <enableActivities>false</enableActivities>
     <enableBulkApi>true</enableBulkApi>
     <enableChangeDataCapture>false</enableChangeDataCapture>
@@ -54,6 +55,7 @@
     <enableStreamingApi>true</enableStreamingApi>
     <fields>
         <fullName>Answer__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Answer</label>
         <length>500</length>
@@ -64,6 +66,7 @@
     <fields>
         <fullName>Campaign_Page__c</fullName>
         <deleteConstraint>SetNull</deleteConstraint>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Campaign Page</label>
         <referenceTo>Campaign</referenceTo>
@@ -75,6 +78,7 @@
     </fields>
     <fields>
         <fullName>Question__c</fullName>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Question</label>
         <referenceTo>Question__c</referenceTo>
@@ -89,6 +93,7 @@
     <fields>
         <fullName>Registration__c</fullName>
         <deleteConstraint>SetNull</deleteConstraint>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Registration</label>
         <referenceTo>Fundraising_Event_Registration__c</referenceTo>
@@ -101,6 +106,7 @@
     <fields>
         <fullName>Supporter__c</fullName>
         <deleteConstraint>SetNull</deleteConstraint>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Supporter</label>
         <referenceTo>Contact</referenceTo>
@@ -113,6 +119,7 @@
     <fields>
         <fullName>Transaction__c</fullName>
         <deleteConstraint>SetNull</deleteConstraint>
+        <deprecated>false</deprecated>
         <externalId>false</externalId>
         <label>Transaction</label>
         <referenceTo>Opportunity</referenceTo>
@@ -125,6 +132,7 @@
     <fields>
         <fullName>fr_Id__c</fullName>
         <caseSensitive>false</caseSensitive>
+        <deprecated>false</deprecated>
         <externalId>true</externalId>
         <label>Funraise ID</label>
         <length>255</length>
