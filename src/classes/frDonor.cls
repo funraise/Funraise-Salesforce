@@ -66,7 +66,7 @@ public class frDonor extends frModel {
         Contact supporterContact = null;
         String frId = String.valueOf(request.get('id'));
         //try to find a donor that's already been integrated, use their funraise ID
-        List<Contact> contacts = (List<Contact>)Database.query('select Id, fr_ID__c, LastName from Contact where fr_ID__c = :frId FOR UPDATE');
+        List<Contact> contacts = (List<Contact>)Database.query('select Id, fr_ID__c, LastName from Contact where fr_ID__c = :frId');
         if(contacts != null && contacts.size() > 0) {
             supporterContact = contacts.get(0);
         }
@@ -81,14 +81,14 @@ public class frDonor extends frModel {
                     contacts = (List<Contact>)Database.query(
                         'select Id, fr_ID__c, LastName from Contact where '+
                         'Email = :email AND FirstName = :firstName AND LastName = :lastName '+
-                        'limit 1 FOR UPDATE'
+                        'limit 1'
                     );
                     supporterContact = applyMatch(contacts, frId);
                 }
                 
                 //if name wasn't present or no match was found, try on email only
                 if(supporterContact == null) {
-                    contacts = (List<Contact>)Database.query('select Id, fr_ID__c, LastName from Contact where Email = :email limit 1 FOR UPDATE');
+                    contacts = (List<Contact>)Database.query('select Id, fr_ID__c, LastName from Contact where Email = :email limit 1');
                     supporterContact = applyMatch(contacts, frId);                 
                 }
                 
@@ -117,7 +117,7 @@ public class frDonor extends frModel {
                 if(String.isNotBlank(postalCode)) {
                     byAddress += ' and MailingPostalCode = :postalCode';
                 }
-                byAddress += ' limit 1 FOR UPDATE';
+                byAddress += ' limit 1';
                 
                 contacts = (List<Contact>)Database.query(byAddress);
                 supporterContact = applyMatch(contacts, frId);
