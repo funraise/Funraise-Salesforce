@@ -64,13 +64,9 @@ public class frDonorTest {
         
         Test.stopTest();
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        
-        Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
-                      'There was not an contact Id in the response as expected');
-        Contact newContact = [SELECT Id, fr_ID__c FROM Contact WHERE Id = :contactId];
-        System.assertEquals('856', newContact.fr_ID__c, 'The funraise donor id was not populated to the contact field');
+        String frId = String.valueOf(getTestRequest().get('id'));
+        Integer newContact = [SELECT COUNT() FROM Contact WHERE fr_Id__c = :frId];
+        System.assertEquals(1, newContact, 'The funraise donor id was not populated to the contact field');
     }
     
     //If the contact's last name field is blank, we'll assume its because there's no last name in funraise
@@ -102,13 +98,8 @@ public class frDonorTest {
         
         Test.stopTest();
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        
-        Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
-                      'There was not an contact Id in the response as expected');
-        Contact newContact = [SELECT Id, fr_ID__c, LastName FROM Contact WHERE Id = :contactId];
-        System.assertEquals('856', newContact.fr_ID__c, 'The funraise donor id was not populated to the contact field');
+        String frId = String.valueOf(getTestRequest().get('id'));
+        Contact newContact = [SELECT Id, fr_ID__c, LastName FROM Contact WHERE fr_Id__c = :frId];
         System.assertEquals(String.valueOf(requestBody.get('institutionName')), newContact.LastName, 'We expected a fallback so that the contact would still get created');
     }
     
@@ -145,13 +136,8 @@ public class frDonorTest {
         
         Test.stopTest();
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        
-        Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
-                      'There was not an contact Id in the response as expected');
-        Contact newContact = [SELECT Id, fr_ID__c, LastName FROM Contact WHERE Id = :contactId];
-        System.assertEquals(existingSupporter.fr_Id__c, newContact.fr_ID__c, 'The funraise donor id was not populated to the contact field');
+        String frId = existingSupporter.fr_Id__c;
+        Contact newContact = [SELECT Id, fr_ID__c, LastName FROM Contact WHERE fr_Id__c = :frId];
         System.assertEquals(String.valueOf(requestBody.get('institutionName')), newContact.LastName, 'We expected a fallback so that the contact would still get created');
     }
     
@@ -160,7 +146,7 @@ public class frDonorTest {
         Contact noMatch = new Contact(LastName = 'nomatch', FirstName = 'nomatch', Email = 'nomatch@example.com', fr_ID__c = '111');
         insert new List<Contact>{existing, noMatch};
             
-            Integer countBeforeSync = [SELECT COUNT() FROM Contact];
+        Integer countBeforeSync = [SELECT COUNT() FROM Contact];
         
         RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
@@ -185,13 +171,9 @@ public class frDonorTest {
         
         Test.stopTest();
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        
-        Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
-                      'There was not an contact Id in the response as expected');
-        System.assertEquals(existing.Id, contactId, 'The existing contact should have been used');
-        Contact newContact = [SELECT Id, fr_ID__c, Email FROM Contact WHERE Id = :contactId];
+        String frId = String.valueOf(getTestRequest().get('id'));
+		Contact syncedContact = [SELECT Id, fr_ID__c, Email FROM Contact WHERE fr_Id__c = :frId];
+        System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
         Integer countAfterSync = [SELECT COUNT() FROM Contact];
         System.assertEquals(countBeforeSync, countAfterSync, 'No additional contacts should have been created');
     }
@@ -226,16 +208,11 @@ public class frDonorTest {
         
         Test.stopTest();
         frTestUtil.assertNoErrors();
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        
-        Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
-                      'There was not an contact Id in the response as expected');
-        System.assertEquals(existing.Id, contactId, 'The existing contact should have been used');
-        Contact newContact = [SELECT Id, fr_ID__c FROM Contact WHERE Id = :contactId];
+        String frId = String.valueOf(getTestRequest().get('id'));
+        Contact syncedContact = [SELECT Id, fr_ID__c FROM Contact WHERE fr_Id__c = :frId];
+        System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
         Integer countAfterSync = [SELECT COUNT() FROM Contact];
         System.assertEquals(countBeforeSync, countAfterSync, 'No additional contacts should have been created');
-        System.assertEquals('856', newContact.fr_ID__c, 'The funraise Id should be populated on the existing contact matched by email');
     }
     
     static testMethod void syncEntity_existing_match_address() {
@@ -275,16 +252,11 @@ public class frDonorTest {
         
         Test.stopTest();
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class); 
-        
-        Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
-                      'There was not an contact Id in the response as expected');
-        System.assertEquals(existing.Id, contactId, 'The existing contact should have been used');
-        Contact newContact = [SELECT Id, fr_ID__c FROM Contact WHERE Id = :contactId];
+        String frId = String.valueOf(getTestRequest().get('id'));
+        Contact syncedContact = [SELECT Id, fr_ID__c FROM Contact WHERE fr_Id__c = :frId];
+        System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
         Integer countAfterSync = [SELECT COUNT() FROM Contact];
         System.assertEquals(countBeforeSync, countAfterSync, 'No additional contacts should have been created');
-        System.assertEquals('856', newContact.fr_ID__c, 'The funraise Id should be populated on the existing contact matched by address');
     }
     
     static testMethod void syncEntity_badMappings() {
@@ -323,23 +295,15 @@ public class frDonorTest {
         }
         System.assertEquals(2, errors.size(), 'Only 2 bad mapping errors were expected (Date and Datetime fields): Errors:' + errorsStr);
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
         
         //but even with bad field mappings the record should still come over correctly
-        Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
-                      'There was not an contact Id in the response as expected');
-        Contact newContact = [SELECT Id, fr_ID__c FROM Contact WHERE Id = :contactId];
-        
-        System.assertEquals('856', newContact.fr_ID__c, 'The funraise donor id was not populated to the contact field');
+        String frId = String.valueOf(getTestRequest().get('id'));
+        Integer newContacts = [SELECT COUNT() FROM Contact WHERE fr_Id__c = :frId];
+        System.assertEquals(1, newContacts, 'The funraise donor id was not populated to the contact field');
     }
     
     private static void createMapping(String frField, String sfField) {
         insert new frMapping__c(Name = frField+sfField, fr_Name__c = frField, sf_Name__c = sfField, Type__c = frDonor.TYPE);
-    }
-    
-    public class MockResponse {
-        String id;
     }
 
     public static Contact getTestContact(Boolean save) {
@@ -362,7 +326,7 @@ public class frDonorTest {
         return Json.serialize(getTestRequest());
     }
     
-    private static Map<String, Object> getTestRequest() {
+    public static Map<String, Object> getTestRequest() {
         Map<String, Object> request = new Map<String, Object>();
         request.put('id', 856);
         request.put('organizationId', 'ae8d412b-db97-49dc-8c8c-5bfe0f41fc6d');

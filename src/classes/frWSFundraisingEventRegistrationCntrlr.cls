@@ -43,7 +43,6 @@ global with sharing class frWSFundraisingEventRegistrationCntrlr {
     
     @HttpPost
     global static void syncEntity() {
-        Map<String, Object> request = (Map<String, Object>)JSON.deserializeUntyped(RestContext.request.requestBody.toString());
-        frFundraisingEventRegistration registration = new frFundraisingEventRegistration(request);
+        frWSBaseController.syncEntity(frUtil.Entity.REGISTRATION);
     }
 }

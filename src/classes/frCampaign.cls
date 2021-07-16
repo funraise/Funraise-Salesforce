@@ -38,23 +38,33 @@
 * AUTHOR: Jordan Speer
 */
 
-public class frCampaign {
-    
-    public frCampaign(Map<String, Object> request) {
-        if (Boolean.valueOf(request.get('deleted'))) {
-            deleteCampaign(request);
-        } else {
-            create(request);
-        }
+public class frCampaign extends frModel implements frSyncable {
+    public frCampaign(Sync_Attempt__c syncRecord){
+        super(syncRecord);
     }
     
-    public void deleteCampaign(Map<String, Object> request) {
+    public Boolean sync() {
+        Boolean result = false;
+        Map<String, Object> request = 
+            (Map<String, Object>)JSON.deserializeUntyped(syncRecord.Request_Body__c);
+        if (Boolean.valueOf(request.get('deleted'))) {
+            result = deleteCampaign(request);
+        } else {
+            result = create(request);
+        }
+        return result;
+    }
+    
+    private Boolean deleteCampaign(Map<String, Object> request) {
+        Boolean result = false;
         String goalId = String.valueOf(request.get('goalId'));
         try {
             List<Campaign> campaigns = [SELECT Id, fr_ID__c, ParentId, 
                                  (SELECT Id, fr_ID__c, ParentId from ChildCampaigns)
                                  from Campaign where fr_ID__c = :goalId];
-            if(campaigns.size() == 0) {return;}
+            if(campaigns.size() == 0) {
+                return true;
+            }
             Campaign campaignToDelete = campaigns.get(0);
             if (campaignToDelete.ChildCampaigns.size() > 0) {
                 if(String.isNotBlank(campaignToDelete.ParentId)) {
@@ -67,13 +77,15 @@ public class frCampaign {
                 }
             }
             delete campaignToDelete;
-            return;
+            result = true;
         } catch (DMLException e) {
-            frUtil.logException(frUtil.Entity.CAMPAIGN, goalId, e);
+            if(createLogRecord) frUtil.logException(frUtil.Entity.CAMPAIGN, goalId, e);
         }
+        return result;
     }
     
-    public void create(Map<String, Object> request) {
+    private Boolean create(Map<String, Object> request) {
+        Boolean result = false;
         String goalId = String.valueOf(request.get('goalId'));
         
         Campaign newCampaign = new Campaign();
@@ -89,15 +101,16 @@ public class frCampaign {
             if(parentCampaigns.size() > 0) {
                 newCampaign.ParentId = parentCampaigns.get(0).Id;                
             } else {
-                frUtil.logRelationshipError(frUtil.Entity.CAMPAIGN, goalId, 
+                if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.CAMPAIGN, goalId, 
                                             frUtil.Entity.CAMPAIGN, parentId);
             }
         }
         try {
             Database.upsert(newCampaign, Campaign.Field.fr_ID__c, true);
+            result = true;
         } catch (DMLException e) {
-            frUtil.logException(frUtil.Entity.CAMPAIGN, goalId, e);
-			return;
+            if(createLogRecord) frUtil.logException(frUtil.Entity.CAMPAIGN, goalId, e);
+			return result;
         }
         
         String supporterFunraiseId = String.valueOf(request.get('supporterId'));        
@@ -113,15 +126,17 @@ public class frCampaign {
                     );
                     try {
                         insert fundraiserMember;
+                        result = true;
                     } catch (DMLException ex) {
-                        frUtil.logException(frUtil.Entity.CAMPAIGN, goalId, ex);
-                        return;
+                        if(createLogRecord) frUtil.logException(frUtil.Entity.CAMPAIGN, goalId, ex);
+                        result = false;
                     }
                 }
             } else {
-                frUtil.logRelationshipError(frUtil.Entity.CAMPAIGN, goalId, 
+                if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.CAMPAIGN, goalId, 
                                             frUtil.Entity.SUPPORTER, supporterFunraiseId);
             }
         }
+        return result;
     }
 }

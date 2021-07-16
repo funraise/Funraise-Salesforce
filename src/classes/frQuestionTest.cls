@@ -141,7 +141,7 @@ public class frQuestionTest {
         System.assertEquals(countAfter, 0, 'The question should have been deleted');
     }
     
-    private static Map<String, Object> getTestRequest() {
+    public static Map<String, Object> getTestRequest() {
         Map<String, Object> request = new Map<String, Object>();
         request.put('id', 1234);
         request.put('name', 'Test Question');

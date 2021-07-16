@@ -37,8 +37,8 @@
 * CREATED: 2020 Funraise Inc - https://funraise.io
 * AUTHOR: Alex Molina
 */
-public class frDataMigration implements InstallHandler {
-    public void onInstall(InstallContext context) {
+public class frDataMigration {
+    public static void runMigrations() {
         //no migrations currently
     }
 }

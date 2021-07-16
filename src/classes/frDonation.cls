@@ -38,22 +38,7 @@
 * AUTHOR: Jason M. Swenski
 */
 
-public class frDonation extends frModel {
-    //Donation statuses
-    private static final String COMPLETE = 'Complete';
-    private static final String PENDING = 'Pending';
-    private static final String REFUNDED = 'Refunded';
-    private static final String FAILED = 'Failed';
-    
-    //Opportunity Contact Role types
-    @TestVisible private static final String OPP_ROLE_DONOR = 'Donor';
-    @TestVisible private static final String OPP_ROLE_FUNDRAISER = 'Fundraiser';
-    @TestVisible private static final String OPP_ROLE_TEAM_CAPTAIN = 'Team Captain';
-    @TestVisible private static final String OPP_ROLE_SOFT_CREDIT = 'Soft Credit';
-    
-    private static final String META_OPP_CONTACT_MAPPING_KEY = 'opportunityContactMappingDisabled';
-    private static final String META_CAMPAIGN_MAPPING_KEY = 'campaignMappingDisabled';
-    
+public class frDonation extends frModel implements frSyncable {
     public static List<frMapping__c> mappings {
         get {
             if(mappings == null) {
@@ -64,23 +49,22 @@ public class frDonation extends frModel {
         set;
     }
     
-    public override List<frMapping__c> getMappings() {
+    protected override List<frMapping__c> getMappings() {
         return mappings;
-    }
-    public static final String TYPE = 'Donation';
-    protected override SObject getObject() {
-        return o;
     }
     
     private Opportunity o;
     
-    public Opportunity getOpportunity() {
-        return o;
+    public frDonation(Sync_Attempt__c syncRecord){
+        super(syncRecord);
     }
     
-    public frDonation(Map<String, Object> request) {
+    public Boolean sync() {
+        Boolean result = false;
+        Map<String, Object> request = 
+            (Map<String, Object>)JSON.deserializeUntyped(syncRecord.Request_Body__c);
         o = new Opportunity();
-        super.populateFromRequest(request);
+        applyMappings(o, request);
         String funraiseId = String.valueOf(request.get('id'));
         
         String status = String.valueOf(request.get('status'));
@@ -106,7 +90,7 @@ public class frDonation extends frModel {
                     o.AccountId = supporterContact.AccountId;
                 }
             } else {
-                frUtil.logRelationshipError(frUtil.Entity.DONATION, funraiseId, 
+                if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.DONATION, funraiseId, 
                                             frUtil.Entity.SUPPORTER, supporterFunraiseId);
             }
         }
@@ -136,7 +120,7 @@ public class frDonation extends frModel {
                                             frUtil.Entity.SUBSCRIPTION, subscriptionId);
             }
         }
-        Opportunity opp = getOpportunity();
+        Opportunity opp = this.o;
         
         
         Boolean isPledge = Boolean.valueOf(request.get('pledge'));
@@ -149,16 +133,23 @@ public class frDonation extends frModel {
         
         try {
             Database.upsert(opp, Opportunity.Fields.fr_Id__c, true);
+            result = true;
         } catch (Exception ex) {
             frUtil.logException(frUtil.Entity.DONATION, funraiseId, ex);
         }
         
-        if(isPledge) {
+        if(isPledge && opp.Id != null) {
             frPledge.create(opp);
         }
-    }
+        
+        if(opp.Id != null) {
+            createOpportunityMapping(request);
+        }
+        return result;
+    } 
+   
     
-    public void createOpportunityMapping(Map<String, Object> request) {
+    private void createOpportunityMapping(Map<String, Object> request) {
         Boolean mappingDisabled = request.containsKey(META_OPP_CONTACT_MAPPING_KEY) ?
             Boolean.valueOf(request.get(META_OPP_CONTACT_MAPPING_KEY)): true;
         if(mappingDisabled) {
@@ -255,11 +246,27 @@ public class frDonation extends frModel {
         return newRole;
     }
     
-    public Boolean hasDonor() {
-        return getOpportunity() != null && getOpportunity().fr_Donor__c != null;
+    public String getOpportunityId() {
+        return this.o != null ? this.o.Id : null;
     }
     
-    public String getOpportunityId() {
-        return getOpportunity() != null ? getOpportunity().Id : null;
-    }
+    
+    ///CONSTANTS///
+
+    public static final String TYPE = 'Donation';
+    
+    //Donation statuses
+    private static final String COMPLETE = 'Complete';
+    private static final String PENDING = 'Pending';
+    private static final String REFUNDED = 'Refunded';
+    private static final String FAILED = 'Failed';
+    
+    //Opportunity Contact Role types
+    @TestVisible private static final String OPP_ROLE_DONOR = 'Donor';
+    @TestVisible private static final String OPP_ROLE_FUNDRAISER = 'Fundraiser';
+    @TestVisible private static final String OPP_ROLE_TEAM_CAPTAIN = 'Team Captain';
+    @TestVisible private static final String OPP_ROLE_SOFT_CREDIT = 'Soft Credit';
+    
+    private static final String META_OPP_CONTACT_MAPPING_KEY = 'opportunityContactMappingDisabled';
+    private static final String META_CAMPAIGN_MAPPING_KEY = 'campaignMappingDisabled';
 }

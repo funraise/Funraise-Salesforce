@@ -43,13 +43,6 @@ global with sharing class frWSDonorController {
 
     @HttpPost
     global static void syncEntity() {
-        Map<String, Object> request = (Map<String, Object>)JSON.deserializeUntyped(RestContext.request.requestBody.toString());
-        frDonor donor = new frDonor(request);
-
-        Map<String,Object> resp = new Map<String,Object>();
-        resp.put('id', donor.getContactId());
-
-        RestContext.response.addHeader('Content-Type', 'application/json');
-        RestContext.response.responseBody = Blob.valueOf(JSON.serialize(resp));
+        frWSBaseController.syncEntity(frUtil.Entity.SUPPORTER);
     }
 }

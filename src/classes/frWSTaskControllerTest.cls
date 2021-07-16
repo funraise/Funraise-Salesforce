@@ -39,10 +39,11 @@
 */
 @isTest
 public class frWSTaskControllerTest {
-    static testMethod void syncEntity_test() {
-        insert new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'testExisting@example.com', fr_ID__c = '410');
-        insert new Opportunity(fr_ID__c = '67', StageName = 'Closed Won', Name = 'donation1', CloseDate = Date.today());
-        insert new Opportunity(fr_ID__c = '68', StageName = 'Closed Won', Name = 'donation2', CloseDate = Date.today());
+    static testMethod void syncEntity_task() {
+        Contact supporter = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'testExisting@example.com', fr_ID__c = '410');
+		Opportunity donation = new Opportunity(fr_ID__c = '67', StageName = 'Closed Won', Name = 'donation1', CloseDate = Date.today());
+        Opportunity unrelatedDonation = new Opportunity(fr_ID__c = '68', StageName = 'Closed Won', Name = 'donation2', CloseDate = Date.today());
+        insert new List<SObject>{supporter, donation, unrelatedDonation};
         
         RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
@@ -59,29 +60,143 @@ public class frWSTaskControllerTest {
         
         Test.stopTest();
         
-        Map<String, Object> response = (Map<String, Object>)JSON.deserializeUntyped(
-            res.responseBody.toString()
-        );
+        List<Task> expectedTasks = [SELECT Id, WhoId, WhatId FROM Task WHERE fr_Task_ID__c = '856'];
+        System.assertEquals(1, expectedTasks.size(), 'An unexpected number of tasks were returned');
+        Task expectedTask = expectedTasks.get(0);
+        System.assertEquals(expectedTask.WhoId, supporter.Id, 'The task was not related to the correct supporter');
+        System.assertEquals(expectedTask.WhatId, donation.Id, 'The task was not related to the correct opportunity');
+    }
+    
+    static testMethod void syncEntity_interaction() {
+        Contact supporter = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'testExisting@example.com', fr_ID__c = '410');
+        insert supporter;
         
-        Boolean success = (Boolean)response.get('success');
-        System.assert(success, 'task update failed');
+        Map<String, Object> request = getTestRequest();
+        request.put('taskType', 'Interaction');
+        request.remove('donationId');
         
-        String message = (String)response.get('message');
-        System.assertEquals('', message, 'error message on update');
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/task';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        RestContext.request = req;
+        RestContext.response = res;
+        
+        Test.startTest();
+        
+        frWSTaskController.syncEntity();
+        
+        Test.stopTest();
+        
+        List<Task> expectedTasks = [SELECT Id, WhoId, WhatId FROM Task WHERE fr_Task_ID__c = '856'];
+        System.assertEquals(1, expectedTasks.size(), 'An unexpected number of tasks were returned');
+        Task expectedTask = expectedTasks.get(0);
+        System.assertEquals(expectedTask.WhoId, supporter.Id, 'The interaction was not related to the correct supporter');
+    }
+
+    static testMethod void syncEntity_missingSupporter() {
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/task';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(getTestPayload());
+        RestContext.request = req;
+        RestContext.response = res;
+        
+        Test.startTest();
+        
+        frWSTaskController.syncEntity();
+        
+        Test.stopTest();
+        
+        Integer resultingTasks = [SELECT COUNT() FROM Task WHERE fr_Task_ID__c != null];
+        System.assertEquals(0, resultingTasks, 'A task should not have been created if the supporter/contact could not be found');
+    }
+    
+    static testMethod void syncEntity_testDelete() {
+        Contact supporter = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'testExisting@example.com', fr_ID__c = '410');
+		Opportunity donation = new Opportunity(fr_ID__c = '67', StageName = 'Closed Won', Name = 'donation1', CloseDate = Date.today());
+        insert new List<SObject>{supporter, donation};
+            
+        Task existingTask = new Task(fr_Task_Id__c = '856', Description = 'Test Task', Priority = 'Normal', WhoId = supporter.Id,
+                                    WhatId = donation.Id);
+        insert existingTask;
+
+        Map<String, Object> request = getTestRequest();
+        request.put('deleted', true);
+        
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/task';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        RestContext.request = req;
+        RestContext.response = res;
+        
+        Test.startTest();
+        
+        frWSTaskController.syncEntity();
+        
+        Test.stopTest();
+        
+        Integer expectedTasks = [SELECT COUNT() FROM Task WHERE fr_Task_ID__c = :existingTask.fr_Task_Id__c];
+        System.assertEquals(0, expectedTasks, 'The task should have been deleted');
+    }
+    
+    
+    
+    static testMethod void syncEntity_testDelete_notFound() {
+        Contact supporter = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'testExisting@example.com', fr_ID__c = '410');
+		Opportunity donation = new Opportunity(fr_ID__c = '67', StageName = 'Closed Won', Name = 'donation1', CloseDate = Date.today());
+        insert new List<SObject>{supporter, donation};
+            
+        Task existingTask = new Task(fr_Task_Id__c = '111', Description = 'Test Task', Priority = 'Normal', WhoId = supporter.Id,
+                                    WhatId = donation.Id);
+        insert existingTask;
+
+        Map<String, Object> request = getTestRequest();
+        request.put('id', 222); //different from request, won't be found. nothing should be deleted
+        request.put('deleted', true);
+        
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/task';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        RestContext.request = req;
+        RestContext.response = res;
+        
+        Test.startTest();
+        
+        frWSTaskController.syncEntity();
+        
+        Test.stopTest();
+        
+        Integer expectedTasks = [SELECT COUNT() FROM Task WHERE fr_Task_ID__c = :existingTask.fr_Task_Id__c];
+        System.assertEquals(1, expectedTasks, 'The existing task should NOT have been deleted');
+    }
+    
+    public static Map<String, Object> getTestRequest() {
+        Map<String, Object> request = new Map<String, Object>();
+        request.put('id', 856);
+        request.put('status', 'Pending');
+        request.put('donationId', 67);
+        request.put('donorId', 410);
+        request.put('description', 'Test description');
+        request.put('taskType', 'Activity');
+        request.put('createdDate', 1493077510493L);
+        request.put('updtime', 1487801043934L);
+        request.put('completedDate', 1487801043597L);
+        request.put('deleted', false);
+        return request;
     }
     
     private static String getTestPayload() {
-        
-        return '{'+
-                '"id":856,'+
-                '"status":"Pending",'+
-                '"donationId":67,'+
-                '"donorId":410,'+
-                '"description":"Test description",'+
-                '"taskType":"Activity",'+
-                '"createdDate":1493077510493,'+
-                '"updtime":1487801043934,'+
-                '"completedDate":1487801043597'+
-            '}';
+        return Json.serialize(getTestRequest());
     }
 }

@@ -40,11 +40,12 @@
 @isTest
 public class frDonorEmailsTest {
     static testMethod void create_ExistingContact_test() {
+        String emailId = '1234';
         Contact testContact = frDonorTest.getTestContact();
 
         Map<String, Object> request = new Map<String, Object>();
         request.put('donorId', testContact.fr_Id__c);
-        request.put('id', 4);
+        request.put('id', emailId);
         request.put('messageId', 'db92570b-766b-46b9-8b7a-a0c7efa92053');
         request.put('correlationId', '4aeeCRcARIamde0uiZAr6Q');
         request.put('fromAddress', 'test@funraise.io');
@@ -54,12 +55,20 @@ public class frDonorEmailsTest {
         request.put('sentDate', 1536184380L);
         request.put('subject', 'Hello there!');
 
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/email';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        RestContext.request = req;
+        RestContext.response = res;
         Test.startTest();
-        String responseEmailId = frDonorEmails.create(request);
+        frWSDonorEmailController.syncEntity();
         Test.stopTest();
 
         frTestUtil.assertNoErrors();
-        EmailMessage newEmail = [SELECT Id, fromAddress FROM EmailMessage WHERE Id = :responseEmailId];
+        EmailMessage newEmail = [SELECT Id, fromAddress FROM EmailMessage WHERE fr_Email_ID__c = :emailId];
         System.assertEquals('test@funraise.io', newEmail.fromAddress, 'The fromAddress was not correct');
     }
 
@@ -76,12 +85,20 @@ public class frDonorEmailsTest {
         request.put('sentDate', 1536184380L);
         request.put('subject', 'Hello there!');
         
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/email';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        RestContext.request = req;
+        RestContext.response = res;
         Test.startTest();
-        String responseEmailId = frDonorEmails.create(request);
+        frWSDonorEmailController.syncEntity();
         Test.stopTest();
         
-        System.assertEquals(null, responseEmailId, 'We did not expect the email to be created created when the supporter could not be found');
-        System.assertEquals(1, [SELECT COUNT() FROM Error__c], 'There should be an error for not being able to find the related supporter');
+        System.assertEquals(0, [SELECT COUNT() FROM EmailMessage], 'We did not expect the email to be created created when the supporter could not be found');
+        System.assertEquals(1, [SELECT COUNT() FROM Sync_Attempt__c], 'There should be sync attempt generated to retry later');
     }
     
     static testMethod void syncEntity_test() {
@@ -92,7 +109,7 @@ public class frDonorEmailsTest {
         RestRequest req = new RestRequest();
         RestResponse res = new RestResponse();
 
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donoremail';
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/email';
         req.httpMethod = 'POST';
         req.requestBody = Blob.valueOf(getTestPayload());
         RestContext.request = req;
@@ -103,36 +120,32 @@ public class frDonorEmailsTest {
         frWSDonorEmailController.syncEntity();
 
         Test.stopTest();
-        
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
 
-		frTestUtil.assertNoErrors();        
-        Id emailId = response.id;
-        System.assert(String.isNotBlank(emailId), 'There was not an email Id in the response as expected');
-        EmailMessage newEmail = [SELECT fromAddress, (SELECT Id, RelationId FROM EmailMessageRelations WHERE RelationType = 'ToAddress') FROM EmailMessage WHERE Id = :emailId];
+		frTestUtil.assertNoErrors();      
+        EmailMessage newEmail = [SELECT fromAddress, (SELECT Id, RelationId FROM EmailMessageRelations WHERE RelationType = 'ToAddress') FROM EmailMessage WHERE fr_Email_Id__c = '4'];
         System.assertEquals('email@funraise.io', newEmail.fromAddress, 'The funraise email address was not correct');
         System.assertEquals(1, newEmail.EmailMessageRelations.size(), 'There should be a single email relation on the message. '+newEmail.EmailMessageRelations);
         Contact supporter = [SELECT Id, fr_ID__c FROM Contact WHERE Id = :newEmail.EmailMessageRelations.get(0).RelationId];
         System.assertEquals(testContact.Id, supporter.Id, 'The email should have been associated with the contact with the same fr_ID__c as the request had');
         System.assertEquals(testContact.fr_Id__c, supporter.fr_ID__c, 'The email should have been associated with the contact referenced in the request');
     }
-
-    public class MockResponse {
-        String id;
+    
+    public static Map<String, Object> getTestRequest() {
+        Map<String, Object> request = new Map<String, Object>();
+        request.put('donorId',856);
+        request.put('id', 4);
+        request.put('messageId', 'db92570b-766b-46b9-8b7a-a0c7efa92053');
+        request.put('correlationId', '4aeeCRcARIamde0uiZAr6Q');
+        request.put('fromAddress', 'email@funraise.io');
+        request.put('fromName', 'John Smith');
+        request.put('toAddress', 'testEmail@google.com');
+        request.put('statusCode', 202);
+        request.put('sentDate', 1536184380L);
+        request.put('subject', 'Hello there');
+        return request;
     }
 
     private static String getTestPayload() {
-        return '{'+
-            '"donorId":856,'+
-            '"id": 4,'+
-            '"messageId": "db92570b-766b-46b9-8b7a-a0c7efa92053",'+
-            '"correlationId": "4aeeCRcARIamde0uiZAr6Q",'+
-            '"fromAddress": "email@funraise.io",' +
-            '"fromName": "John Smith",' +
-            '"toAddress": "testEmail@google.com",' +
-            '"statusCode": 202,'+
-            '"sentDate": ' + 1536184380L + ','+
-            '"subject": "Hello there"'+
-            '}';
+        return Json.serialize(getTestRequest());
     }
 }
