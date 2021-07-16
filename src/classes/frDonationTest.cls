@@ -64,19 +64,9 @@ public class frDonationTest {
         frWSDonationController.syncEntity();
         
         Test.stopTest();
-        
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        
-        List<Error__c> errors = [SELECT Id, Name, Error__c from Error__c];
-        System.assertEquals(1, errors.size(), 
-                            'They were unexpected errors. Errors: '+errors);
-        System.assert(errors.get(0).Error__c.contains('Failed to find related record'), 
-                      'The error message was not the expected one');
-        
-        Id oppId = response.id;
-        System.assert(String.isNotBlank(oppId), 
-                      'There was not an opportunity Id in the response as expected');
-        Opportunity newOpportunity = [SELECT Id, fr_ID__c, StageName, Name, Description, Probability, TotalOpportunityQuantity FROM Opportunity WHERE Id = :oppId];
+                
+        String oppFrId = String.valueOf(getTestRequest().get('id'));
+        Opportunity newOpportunity = [SELECT Id, fr_ID__c, StageName, Name, Description, Probability, TotalOpportunityQuantity FROM Opportunity WHERE fr_Id__c = :oppFrId];
         System.assertEquals('Closed Won', newOpportunity.StageName, 'The constant mapping for StageName was not used');
         System.assertEquals(95, newOpportunity.Probability, 'The constant mapping for Probability was not used');
         System.assertEquals(1.5, newOpportunity.TotalOpportunityQuantity, 'The constant mapping for Total Opportunity Quantity was not used');
@@ -106,13 +96,9 @@ public class frDonationTest {
         
         Test.stopTest();
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
         frTestUtil.assertNoErrors();
-        
-        Id oppId = response.id;
-        System.assert(String.isNotBlank(oppId), 
-                      'There was not an opportunity Id in the response as expected');
-        Opportunity newOpportunity = [SELECT Id, fr_ID__c, fr_Donor__c FROM Opportunity WHERE Id = :oppId];
+        String oppFrId = String.valueOf(getTestRequest().get('id'));
+        Opportunity newOpportunity = [SELECT fr_Donor__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
         System.assertEquals(testContact.Id, newOpportunity.fr_Donor__c, 
                             'The funraise sf donor id was not populated to the opportunity\'s contact lookup field');
     }
@@ -141,13 +127,9 @@ public class frDonationTest {
         
         Test.stopTest();
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
         frTestUtil.assertNoErrors();
-        
-        Id oppId = response.id;
-        System.assert(String.isNotBlank(oppId), 
-                      'There was not an opportunity Id in the response as expected');
-        Opportunity newOpportunity = [SELECT Id, fr_ID__c, fr_Donor__c, CampaignId FROM Opportunity WHERE Id = :oppId];
+        String oppFrId = String.valueOf(getTestRequest().get('id'));
+        Opportunity newOpportunity = [SELECT Id, fr_ID__c, fr_Donor__c, CampaignId FROM Opportunity WHERE fr_Id__c = :oppFrId];
         System.assertEquals(testContact.Id, newOpportunity.fr_Donor__c, 
                             'The funraise sf donor id was not populated to the opportunity\'s contact lookup field');
         System.assertEquals(testCampaign.Id, newOpportunity.CampaignId, 
@@ -179,13 +161,9 @@ public class frDonationTest {
         
         Test.stopTest();
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        frTestUtil.assertNoErrors();
-        
-        Id oppId = response.id;
-        System.assert(String.isNotBlank(oppId), 
-                      'There was not an opportunity Id in the response as expected');
-        Opportunity newOpportunity = [SELECT Id, StageName, fr_ID__c, fr_Donor__c FROM Opportunity WHERE Id = :oppId];
+        frTestUtil.assertNoErrors();        
+        String oppFrId = String.valueOf(getTestRequest().get('id'));
+        Opportunity newOpportunity = [SELECT Id, StageName, fr_ID__c, fr_Donor__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
         System.assertEquals('Closed Lost', newOpportunity.StageName, 'A status of refunded should have resulted in a Closed Lost stage');
     }
     
@@ -222,13 +200,10 @@ public class frDonationTest {
         
         Test.stopTest();
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
         frTestUtil.assertNoErrors();
         
-        Id oppId = response.id;
-        System.assert(String.isNotBlank(oppId), 
-                      'There was not an opportunity Id in the response as expected');
-        Opportunity newOpportunity = [SELECT Id, fr_ID__c, fr_Donor__c, (SELECT Id, ContactId, Role FROM OpportunityContactRoles) FROM Opportunity WHERE Id = :oppId];
+        String oppFrId = String.valueOf(getTestRequest().get('id'));
+        Opportunity newOpportunity = [SELECT Id, fr_ID__c, fr_Donor__c, (SELECT Id, ContactId, Role FROM OpportunityContactRoles) FROM Opportunity WHERE fr_Id__c = :oppFrId];
         List<OpportunityContactRole> roles = newOpportunity.OpportunityContactRoles;
         System.assertEquals(3, roles.size(), 'Expected to be a role for donor, fundraiser, and team captain');
         for(OpportunityContactRole role : roles) {
@@ -276,13 +251,9 @@ public class frDonationTest {
         frWSDonationController.syncEntity();
         
         Test.stopTest();
-        
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        
-        Id oppId = response.id;
-        System.assert(String.isNotBlank(oppId), 
-                      'There was not an opportunity Id in the response as expected');
-        Opportunity newOpportunity = [SELECT Id, fr_ID__c, fr_Donor__c, (SELECT Id, ContactId, Role FROM OpportunityContactRoles) FROM Opportunity WHERE Id = :oppId];
+                
+        String oppFrId = String.valueOf(getTestRequest().get('id'));
+        Opportunity newOpportunity = [SELECT Id, fr_ID__c, fr_Donor__c, (SELECT Id, ContactId, Role FROM OpportunityContactRoles) FROM Opportunity WHERE fr_Id__c = :oppFrId];
         List<OpportunityContactRole> roles = newOpportunity.OpportunityContactRoles;
         System.assertEquals(1, roles.size(), 'Since the request had ids that did not exist in SF, no roles should have been created except for the donor');
         System.assertEquals(2, [SELECT COUNT() FROM Error__c], 'There should be 3 error logs for missing supporters that prevented opp roles from being created');
@@ -316,13 +287,10 @@ public class frDonationTest {
         
         Test.stopTest();
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
         frTestUtil.assertNoErrors();
         
-        Id oppId = response.id;
-        System.assert(String.isNotBlank(oppId), 
-                      'There was not an opportunity Id in the response as expected');
-        Opportunity newOpportunity = [SELECT Id, fr_ID__c, Subscription__c FROM Opportunity WHERE Id = :oppId];
+        String oppFrId = String.valueOf(getTestRequest().get('id'));
+        Opportunity newOpportunity = [SELECT Id, fr_ID__c, Subscription__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
         System.assertEquals(subscription.Id, newOpportunity.Subscription__c, 'The new donation should be pointing at the subscription corresponding to the id provided in the request');
     }
     
@@ -353,13 +321,9 @@ public class frDonationTest {
         
         Test.stopTest();
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
         frTestUtil.assertNoErrors();
-        
-        Id oppId = response.id;
-        System.assert(String.isNotBlank(oppId), 
-                      'There was not an opportunity Id in the response as expected');
-        Opportunity newOpportunity = [SELECT Id, fr_ID__c, Funraise_Pledge__c FROM Opportunity WHERE Id = :oppId];
+        String oppFrId = String.valueOf(getTestRequest().get('id'));
+        Opportunity newOpportunity = [SELECT Id, fr_ID__c, Funraise_Pledge__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
         System.assertEquals(pledge.Id, newOpportunity.Funraise_Pledge__c, 'The new donation should be pointing at the pledge that the supporter had active');
     }
     
@@ -389,13 +353,9 @@ public class frDonationTest {
         
         Test.stopTest();
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        frTestUtil.assertNoErrors();
-        
-        Id oppId = response.id;
-        System.assert(String.isNotBlank(oppId), 
-                      'There was not an opportunity Id in the response as expected');
-        Opportunity opp = [SELECT Id, Amount, fr_ID__c, Funraise_Pledge__c FROM Opportunity WHERE Id = :oppId];
+        frTestUtil.assertNoErrors();        
+        String oppFrId = String.valueOf(getTestRequest().get('id'));
+        Opportunity opp = [SELECT Id, Amount, fr_ID__c, Funraise_Pledge__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
         System.assertNotEquals(null, opp.Funraise_Pledge__c, 'The new donation should have created a new pledge');
         Pledge__c pledge = [SELECT Pledge_Donation_uq__c , Pledge_Donation__c, Pledge_Amount__c, Received_Amount__c from Pledge__c
                             WHERE Id = :opp.Funraise_Pledge__c];
@@ -447,13 +407,10 @@ public class frDonationTest {
         
         Test.stopTest();
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
         frTestUtil.assertNoErrors();
         
-        Id oppId = response.id;
-        System.assert(String.isNotBlank(oppId), 
-                      'There was not an opportunity Id in the response as expected');
-        Opportunity opp = [SELECT Id, Amount, fr_ID__c, Funraise_Pledge__c FROM Opportunity WHERE Id = :oppId];
+        String oppFrId = String.valueOf(getTestRequest().get('id'));
+        Opportunity opp = [SELECT Id, Amount, fr_ID__c, Funraise_Pledge__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
         System.assertNotEquals(null, opp.Funraise_Pledge__c, 'The new donation should have created a new pledge');
         pledge = [SELECT Pledge_Donation_uq__c , Pledge_Donation__c, Pledge_Amount__c, Received_Amount__c from Pledge__c
                   WHERE Id = :opp.Funraise_Pledge__c];
@@ -501,13 +458,10 @@ public class frDonationTest {
         
         Test.stopTest();
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
         frTestUtil.assertNoErrors();
         
-        Id oppId = response.id;
-        System.assert(String.isNotBlank(oppId), 
-                      'There was not an opportunity Id in the response as expected');
-        Opportunity opp = [SELECT Id, Funraise_Pledge__c FROM Opportunity WHERE Id = :oppId];
+        String oppFrId = String.valueOf(getTestRequest().get('id'));
+        Opportunity opp = [SELECT Id, Funraise_Pledge__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
         System.assertEquals(pledge.Id, opp.Funraise_Pledge__c, 'The pledge value should remain unchanged');
     }
     
@@ -548,13 +502,10 @@ public class frDonationTest {
         
         Test.stopTest();
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
         frTestUtil.assertNoErrors();
         
-        Id oppId = response.id;
-        System.assert(String.isNotBlank(oppId), 
-                      'There was not an opportunity Id in the response as expected');
-        Opportunity opp = [SELECT Id, Funraise_Pledge__c FROM Opportunity WHERE Id = :oppId];
+        String oppFrId = String.valueOf(getTestRequest().get('id'));
+        Opportunity opp = [SELECT Id, Funraise_Pledge__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
         System.assertEquals(pledge.Id, opp.Funraise_Pledge__c, 'The donation should have matched to a previously active unfulfilled pledge');
     }
     
@@ -595,13 +546,10 @@ public class frDonationTest {
         
         Test.stopTest();
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
         frTestUtil.assertNoErrors();
         
-        Id oppId = response.id;
-        System.assert(String.isNotBlank(oppId), 
-                      'There was not an opportunity Id in the response as expected');
-        Opportunity opp = [SELECT Id, Funraise_Pledge__c FROM Opportunity WHERE Id = :oppId];
+        String oppFrId = String.valueOf(getTestRequest().get('id'));
+        Opportunity opp = [SELECT Id, Funraise_Pledge__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
         System.assertEquals(null, opp.Funraise_Pledge__c, 'The donation should not have matched to a previously active unfulfilled pledge');
     }
     
@@ -640,13 +588,9 @@ public class frDonationTest {
         
         Test.stopTest();
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
         frTestUtil.assertNoErrors();
         
-        Id oppId = response.id;
-        System.assert(String.isNotBlank(oppId), 
-                      'There was not an opportunity Id in the response as expected');
-        
+        String oppFrId = String.valueOf(getTestRequest().get('id'));
         Set<String> funraiseRoles = new Set<String>{
             frDonation.OPP_ROLE_DONOR, 
             frDonation.OPP_ROLE_FUNDRAISER, 
@@ -655,7 +599,7 @@ public class frDonationTest {
         };
         Opportunity opp = [SELECT Id, Funraise_Pledge__c, 
                            (SELECT Id, Role FROM OpportunityContactRoles WHERE ContactId = :testSupporter.Id AND role IN :funraiseRoles) 
-                           FROM Opportunity WHERE Id = :oppId];
+                           FROM Opportunity WHERE fr_Id__c = :oppFrId];
         System.assertEquals(1, opp.OpportunityContactRoles.size(), 
                             'There should be a single opp contact role for the supporter');
         System.assertEquals(frDonation.OPP_ROLE_DONOR, opp.OpportunityContactRoles.get(0).role,
@@ -664,10 +608,6 @@ public class frDonationTest {
     
     private static void createMapping(String frField, String sfField) {
         insert new frMapping__c(Name = frField+sfField, fr_Name__c = frField, sf_Name__c = sfField, Type__c = frDonation.TYPE);
-    }
-    
-    public class MockResponse {
-        String id;
     }
     
     private static String getTestPayload() {
@@ -681,7 +621,7 @@ public class frDonationTest {
         return Json.serialize(testRequest);
     }
     
-    private static Map<String, Object> getTestRequest() {
+    public static Map<String, Object> getTestRequest() {
         Map<String, Object> request = new Map<String, Object>();
         request.put('id', 2048);
         request.put('organizationId', 'ae8d412b-db97-49dc-8c8c-5bfe0f41fc6d');

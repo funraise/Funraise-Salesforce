@@ -41,7 +41,7 @@ public class frDataMigrationTest {
     @isTest
     static void test() {
         Test.startTest();
-        new frDataMigration().onInstall(null);
+        frDataMigration.runMigrations();
         Test.stopTest();        
     }
 }

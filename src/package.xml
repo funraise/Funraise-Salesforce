@@ -21,6 +21,8 @@
         <members>frModel</members>
         <members>frOpportunityPledgeCalculatorTriggerTest</members>
         <members>frPledge</members>
+        <members>frPostInstall</members>
+        <members>frPostInstallTest</members>
         <members>frQuestion</members>
         <members>frQuestionTest</members>
         <members>frSchemaUtil</members>
@@ -28,7 +30,13 @@
         <members>frSetupControllerTest</members>
         <members>frSubscription</members>
         <members>frSubscriptionTest</members>
+        <members>frSyncRequestHandler</members>
+        <members>frSyncRequestHandlerTest</members>
+        <members>frSyncRequestScheduler</members>
+        <members>frSyncable</members>
+        <members>frTask</members>
         <members>frUtil</members>
+        <members>frWSBaseController</members>
         <members>frWSCampaignController</members>
         <members>frWSCustomQuestionAnswerController</members>
         <members>frWSCustomQuestionController</members>

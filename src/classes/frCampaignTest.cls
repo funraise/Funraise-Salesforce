@@ -48,17 +48,19 @@ public class frCampaignTest {
     static testMethod void createTopLevelCampaign_test() {	
         String goalId = '10';
         String campaignName = 'New Campaign';
-        Map<String, Object> request = new Map<String, Object>();
-        request.put('name', 'New Campaign');
-        request.put('reason', 'The campaign is new');
-        request.put('status', 'Published');
-        request.put('goalAmount', '238329.12');
-        request.put('parentGoalId', null);
+        Map<String, Object> request = getTestRequest();
         request.put('goalId', goalId);
-        request.put('deleted', false);
+        
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/campaign';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        RestContext.request = req;
+        RestContext.response = res;
 
         Test.startTest();
-        new frCampaign(request);
+        frWSCampaignController.syncEntity();
         Test.stopTest();
 
         Campaign newCampaign = [SELECT Id, fr_ID__c, Name FROM Campaign WHERE fr_ID__c = :goalId];
@@ -71,31 +73,31 @@ public class frCampaignTest {
         String childCampaignName = 'Child campaign';
         String childGoalId = '19';
         
-        Map<String, Object> parentRequest = new Map<String, Object>();
-        parentRequest.put('name', parentCampaignName);
-        parentRequest.put('reason', 'The campaign is new');
-        parentRequest.put('status', 'Published');
-        parentRequest.put('goalAmount', '238329.12');
-        parentRequest.put('parentGoalId', null);
-        parentRequest.put('goalId', parentGoalId);
-        parentRequest.put('deleted', false);
+        Campaign parentCampaign = getTestCampaign();
+        parentCampaign.fr_Id__c = parentGoalId;
+        update parentCampaign;
         
-        Map<String, Object> childRequest = new Map<String, Object>();
-        childRequest.put('name', childCampaignName);
-        childRequest.put('reason', 'The campaign is new');
-        childRequest.put('status', 'Published');
-        childRequest.put('goalAmount', '1200');
-        childRequest.put('parentGoalId', parentGoalId);
-        childRequest.put('goalId', childGoalId);
-        childRequest.put('deleted', false);
-        
-        new frCampaign(parentRequest);
+        Map<String, Object> request = new Map<String, Object>();
+        request.put('name', childCampaignName);
+        request.put('reason', 'The campaign is new');
+        request.put('status', 'Published');
+        request.put('goalAmount', '1200');
+        request.put('parentGoalId', parentGoalId);
+        request.put('goalId', childGoalId);
+        request.put('deleted', false);
+
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/campaign';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        RestContext.request = req;
+        RestContext.response = res;
 
         Test.startTest();
-        new frCampaign(childRequest);
+        frWSCampaignController.syncEntity();
         Test.stopTest();
 
-        Campaign parentCampaign = [SELECT Id, fr_ID__c FROM Campaign WHERE fr_ID__c = :parentGoalId];
         Campaign childCampaign = [SELECT Id, fr_ID__c, Name, ParentId FROM Campaign WHERE fr_ID__c = :childGoalId];
         System.assertEquals(childCampaignName, childCampaign.Name, 'The campaign name was not correct');
         System.assertEquals(parentCampaign.Id, childCampaign.ParentId, 'The campaign parentId was not correct');
@@ -114,8 +116,16 @@ public class frCampaignTest {
         childRequest.put('goalId', childGoalId);
         childRequest.put('deleted', false);
 
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/campaign';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(childRequest));
+        RestContext.request = req;
+        RestContext.response = res;
+
         Test.startTest();
-        new frCampaign(childRequest);
+        frWSCampaignController.syncEntity();
         Test.stopTest();
 
         List<Campaign> childCampaigns = [SELECT Id, fr_ID__c, Name, ParentId FROM Campaign WHERE fr_ID__c = :childGoalId];
@@ -135,8 +145,16 @@ public class frCampaignTest {
         topLevelCampaign.put('goalId', topLevelGoalId);
         topLevelCampaign.put('deleted', true);
         
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/campaign';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(topLevelCampaign));
+        RestContext.request = req;
+        RestContext.response = res;
+
         Test.startTest();
-        new frCampaign(topLevelCampaign);
+        frWSCampaignController.syncEntity();
         Test.stopTest();
         
         List<Campaign> campaigns = [SELECT Id, ParentId, Parent.fr_ID__c FROM Campaign];
@@ -156,8 +174,16 @@ public class frCampaignTest {
         topLevelCampaign.put('goalId', topLevelGoalId);
         topLevelCampaign.put('deleted', true);
         
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/campaign';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(topLevelCampaign));
+        RestContext.request = req;
+        RestContext.response = res;
+
         Test.startTest();
-        new frCampaign(topLevelCampaign);
+        frWSCampaignController.syncEntity();
         Test.stopTest();
         
         List<Campaign> campaigns = [SELECT Id, ParentId, Parent.fr_ID__c FROM Campaign];
@@ -169,17 +195,25 @@ public class frCampaignTest {
     static testMethod void testDeleteParent() {
         createCampaigns();
                 
-        Map<String, Object> parentRequest = new Map<String, Object>();
-        parentRequest.put('name', 'Parent Campaign');
-        parentRequest.put('reason', 'The campaign is new');
-        parentRequest.put('status', 'Published');
-        parentRequest.put('goalAmount', '238329.12');
-        parentRequest.put('parentGoalId', topLevelGoalId);
-        parentRequest.put('goalId', parentGoalId);
-        parentRequest.put('deleted', true);
+        Map<String, Object> request = new Map<String, Object>();
+        request.put('name', 'Parent Campaign');
+        request.put('reason', 'The campaign is new');
+        request.put('status', 'Published');
+        request.put('goalAmount', '238329.12');
+        request.put('parentGoalId', topLevelGoalId);
+        request.put('goalId', parentGoalId);
+        request.put('deleted', true);
         
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/campaign';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        RestContext.request = req;
+        RestContext.response = res;
+
         Test.startTest();
-        new frCampaign(parentRequest);
+        frWSCampaignController.syncEntity();
         Test.stopTest();
         
         Campaign topLevelCampaign = [SELECT Id, fr_ID__c FROM Campaign WHERE fr_ID__c = :topLevelGoalId];
@@ -205,8 +239,16 @@ public class frCampaignTest {
         List<Campaign> childCampaigns = [SELECT Id, fr_ID__c, Name, ParentId FROM Campaign WHERE parentId = :parentCampaign.Id];
         System.assertEquals(childCampaigns.size(), 2, 'Number of children is incorrect');
 
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/campaign';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(grandchildCampaign2));
+        RestContext.request = req;
+        RestContext.response = res;
+
         Test.startTest();
-        new frCampaign(grandchildCampaign2);
+        frWSCampaignController.syncEntity();
         Test.stopTest();
 
         childCampaigns = [SELECT Id, fr_ID__c, Name, ParentId FROM Campaign WHERE parentId = :parentCampaign.Id];
@@ -229,8 +271,16 @@ public class frCampaignTest {
         grandchildCampaign2.put('goalId', grandchildGoalId2);
         grandchildCampaign2.put('deleted', false);
 
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/campaign';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(grandchildCampaign2));
+        RestContext.request = req;
+        RestContext.response = res;
+
         Test.startTest();
-        new frCampaign(grandchildCampaign2);
+        frWSCampaignController.syncEntity();
         Test.stopTest();
 
         Campaign campaign = [SELECT Id, fr_ID__c, Name, Description, ExpectedRevenue FROM Campaign WHERE fr_ID__c = :grandchildGoalId2];
@@ -254,12 +304,20 @@ public class frCampaignTest {
         request.put('goalId', goalId);
         request.put('deleted', false);
 
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/campaign';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        RestContext.request = req;
+        RestContext.response = res;
+
         Test.startTest();
         Integer startingErrors = [SELECT COUNT() FROM Error__c];
-        new frCampaign(request);
+        frWSCampaignController.syncEntity();
         
         //the same request twice shouldn't duplicate campaign members
-        new frCampaign(request);
+        frWSCampaignController.syncEntity();
         Integer afterErrors = [SELECT COUNT() FROM Error__c];
         Test.stopTest();
 
@@ -274,46 +332,43 @@ public class frCampaignTest {
     }
     
     static void createCampaigns() {
-        Map<String, Object> topLevelCampaign = new Map<String, Object>();
-        topLevelCampaign.put('name', 'Top level Campaign');
-        topLevelCampaign.put('reason', 'The campaign is old');
-        topLevelCampaign.put('status', 'Published');
-        topLevelCampaign.put('goalAmount', '238329.12');
-        topLevelCampaign.put('parentGoalId', null);
-        topLevelCampaign.put('goalId', topLevelGoalId);
-        topLevelCampaign.put('deleted', false);
+		Campaign topLevelCampaign = new Campaign(
+        	Name = 'Top level Campaign',
+            Description = 'The campaign is old',
+            Status = 'Published',
+            ExpectedRevenue = 238329.12,
+            fr_Id__c = topLevelGoalId
+        );
+        insert topLevelCampaign;
+		
+        Campaign childCampaign = new Campaign(
+        	Name = 'Second Level Campaign',
+            Description = 'The campaign is new',
+            Status = 'Published',
+            ExpectedRevenue = 1200,
+            fr_Id__c = parentGoalId,
+            ParentId = topLevelCampaign.Id
+        );
+        insert childCampaign;
         
-        Map<String, Object> childCampaign = new Map<String, Object>();
-        childCampaign.put('name', 'Second Level Campaign');
-        childCampaign.put('reason', 'The campaign is new');
-        childCampaign.put('status', 'Published');
-        childCampaign.put('goalAmount', '1200');
-        childCampaign.put('parentGoalId', topLevelGoalId);
-        childCampaign.put('goalId', parentGoalId);
-        childCampaign.put('deleted', false);
-        
-        Map<String, Object> grandchildCampaign1 = new Map<String, Object>();
-        grandchildCampaign1.put('name', 'Child campaign 1');
-        grandchildCampaign1.put('reason', 'The campaign is newer');
-        grandchildCampaign1.put('status', 'Published');
-        grandchildCampaign1.put('goalAmount', '232');
-        grandchildCampaign1.put('parentGoalId', parentGoalId);
-        grandchildCampaign1.put('goalId', grandchildGoalId1);
-        grandchildCampaign1.put('deleted', false);
-        
-        Map<String, Object> grandchildCampaign2 = new Map<String, Object>();
-        grandchildCampaign2.put('name', 'Child campaign 1');
-        grandchildCampaign2.put('reason', 'The campaign is newest');
-        grandchildCampaign2.put('status', 'Published');
-        grandchildCampaign2.put('goalAmount', '452');
-        grandchildCampaign2.put('parentGoalId', parentGoalId);
-        grandchildCampaign2.put('goalId', grandchildGoalId2);
-        grandchildCampaign2.put('deleted', false);
-        
-        new frCampaign(topLevelCampaign);
-        new frCampaign(childCampaign);
-        new frCampaign(grandchildCampaign1);
-        new frCampaign(grandchildCampaign2);
+        Campaign grandchildCampaign1 = new Campaign(
+        	Name = 'Child campaign 1',
+            Description = 'The campaign is newer',
+            Status = 'Published',
+            ExpectedRevenue = 232,
+            fr_Id__c = grandchildGoalId1,
+            ParentId = childCampaign.Id
+        );
+                
+        Campaign grandchildCampaign2 = new Campaign(
+        	Name = 'Child campaign 2',
+            Description = 'The campaign is newest',
+            Status = 'Published',
+            ExpectedRevenue = 452,
+            fr_Id__c = grandchildGoalId2,
+            ParentId = childCampaign.Id
+        );
+        insert new List<Campaign>{grandchildCampaign1, grandchildCampaign2};
     }
     
     public static Campaign getTestCampaign() {
@@ -325,5 +380,16 @@ public class frCampaignTest {
         campaign.fr_ID__c = '19920602';
         insert campaign;
         return campaign;
+    }
+    
+    public static Map<String, Object> getTestRequest() {
+        Map<String, Object> request = new Map<String, Object>();
+        request.put('name', 'New Campaign');
+        request.put('reason', 'The campaign is new');
+        request.put('status', 'Published');
+        request.put('goalAmount', '238329.12');
+        request.put('parentGoalId', null);
+        request.put('deleted', false);
+        return request;
     }
 }

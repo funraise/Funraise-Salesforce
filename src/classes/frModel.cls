@@ -1,9 +1,18 @@
 public abstract class frModel {
-	protected abstract SObject getObject();
-    public abstract List<frMapping__c> getMappings();
+    protected Sync_Attempt__c syncRecord;
+    protected Boolean createLogRecord = false;
 
-    public virtual void populateFromRequest(Map<String, Object> request) {
-    	Map<String, Schema.SObjectField> fields = frSchemaUtil.getFields(getObject().getSObjectType().getDescribe().getName());
+    public frModel(Sync_Attempt__c attempt) {
+        this.syncRecord = attempt;
+        createLogRecord = attempt.Attempts__c >= frSyncRequestHandler.MAX_ATTEMPTS;
+    }
+    
+    protected virtual List<frMapping__c> getMappings() {
+        return new List<frMapping__c>();
+    }
+    
+    protected void applyMappings(SObject record, Map<String, Object> request) {
+    	Map<String, Schema.SObjectField> fields = frSchemaUtil.getFields(record.getSObjectType().getDescribe().getName());
         String funraiseId = String.valueOf(request.get('id'));
         
         //a single funraise field might flow into multiple salesforce fields
@@ -28,16 +37,86 @@ public abstract class frModel {
             if(request.containsKey(fieldName)) {
                 for(frMapping__c mapping : frNameToSfName.get(fieldName)) {
                     Schema.SObjectField field = fields.get(mapping.sf_Name__c);
-                    frUtil.write(getObject(), field, mapping.sf_Name__c, request.get(fieldName), funraiseId);                    
+                    write(record, field, mapping.sf_Name__c, request.get(fieldName), funraiseId);                    
                 }
             }
         }
         for(frMapping__c constantMapping : constantMappings) {
             Schema.SObjectField field = fields.get(constantMapping.sf_Name__c);
-            frUtil.write(getObject(), field, constantMapping.sf_Name__c, constantMapping.Constant_Value__c, funraiseId);
+            write(record, field, constantMapping.sf_Name__c, constantMapping.Constant_Value__c, funraiseId);
         }
 
-        getObject().put('fr_ID__c', funraiseId);
+        record.put('fr_ID__c', funraiseId);
+    }
+    
+    public static void write(SObject record, Schema.SObjectField field, String fieldName, Object value, String funraiseId) {
+        try {
+            if (fieldName.toLowerCase() == 'id') {
+                if (value != null && ((String)value) != '') {
+                    record.put(field, Id.valueOf((String)value));
+                }
+            } else if (field.getDescribe().getType() == Schema.DisplayType.DateTime) {
+                record.put(field, DateTime.newInstance((Long)value));
+            } else if (field.getDescribe().getType() == Schema.DisplayType.Date) {
+                if(value instanceof List<Object>) {
+                    List<Object> localDate = (List<Object>)value;
+                    if(localDate.size() > 3) {
+                        DateTime sfLocalDateTime = convertFromLocalDateTime(localDate);
+                        record.put(field, sfLocalDateTime);                        
+                    } else if (localDate.size() == 3) {
+                        Date sfLocalDate = convertFromLocalDate(localDate);
+                        record.put(field, sfLocalDate);                        
+                    }
+                    
+                } else {
+                    record.put(field, DateTime.newInstance((Long)value).date());
+                }
+            } else if(field.getDescribe().getType() == Schema.DisplayType.Double) {
+                record.put(field, Double.valueOf(value));
+            } else if(field.getDescribe().getType() == Schema.DisplayType.Integer) {
+                record.put(field, Integer.valueOf(value));
+            } else if(field.getDescribe().getType() == Schema.DisplayType.Percent) {
+                record.put(field, Decimal.valueOf(String.valueOf(value)));
+            } else {
+                write(record, field, value, funraiseId);
+            }
+        }
+        catch (Exception e) {
+            write(record, field, value, funraiseId);
+        }
+    }
+    
+    private static void write(SObject record, Schema.SObjectField field, Object value, String funraiseId) {
+        try {
+            if(value instanceof String) {
+                value = frUtil.truncateToFieldLength(field.getDescribe(), (String)value);
+            }
+            record.put(field, value);
+        } catch (Exception ex) {
+            insert new Error__c(Error__c = 'Field mapping exception. Object type: '+ record.getSObjectType().getDescribe().getName()
+                +' Record Id: '+record.Id+' - Funraise Id: '+ funraiseId + ' - Field: '+field.getDescribe().getName()+' - Value: '+value
+                +' Exception: '+ex
+            );
+        }
+    }
+    
+    public static DateTime convertFromLocalDateTime(List<Object> localDateTime) {
+        return DateTime.newInstance(
+            (Integer)localDateTime.get(0), //year
+            (Integer)localDateTime.get(1), //month
+            (Integer)localDateTime.get(2), //day
+            (Integer)localDateTime.get(3), //hour
+            (Integer)localDateTime.get(4), //minute
+            0 				  //second
+        );
+    }
+    
+    public static Date convertFromLocalDate(List<Object> localDate) {
+        return Date.newInstance(
+            (Integer)localDate.get(0), //year
+            (Integer)localDate.get(1), //month
+            (Integer)localDate.get(2)  //day
+        );
     }
     
     public static void flushLogs() {

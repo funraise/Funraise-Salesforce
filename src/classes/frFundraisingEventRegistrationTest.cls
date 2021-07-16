@@ -101,17 +101,25 @@ public class frFundraisingEventRegistrationTest {
         request.put('guestOfId', testSupporter.fr_Id__c);
         request.put('id', funraiseId);
 
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        RestContext.request = req;
+        RestContext.response = res;
         Test.startTest();
-        Integer errorsBefore = [SELECT COUNT() FROM Error__c];
-        new frFundraisingEventRegistration(request);
-        Integer errorsAfter = [SELECT COUNT() FROM Error__c];
+        Integer syncAttemptsBefore = [SELECT COUNT() FROM Sync_Attempt__c];
+        frWSFundraisingEventRegistrationCntrlr.syncEntity();
+        Integer syncAttemptsAfter = [SELECT COUNT() FROM Sync_Attempt__c];
         Test.stopTest();
 
         List<Fundraising_Event_Registration__c> registrations = [SELECT Id, fr_ID__c, Name, Attended__c, Ticket_Name__c, Fundraising_Event__c, Guest_Of__c 
                                                                  FROM Fundraising_Event_Registration__c WHERE fr_ID__c = :funraiseId];
         System.assertEquals(0, registrations.size(), 'No registrations should have been created if an event id could not be matched');
-        System.assertEquals(0, errorsBefore, 'Precondition');
-        System.assertEquals(1, errorsAfter, 'An error log should have been created to record that an event id could not be matched');
+        System.assertEquals(0, syncAttemptsBefore, 'Precondition');
+        System.assertEquals(1, syncAttemptsAfter, 'A sync attempt should have been created to retry the registration later');
     }
     
     static testMethod void createRegistration_supporterMissing() {	
@@ -127,18 +135,22 @@ public class frFundraisingEventRegistrationTest {
         request.put('guestOfId', guestOf.fr_Id__c);
         request.put('id', funraiseId);
 
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        RestContext.request = req;
+        RestContext.response = res;
         Test.startTest();
-        Integer errorsBefore = [SELECT COUNT() FROM Error__c];
-        new frFundraisingEventRegistration(request);
-        Integer errorsAfter = [SELECT COUNT() FROM Error__c];
+        frWSFundraisingEventRegistrationCntrlr.syncEntity();
         Test.stopTest();
 
         List<Fundraising_Event_Registration__c> registrations = [SELECT Id, fr_ID__c, Name, Attended__c, Ticket_Name__c, 
                                                                  Fundraising_Event__c, Guest_Of__c 
                                                                  FROM Fundraising_Event_Registration__c WHERE fr_ID__c = :funraiseId];
         System.assertEquals(1, registrations.size(), 'A registration should have been created even if a supporter id could not be matched'); 
-        System.assertEquals(0, errorsBefore, 'Precondition');
-        System.assertEquals(1, errorsAfter, 'An error log should have been created to record that a supporter id could not be matched');
     }
     
     static testMethod void createRegistration_guestOfMissing() {	
@@ -174,10 +186,16 @@ public class frFundraisingEventRegistrationTest {
         request.put('guestOfId', 'nonexistent'); //not matching on guestOf is ok, we will create anyway
         request.put('id', funraiseId);
 
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        RestContext.request = req;
+        RestContext.response = res;
         Test.startTest();
-        Integer errorsBefore = [SELECT COUNT() FROM Error__c];
-        new frFundraisingEventRegistration(request);
-        Integer errorsAfter = [SELECT COUNT() FROM Error__c];
+        frWSFundraisingEventRegistrationCntrlr.syncEntity();
         Test.stopTest();
 
         Fundraising_Event_Registration__c registration = [SELECT Id, fr_ID__c, Name, Attended__c, Ticket_Name__c, Registrant__c,
@@ -190,8 +208,6 @@ public class frFundraisingEventRegistrationTest {
         System.assertEquals(testSupporter.Id, registration.Registrant__c, 'The lookup for supporter should have been populated with the contact that has the funraise id referenced in the request');
         System.assertEquals(null, registration.Guest_Of__c, 'The lookup for guest of should not have been populated since the request did not specify a valid id');
         System.assertEquals(null, registration.Transaction__c, 'The lookup for transaction__c should not have been populated with an opportunity');
-        System.assertEquals(0, errorsBefore, 'Precondition');
-        System.assertEquals(1, errorsAfter, 'An error log should have been created to record that a guest of id could not be matched');   
     }
     
     static testMethod void createRegistration_transactionMissing() {	
@@ -208,17 +224,21 @@ public class frFundraisingEventRegistrationTest {
         request.put('transactionId', 'nonexistent');
         request.put('id', funraiseId);
 
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        RestContext.request = req;
+        RestContext.response = res;
         Test.startTest();
-        Integer errorsBefore = [SELECT COUNT() FROM Error__c];
-        new frFundraisingEventRegistration(request);
-        Integer errorsAfter = [SELECT COUNT() FROM Error__c];
+        frWSFundraisingEventRegistrationCntrlr.syncEntity();
         Test.stopTest();
 
         Fundraising_Event_Registration__c registration = [SELECT Id, fr_ID__c, Transaction__c
                                                           FROM Fundraising_Event_Registration__c WHERE fr_ID__c = :funraiseId];
         System.assertEquals(null, registration.Transaction__c, 'The lookup for transaction__c should not have been populated with an opportunity');
-        System.assertEquals(0, errorsBefore, 'Precondition');
-        System.assertEquals(1, errorsAfter, 'An error log should have been created to record that a transaction could not be matched');   
     }
     
     static testMethod void deleteRegistration() {	
@@ -231,15 +251,23 @@ public class frFundraisingEventRegistrationTest {
         request.put('id', existingRegistration.fr_Id__c);
         request.put('deleted', true);
 
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        RestContext.request = req;
+        RestContext.response = res;
         Test.startTest();
-        new frFundraisingEventRegistration(request);
+        frWSFundraisingEventRegistrationCntrlr.syncEntity();
         Test.stopTest();
 
         frTestUtil.assertNoErrors();
         System.assertEquals(0, [SELECT COUNT() FROM Fundraising_Event_Registration__c], 'Registration should have been deleted and therefore not returned');
     }
 
-    private static Map<String, Object> getTestRequest() {
+    public static Map<String, Object> getTestRequest() {
         Map<String, Object> request = new Map<String, Object>();
         request.put('name', '000001');
         request.put('attended', true);

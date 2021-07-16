@@ -38,31 +38,43 @@
 * AUTHOR: Alex Molina
 */
 
-public class frFundraisingEventRegistration {    
-    public frFundraisingEventRegistration(Map<String, Object> request) {
-        if (Boolean.valueOf(request.get('deleted'))) {
-            deleteRegistration(String.valueOf(request.get('id')));
-        } else {
-            create(request);
-        }
+public class frFundraisingEventRegistration extends frModel implements frSyncable {    
+    
+    public frFundraisingEventRegistration(Sync_Attempt__c syncRecord){
+        super(syncRecord);
     }
     
-    public void deleteRegistration(String funraiseId) {
+    public Boolean sync() {
+        Boolean result = false;
+        Map<String, Object> request = (Map<String, Object>)JSON.deserializeUntyped(syncRecord.Request_Body__c);
+        if (Boolean.valueOf(request.get('deleted'))) {
+            result = deleteRegistration(String.valueOf(request.get('id')));
+        } else {
+            result = create(request);
+        }
+        return result;
+    }
+    
+    private Boolean deleteRegistration(String funraiseId) {
+        Boolean result = false;
         try {
             delete [SELECT id FROM Fundraising_Event_Registration__c WHERE fr_ID__c = :funraiseId];
+            result = true;
         } catch (DMLException e) {
-            frUtil.logException(frUtil.Entity.REGISTRATION, funraiseId, e);
+            if(createLogRecord) frUtil.logException(frUtil.Entity.REGISTRATION, funraiseId, e);
         }
+        return result;
     }
     
-    public void create(Map<String, Object> request) {
+    private Boolean create(Map<String, Object> request) {
+        Boolean result = false;
         String funraiseId = String.valueOf(request.get('id'));
         String funraiseEventId = String.valueOf(request.get('eventId'));
         List<Fundraising_Event__c> event = [SELECT Id from Fundraising_Event__c WHERE fr_Id__c = :funraiseEventId];
         if(event.isEmpty()) {
-            frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
+            if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
                                         frUtil.Entity.EVENT, funraiseEventId);
-            return;
+            return result;
         }
         
         String funraiseSupporterId = String.valueOf(request.get('supporterId'));
@@ -71,7 +83,7 @@ public class frFundraisingEventRegistration {
             supporter = [SELECT Id from Contact WHERE fr_Id__c = :funraiseSupporterId];
             if(supporter.isEmpty()) {
                 //if it wasn't found, log an error but continue
-                frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
+                if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
                                             frUtil.Entity.SUPPORTER, funraiseSupporterId,
                                             'Registration registrant');
             }
@@ -83,7 +95,7 @@ public class frFundraisingEventRegistration {
             guestOf = [SELECT Id from Contact WHERE fr_Id__c = :funraiseGuestOfId];
             if(guestOf.isEmpty()) {
                 //if it wasn't found, log an error but continue
-                frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
+                if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
                                             frUtil.Entity.SUPPORTER, funraiseSupporterId,
                                             'Registration guest of');
                 
@@ -96,7 +108,7 @@ public class frFundraisingEventRegistration {
             transactions = [SELECT Id FROM Opportunity WHERE fr_Id__c = :funraiseTransactionId];
             if(transactions.isEmpty()) {
                 //if it wasn't found, log an error but continue
-                frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
+                if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
                                             frUtil.Entity.DONATION, funraiseTransactionId);                
             }
         }
@@ -134,14 +146,14 @@ public class frFundraisingEventRegistration {
                 String.valueOf(request.get('email'))
             )
         );
-        frUtil.write(
+        frModel.write(
             registration, 
             Fundraising_Event_Registration__c.Ticket_Amount__c, 
             'Ticket_Amount__c',
             request.get('ticketAmount'),
             funraiseId
         );
-        frUtil.write(
+        frModel.write(
             registration, 
             Fundraising_Event_Registration__c.Ticket_Tax_Deductible_Amount__c, 
             'Ticket_Tax_Deductible_Amount__c',
@@ -151,9 +163,10 @@ public class frFundraisingEventRegistration {
         
         try {
             Database.upsert(registration, Fundraising_Event_Registration__c.Field.fr_ID__c, true);
+            result = true;
         } catch (DMLException ex) {
-            frUtil.logException(frUtil.Entity.REGISTRATION, funraiseId, ex);
-            return;
+            if(createLogRecord) frUtil.logException(frUtil.Entity.REGISTRATION, funraiseId, ex);
         }
+        return result;
     }
 }

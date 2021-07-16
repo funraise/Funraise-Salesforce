@@ -30,19 +30,16 @@
 *
 *
 *
-* PURPOSE:
+* PURPOSE: A class to migrate data between releases of the Salesforce managed package.  
+* 	primarily in cases where one field is being replaced by another and we need to copy data.
 *
 *
-*
-* CREATED: 9-18-2018 Funraise Inc - https://funraise.io
-* AUTHOR: Mark D. Dufresne
+* CREATED: 2021 Funraise Inc - https://funraise.io
+* AUTHOR: Alex Molina
 */
-
-@RestResource(urlMapping='/v1/task')
-global with sharing class frWSTaskController {
-    
-    @HttpPost
-    global static void syncEntity() {
-        frWSBaseController.syncEntity(frUtil.Entity.TASK);
+public class frPostInstall implements InstallHandler {
+    public void onInstall(InstallContext context) {
+        frDataMigration.runMigrations();
+        frSetupController.setupScheduledJobs();
     }
 }

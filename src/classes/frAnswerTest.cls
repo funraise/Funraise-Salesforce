@@ -271,7 +271,7 @@ public class frAnswerTest {
         
         Test.stopTest();
         System.assertEquals(0, [SELECT COUNT() FROM Answer__c], 'Since the question relationship was missing, the answer should not have been created');
-        System.assertEquals(1, [SELECT COUNT() FROM Error__c], 'An error log should have been generated for the missing question');   
+        System.assertEquals(1, [SELECT COUNT() FROM Sync_Attempt__c], 'A sync attempt should have been generated because of the missing question');   
     }
     
     @isTest
@@ -304,10 +304,9 @@ public class frAnswerTest {
         
         Test.stopTest();
         System.assertEquals(1, [SELECT COUNT() FROM Answer__c], 'The required values were provided so the answer should exist');
-        System.assertEquals(4, [SELECT COUNT() FROM Error__c], 'An error log should have been generated for the missing relationships (supporter, opp, campaign, registration)');   
     }
     
-    private static Map<String, Object> getTestRequest() {
+    public static Map<String, Object> getTestRequest() {
         Map<String, Object> request = new Map<String, Object>();
         request.put('id', 1234);
         request.put('answer', 'Test answer');

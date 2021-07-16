@@ -38,7 +38,7 @@
  * AUTHOR: Alex Molina
  */
 @isTest
-public class frSubscriptionTest {  
+public class frSubscriptionTest {
     static testMethod void createSubscription_noCampaign() {
         Contact testSupporter = frDonorTest.getTestContact();
                 
@@ -96,7 +96,7 @@ public class frSubscriptionTest {
         System.assertEquals(String.valueOf(request.get('paymentMethodType')), subscription.Payment_Method_Type__c, 'The property should be what was provided in the request');
         System.assertEquals(String.valueOf(request.get('status')), subscription.Status__c, 'The property should be what was provided in the request');
         List<Object> requestPaymentDate = (List<Object>)request.get('nextPaymentDate');
-        System.assertEquals(frUtil.convertFromLocalDate(requestPaymentDate), subscription.Next_Payment_Date__c, 'The property for next payment date should be what was provided in the request');
+        System.assertEquals(frModel.convertFromLocalDate(requestPaymentDate), subscription.Next_Payment_Date__c, 'The property for next payment date should be what was provided in the request');
         
         System.assertEquals(testSupporter.Id, subscription.Supporter__c, 'The lookup for supporter should have been populated with the contact that has the funraise id referenced in the request');
         System.assertEquals(0, [SELECT COUNT() FROM Error__c], 'No errors were expected');
@@ -114,14 +114,23 @@ public class frSubscriptionTest {
         request.put('supporterId', testSupporter.fr_ID__c);
         request.put('id', funraiseId);
         request.put('campaignGoalId', testCampaign.fr_ID__c);
-
+        
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        RestContext.request = req;
+        RestContext.response = res;
         Test.startTest();
-        new frSubscription(request);
+
+        frWSSubscriptionController.syncEntity();
+
         Test.stopTest();
 
         Subscription__c subscription = [SELECT Id, fr_ID__c, Campaign_Goal__c FROM Subscription__c WHERE fr_ID__c = :funraiseId];
         System.assertEquals(testCampaign.Id, subscription.Campaign_Goal__c, 'The subscription should have been assocaited with the campaign goal included in the request');
-        System.assertEquals(0, [SELECT COUNT() FROM Error__c], 'No errors were expected');
+        frTestUtil.assertNoErrors();
     }
     
     static testMethod void createSubscription_missingSupporter() {	
@@ -132,13 +141,22 @@ public class frSubscriptionTest {
         request.put('supporterId', testSupporter.fr_ID__c+'1');
         request.put('id', funraiseId);
 
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        RestContext.request = req;
+        RestContext.response = res;
         Test.startTest();
-        new frSubscription(request);
+
+        frWSSubscriptionController.syncEntity();
+
         Test.stopTest();
 
         Integer subscriptions = [SELECT COUNT() FROM Subscription__c WHERE fr_ID__c = :funraiseId];
         System.assertEquals(0, subscriptions, 'Since the supporter could not be found, the subscription should not have been created');
-        System.assertEquals(1, [SELECT COUNT() FROM Error__c], 'There should be an error for a missing supporter');
+        System.assertEquals(1, [SELECT COUNT() FROM Sync_Attempt__c], 'There should be a sync attempt to retry the failed sync');
     }
     
     static testMethod void createSubscription_missingCampaignGoal() {	
@@ -154,13 +172,21 @@ public class frSubscriptionTest {
         request.put('id', funraiseId);
         request.put('campaignGoalId', testCampaign.fr_ID__c+'1');
 
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        RestContext.request = req;
+        RestContext.response = res;
         Test.startTest();
-        new frSubscription(request);
+
+        frWSSubscriptionController.syncEntity();
+
         Test.stopTest();
 
         Subscription__c subscription = [SELECT Id, fr_ID__c, Campaign_Goal__c FROM Subscription__c WHERE fr_ID__c = :funraiseId];
         System.assertEquals(null, subscription.Campaign_Goal__c, 'The subscription should not have been associated with a campaign since the requested id does not exist');
-        System.assertEquals(1, [SELECT COUNT() FROM Error__c], 'There should be an error for a missing campaign record');
     }
     
     static testMethod void deleteSubscription() {	      
@@ -174,8 +200,17 @@ public class frSubscriptionTest {
         request.put('id', funraiseId);
         request.put('deleted', true);
 
+        RestRequest req = new RestRequest();
+        RestResponse res = new RestResponse();
+        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
+        req.httpMethod = 'POST';
+        req.requestBody = Blob.valueOf(Json.serialize(request));
+        RestContext.request = req;
+        RestContext.response = res;
         Test.startTest();
-        new frSubscription(request);
+
+        frWSSubscriptionController.syncEntity();
+
         Test.stopTest();
 
         Integer matchingRecords = [SELECT COUNT() FROM Subscription__c WHERE fr_ID__c = :funraiseId];
@@ -214,7 +249,7 @@ public class frSubscriptionTest {
         System.assertEquals(500, pledge.Pledge_Amount__c, 'The pledge amount should have been what was received in the request');
     }
     
-    private static Map<String, Object> getTestRequest() {
+    public static Map<String, Object> getTestRequest() {
         Map<String, Object> request = new Map<String, Object>();
         request.put('name', '000001');
         request.put('status', 'Active');
