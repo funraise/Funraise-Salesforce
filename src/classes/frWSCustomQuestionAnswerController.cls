@@ -43,7 +43,6 @@ global with sharing class frWSCustomQuestionAnswerController {
     
     @HttpPost
     global static void syncEntity() {
-        Map<String, Object> request = (Map<String, Object>)JSON.deserializeUntyped(RestContext.request.requestBody.toString());
-        frAnswer answer = new frAnswer(request);
+        frWSBaseController.syncEntity(frUtil.Entity.ANSWER);
     }
 }

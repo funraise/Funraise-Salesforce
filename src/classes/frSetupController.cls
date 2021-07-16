@@ -164,11 +164,11 @@ public with sharing class frSetupController {
 		return redirect;
 	}
 
-	private void addConfirm(String message) {
+	private static void addConfirm(String message) {
 		ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.CONFIRM, message));
 	}
 
-	private void addError(String message) {
+	private static void addError(String message) {
 		ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.ERROR, message));	
 	}
 
@@ -216,6 +216,29 @@ public with sharing class frSetupController {
 			return false;
 		}
 	}
+    
+    public static void setupScheduledJobs() {
+        Set<String> activeJobs = new Set<String>();
+        for (CronTrigger activeJob : [SELECT CronJobDetail.Name FROM CronTrigger 
+                                        WHERE State NOT IN ('ERROR', 'DELETED') AND
+                                      CronJobDetail.Name IN :frSyncRequestScheduler.ALL_JOBS]) {
+			activeJobs.add(activeJob.CronJobDetail.Name);
+        }
+
+        if(!activeJobs.contains(frSyncRequestScheduler.SCHEDULED_JOB_NAME_1)) {
+            System.schedule(frSyncRequestScheduler.SCHEDULED_JOB_NAME_1, '0 0 * * * ?', new frSyncRequestScheduler());
+        }
+        if(!activeJobs.contains(frSyncRequestScheduler.SCHEDULED_JOB_NAME_2)) {
+            System.schedule(frSyncRequestScheduler.SCHEDULED_JOB_NAME_2, '0 15 * * * ?', new frSyncRequestScheduler());
+        }
+        if(!activeJobs.contains(frSyncRequestScheduler.SCHEDULED_JOB_NAME_3)) {
+            System.schedule(frSyncRequestScheduler.SCHEDULED_JOB_NAME_3, '0 30 * * * ?', new frSyncRequestScheduler());
+        }
+        if(!activeJobs.contains(frSyncRequestScheduler.SCHEDULED_JOB_NAME_4)) {
+            System.schedule(frSyncRequestScheduler.SCHEDULED_JOB_NAME_4, '0 45 * * * ?', new frSyncRequestScheduler());
+        }
+        addConfirm('Managed package jobs rescheduled');
+    }
 
 	@testVisible
 	private static List<frMapping__c> getDonorDefaults() {

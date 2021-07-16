@@ -38,24 +38,36 @@
 * AUTHOR: Alex Molina
 */
 
-public class frFundraisingEvent {    
-    public frFundraisingEvent(Map<String, Object> request) {
-        if (Boolean.valueOf(request.get('deleted'))) {
-            deleteEvent(String.valueOf(request.get('id')));
-        } else {
-            create(request);
-        }
+public class frFundraisingEvent extends frModel implements frSyncable {    
+    
+    public frFundraisingEvent(Sync_Attempt__c syncRecord){
+        super(syncRecord);
     }
     
-    public void deleteEvent(String funraiseId) {
+    public Boolean sync() {
+        Boolean result = false;
+        Map<String, Object> request = (Map<String, Object>)JSON.deserializeUntyped(syncRecord.Request_Body__c);
+        if (Boolean.valueOf(request.get('deleted'))) {
+            result = deleteEvent(String.valueOf(request.get('id')));
+        } else {
+            result = create(request);
+        }
+        return result;
+    }
+    
+    private boolean deleteEvent(String funraiseId) {
+        Boolean result = false;
         try {
             delete [SELECT id FROM Fundraising_Event__c WHERE fr_ID__c = :funraiseId];
+            result = true;
         } catch (DMLException e) {
-            frUtil.logException(frUtil.Entity.EVENT, funraiseId, e);
+            if (createLogRecord) frUtil.logException(frUtil.Entity.EVENT, funraiseId, e);
         }
+        return result;
     }
     
-    public void create(Map<String, Object> request) {
+    private boolean create(Map<String, Object> request) {
+        Boolean result = false;
         String funraiseId = String.valueOf(request.get('id'));
         Fundraising_Event__c event = new Fundraising_Event__c(
         	fr_ID__c = funraiseId,
@@ -67,15 +79,17 @@ public class frFundraisingEvent {
 
         try {
             Database.upsert(event, Fundraising_Event__c.Field.fr_ID__c, true);
+            result = true;
         } catch (DMLException e) {
-            frUtil.logException(frUtil.Entity.EVENT, funraiseId, e);
+            if (createLogRecord) frUtil.logException(frUtil.Entity.EVENT, funraiseId, e);
         }
+        return result;
     }
     
     private static DateTime convertFromLocalDateTime(List<Object> localDate, String recordId) {
         if(localDate != null && localDate.size() == 5) {
             try {
-                return frUtil.convertFromLocalDateTime(localDate);
+                return frModel.convertFromLocalDateTime(localDate);
             } catch (Exception ex) {
                 frUtil.logError(frUtil.Entity.EVENT, recordId, 'Could not parse event date.  Event created without this data');
             }

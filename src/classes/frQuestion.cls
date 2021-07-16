@@ -38,27 +38,41 @@
 * AUTHOR: Alex Molina
 */
 
-public class frQuestion {
+public class frQuestion extends frModel implements frSyncable {
     public static final Map<String, Schema.SObjectField> fields = 
         frSchemaUtil.getFields(Question__c.getSObjectType().getDescribe().getName());
     
-    public frQuestion(Map<String, Object> request) {
-        if (Boolean.valueOf(request.get('deleted'))) {
-            deleteQuestion(String.valueOf(request.get('id')));
-        } else {
-            create(request);
-        }
+    public frQuestion(Sync_Attempt__c syncRecord){
+        super(syncRecord);
     }
     
-    public void deleteQuestion(String funraiseId) {
+    public Boolean sync() {
+        Boolean result = false;
+        Map<String, Object> request = 
+            (Map<String, Object>)JSON.deserializeUntyped(syncRecord.Request_Body__c);
+        
+        if (Boolean.valueOf(request.get('deleted'))) {
+            result = deleteQuestion(String.valueOf(request.get('id')));
+        } else {
+            result = create(request);
+        }
+
+    	return result;
+    }
+    
+    private Boolean deleteQuestion(String funraiseId) {
+        Boolean result = false;
         try {
             delete [SELECT id FROM Question__c WHERE fr_ID__c = :funraiseId];
+            result = true;
         } catch (DMLException e) {
-            frUtil.logException(frUtil.Entity.SUBSCRIPTION, funraiseId, e);
+            if(createLogRecord) frUtil.logException(frUtil.Entity.QUESTION, funraiseId, e);
         }
+        return result;
     }
     
-    public void create(Map<String, Object> request) {
+    public Boolean create(Map<String, Object> request) {
+        Boolean result = false;
         String funraiseId = String.valueOf(request.get('id'));
 		Question__c question = new Question__c(
 			fr_Id__c = funraiseId,
@@ -78,9 +92,10 @@ public class frQuestion {
         
         try {
             Database.upsert(question, Question__c.Field.fr_ID__c, true);
+            result = true;
         } catch (DMLException ex) {
-            frUtil.logException(frUtil.Entity.QUESTION, funraiseId, ex);
-            return;
+            if(createLogRecord) frUtil.logException(frUtil.Entity.QUESTION, funraiseId, ex);
         }
+        return result;
     } 
 }
