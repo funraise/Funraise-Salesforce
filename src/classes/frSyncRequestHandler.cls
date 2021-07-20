@@ -20,17 +20,24 @@ public class frSyncRequestHandler implements Database.Batchable<SObject> {
     public void execute (Database.BatchableContext bc, List<Sync_Attempt__c> syncs) {
         List<Sync_Attempt__c> toDelete = new List<Sync_Attempt__c>();
         List<Sync_Attempt__c> toUpdate = new List<Sync_Attempt__c>();
-        for (Sync_Attempt__c attempt : syncs) {
-            attempt.Attempts__c += 1;
-            Boolean success = sync(attempt);
-            if (success || attempt.Attempts__c > MAX_ATTEMPTS) {
-                toDelete.add(attempt);
-            } else {
-                toUpdate.add(attempt);
-            }
+        try {
+            for (Sync_Attempt__c attempt : syncs) {
+                attempt.Attempts__c += 1;
+                Boolean success = false;
+                try {
+                    success = sync(attempt);
+                } finally {
+                    if (success || attempt.Attempts__c > MAX_ATTEMPTS) {
+                        toDelete.add(attempt);
+                    } else {
+                        toUpdate.add(attempt);
+                    }
+                }
+            }  
+        } finally {
+            delete toDelete;
+            update toUpdate; 
         }
-        delete toDelete;
-        update toUpdate;
     }
     
     public static Boolean sync(Sync_Attempt__c attempt) {
