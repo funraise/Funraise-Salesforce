@@ -46,19 +46,11 @@ public class frSubscriptionTest {
         Map<String, Object> request = getTestRequest();
         request.put('supporterId', testSupporter.fr_ID__c);
         request.put('id', funraiseId);
+
+        frTestUtil.createTestPost(request);
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
         Test.startTest();
-
         frWSSubscriptionController.syncEntity();
-
         Test.stopTest();
         
         Subscription__c subscription = [SELECT Id, fr_ID__c, 
@@ -115,17 +107,10 @@ public class frSubscriptionTest {
         request.put('id', funraiseId);
         request.put('campaignGoalId', testCampaign.fr_ID__c);
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
+
         Test.startTest();
-
         frWSSubscriptionController.syncEntity();
-
         Test.stopTest();
 
         Subscription__c subscription = [SELECT Id, fr_ID__c, Campaign_Goal__c FROM Subscription__c WHERE fr_ID__c = :funraiseId];
@@ -141,17 +126,10 @@ public class frSubscriptionTest {
         request.put('supporterId', testSupporter.fr_ID__c+'1');
         request.put('id', funraiseId);
 
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
+        
         Test.startTest();
-
         frWSSubscriptionController.syncEntity();
-
         Test.stopTest();
 
         Integer subscriptions = [SELECT COUNT() FROM Subscription__c WHERE fr_ID__c = :funraiseId];
@@ -172,17 +150,10 @@ public class frSubscriptionTest {
         request.put('id', funraiseId);
         request.put('campaignGoalId', testCampaign.fr_ID__c+'1');
 
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
+        
         Test.startTest();
-
         frWSSubscriptionController.syncEntity();
-
         Test.stopTest();
 
         Subscription__c subscription = [SELECT Id, fr_ID__c, Campaign_Goal__c FROM Subscription__c WHERE fr_ID__c = :funraiseId];
@@ -200,17 +171,10 @@ public class frSubscriptionTest {
         request.put('id', funraiseId);
         request.put('deleted', true);
 
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
+
         Test.startTest();
-
         frWSSubscriptionController.syncEntity();
-
         Test.stopTest();
 
         Integer matchingRecords = [SELECT COUNT() FROM Subscription__c WHERE fr_ID__c = :funraiseId];
@@ -227,18 +191,10 @@ public class frSubscriptionTest {
         request.put('id', funraiseId);
         request.put('pledgeAmount', 500);
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
+        frTestUtil.createTestPost(request);
 
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
         Test.startTest();
-
         frWSSubscriptionController.syncEntity();
-
         Test.stopTest();
         
         Subscription__c subscription = [SELECT Id, Supporter__c FROM Subscription__c WHERE fr_ID__c = :funraiseId];

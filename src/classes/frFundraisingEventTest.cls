@@ -43,18 +43,9 @@ public class frFundraisingEventTest {
         Map<String, Object> request = getTestRequest();
         String funraiseId = String.valueOf(request.get('id'));
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
         Test.startTest();
-
         frWSFundraisingEventController.syncEntity();
-
         Test.stopTest();
         
         Fundraising_Event__c newEvent = [SELECT Id, fr_ID__c, Name, Description__c, Start_Date__c, End_Date__c 
@@ -73,18 +64,9 @@ public class frFundraisingEventTest {
         request.put('eventStartDate', null);
         request.put('eventEndDate', null);
 
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
         Test.startTest();
-
         frWSFundraisingEventController.syncEntity();
-
         Test.stopTest();
 
         Fundraising_Event__c newEvent = [SELECT Id, fr_ID__c, Name, Description__c, Start_Date__c, End_Date__c 
@@ -104,18 +86,10 @@ public class frFundraisingEventTest {
         }
         request.put('name', name);
 
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
+        frTestUtil.createTestPost(request);
 
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
         Test.startTest();
-
         frWSFundraisingEventController.syncEntity();
-
         Test.stopTest();
 
         Fundraising_Event__c newEvent = [SELECT Id, fr_ID__c, Name, Description__c, Start_Date__c, End_Date__c 
@@ -132,18 +106,9 @@ public class frFundraisingEventTest {
         Map<String, Object> request = getTestRequest();
         request.put('id', null);
 
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
         Test.startTest();
-
         frWSFundraisingEventController.syncEntity();
-
         Test.stopTest();
 
         List<Fundraising_Event__c> events = [SELECT Id, fr_ID__c, Name, Description__c, Start_Date__c, End_Date__c 
@@ -160,18 +125,9 @@ public class frFundraisingEventTest {
         Map<String, Object> request = getTestRequest();
         request.put('id', existingEvent.fr_Id__c);
 
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
         Test.startTest();
-
         frWSFundraisingEventController.syncEntity();
-
         Test.stopTest();
 
         Fundraising_Event__c newEvent = [SELECT Id, fr_ID__c, Name, Description__c, Start_Date__c, End_Date__c 
@@ -192,18 +148,9 @@ public class frFundraisingEventTest {
         Fundraising_Event__c existingEvent = new Fundraising_Event__c(Name = 'Test Event', fr_Id__c = funraiseId);
         insert existingEvent;
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
         Test.startTest();
-
         frWSFundraisingEventController.syncEntity();
-
         Test.stopTest();
 
         List<Fundraising_Event__c> events = [SELECT Id, fr_ID__c, Name, Description__c, Start_Date__c, End_Date__c 

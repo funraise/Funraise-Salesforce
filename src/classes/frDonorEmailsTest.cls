@@ -42,57 +42,30 @@ public class frDonorEmailsTest {
     static testMethod void create_ExistingContact_test() {
         String emailId = '1234';
         Contact testContact = frDonorTest.getTestContact();
-
-        Map<String, Object> request = new Map<String, Object>();
+        
+        Map<String, Object> request = getTestRequest();
         request.put('donorId', testContact.fr_Id__c);
         request.put('id', emailId);
-        request.put('messageId', 'db92570b-766b-46b9-8b7a-a0c7efa92053');
-        request.put('correlationId', '4aeeCRcARIamde0uiZAr6Q');
-        request.put('fromAddress', 'test@funraise.io');
-        request.put('fromName', 'Bob Hope');
-        request.put('toAddress', 'notfunraise@funraise.io');
-        request.put('statusCode', 202);
-        request.put('sentDate', 1536184380L);
-        request.put('subject', 'Hello there!');
-
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
         
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/email';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
         Test.startTest();
         frWSDonorEmailController.syncEntity();
         Test.stopTest();
-
+        
         frTestUtil.assertNoErrors();
         EmailMessage newEmail = [SELECT Id, fromAddress FROM EmailMessage WHERE fr_Email_ID__c = :emailId];
         System.assertEquals('test@funraise.io', newEmail.fromAddress, 'The fromAddress was not correct');
     }
-
+    
     static testMethod void createNoExistingContact_test() {
         String funraiseId = '2314';
-
-        Map<String, Object> request = new Map<String, Object>();
+        
+        Map<String, Object> request = getTestRequest();
         request.put('donorId', funraiseId);
         request.put('id', 2314);
-        request.put('emailId', 4);
-        request.put('messageId', 'db92570b-766b-46b9-8b7a-a0c7efa92053');
-        request.put('correlationId', '4aeeCRcARIamde0uiZAr6Q');
-        request.put('statusCode', 202);
-        request.put('sentDate', 1536184380L);
-        request.put('subject', 'Hello there!');
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
+        frTestUtil.createTestPost(request);
         
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/email';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
         Test.startTest();
         frWSDonorEmailController.syncEntity();
         Test.stopTest();
@@ -106,24 +79,14 @@ public class frDonorEmailsTest {
         testContact.fr_ID__c = '856';
         insert testContact;
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/email';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(getTestPayload());
-        RestContext.request = req;
-        RestContext.response = res;
-
+        frTestUtil.createTestPost(getTestRequest());
         Test.startTest();
-
         frWSDonorEmailController.syncEntity();
-
         Test.stopTest();
-
-		frTestUtil.assertNoErrors();      
+        
+        frTestUtil.assertNoErrors();      
         EmailMessage newEmail = [SELECT fromAddress, (SELECT Id, RelationId FROM EmailMessageRelations WHERE RelationType = 'ToAddress') FROM EmailMessage WHERE fr_Email_Id__c = '4'];
-        System.assertEquals('email@funraise.io', newEmail.fromAddress, 'The funraise email address was not correct');
+        System.assertEquals('test@funraise.io', newEmail.fromAddress, 'The funraise email address was not correct');
         System.assertEquals(1, newEmail.EmailMessageRelations.size(), 'There should be a single email relation on the message. '+newEmail.EmailMessageRelations);
         Contact supporter = [SELECT Id, fr_ID__c FROM Contact WHERE Id = :newEmail.EmailMessageRelations.get(0).RelationId];
         System.assertEquals(testContact.Id, supporter.Id, 'The email should have been associated with the contact with the same fr_ID__c as the request had');
@@ -136,16 +99,12 @@ public class frDonorEmailsTest {
         request.put('id', 4);
         request.put('messageId', 'db92570b-766b-46b9-8b7a-a0c7efa92053');
         request.put('correlationId', '4aeeCRcARIamde0uiZAr6Q');
-        request.put('fromAddress', 'email@funraise.io');
+        request.put('fromAddress', 'test@funraise.io');
         request.put('fromName', 'John Smith');
         request.put('toAddress', 'testEmail@google.com');
         request.put('statusCode', 202);
         request.put('sentDate', 1536184380L);
         request.put('subject', 'Hello there');
         return request;
-    }
-
-    private static String getTestPayload() {
-        return Json.serialize(getTestRequest());
     }
 }

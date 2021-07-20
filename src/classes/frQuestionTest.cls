@@ -45,20 +45,12 @@ public class frQuestionTest {
         Map<String, Object> request = getTestRequest();
         request.put('id', funraiseId);
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/custom-question';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        
         frWSCustomQuestionController.syncEntity();
-        
         Test.stopTest();
         frTestUtil.assertNoErrors();
+        
         Question__c question = [SELECT Id, fr_ID__c, Name__c, Description__c, Type__c
                                 FROM Question__c WHERE fr_ID__c = :funraiseId];
         
@@ -79,20 +71,12 @@ public class frQuestionTest {
         Map<String, Object> request = getTestRequest();
         request.put('id', funraiseId);
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/custom-question';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        
         frWSCustomQuestionController.syncEntity();
-        
         Test.stopTest();
         frTestUtil.assertNoErrors();
+        
         Question__c question = [SELECT Id, fr_ID__c, Name__c, Description__c, Type__c
                                 FROM Question__c WHERE fr_ID__c = :funraiseId];
         
@@ -118,21 +102,10 @@ public class frQuestionTest {
         request.put('id', funraiseId);
         request.put('deleted', true);
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/custom-question';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
-        
         Integer countBefore = [SELECT COUNT() FROM Question__c];
-        
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        
         frWSCustomQuestionController.syncEntity();
-        
         Test.stopTest();
         frTestUtil.assertNoErrors();
         Integer countAfter = [SELECT COUNT() FROM Question__c];

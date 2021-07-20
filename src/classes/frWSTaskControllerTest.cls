@@ -45,19 +45,9 @@ public class frWSTaskControllerTest {
         Opportunity unrelatedDonation = new Opportunity(fr_ID__c = '68', StageName = 'Closed Won', Name = 'donation2', CloseDate = Date.today());
         insert new List<SObject>{supporter, donation, unrelatedDonation};
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/task';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(getTestPayload());
-        RestContext.request = req;
-        RestContext.response = res;
-        
+        frTestUtil.createTestPost(getTestRequest());
         Test.startTest();
-        
         frWSTaskController.syncEntity();
-        
         Test.stopTest();
         
         List<Task> expectedTasks = [SELECT Id, WhoId, WhatId FROM Task WHERE fr_Task_ID__c = '856'];
@@ -75,19 +65,9 @@ public class frWSTaskControllerTest {
         request.put('taskType', 'Interaction');
         request.remove('donationId');
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/task';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
-        
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        
         frWSTaskController.syncEntity();
-        
         Test.stopTest();
         
         List<Task> expectedTasks = [SELECT Id, WhoId, WhatId FROM Task WHERE fr_Task_ID__c = '856'];
@@ -97,19 +77,9 @@ public class frWSTaskControllerTest {
     }
 
     static testMethod void syncEntity_missingSupporter() {
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/task';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(getTestPayload());
-        RestContext.request = req;
-        RestContext.response = res;
-        
+        frTestUtil.createTestPost(getTestRequest());
         Test.startTest();
-        
         frWSTaskController.syncEntity();
-        
         Test.stopTest();
         
         Integer resultingTasks = [SELECT COUNT() FROM Task WHERE fr_Task_ID__c != null];
@@ -128,19 +98,9 @@ public class frWSTaskControllerTest {
         Map<String, Object> request = getTestRequest();
         request.put('deleted', true);
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/task';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
-        
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        
         frWSTaskController.syncEntity();
-        
         Test.stopTest();
         
         Integer expectedTasks = [SELECT COUNT() FROM Task WHERE fr_Task_ID__c = :existingTask.fr_Task_Id__c];
@@ -159,22 +119,12 @@ public class frWSTaskControllerTest {
         insert existingTask;
 
         Map<String, Object> request = getTestRequest();
-        request.put('id', 222); //different from request, won't be found. nothing should be deleted
+        request.put('id', 222); //different from existing, won't be found. nothing should be deleted
         request.put('deleted', true);
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/task';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
-        
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        
         frWSTaskController.syncEntity();
-        
         Test.stopTest();
         
         Integer expectedTasks = [SELECT COUNT() FROM Task WHERE fr_Task_ID__c = :existingTask.fr_Task_Id__c];
@@ -194,9 +144,5 @@ public class frWSTaskControllerTest {
         request.put('completedDate', 1487801043597L);
         request.put('deleted', false);
         return request;
-    }
-    
-    private static String getTestPayload() {
-        return Json.serialize(getTestRequest());
     }
 }

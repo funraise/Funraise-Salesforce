@@ -40,17 +40,6 @@
 @isTest
 public class frDonationTest {
     static testMethod void syncEntity_newDonor() {  
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
-        req.httpMethod = 'POST';
-        
-        req.requestBody = Blob.valueOf(getTestPayload());
-        
-        RestContext.request = req;
-        RestContext.response = res;
-        
         createMapping('name', 'Name');
         createMapping('name', 'Description');
         createMapping('amount', 'amount');
@@ -59,6 +48,7 @@ public class frDonationTest {
         insert new frMapping__c(Name = 'Test Percent', Is_Constant__c = true, Constant_Value__c = '95', sf_Name__c = 'Probability', Type__c = frDonation.TYPE);
         insert new frMapping__c(Name = 'Test Double', Is_Constant__c = true, Constant_Value__c = '1.5', sf_Name__c = 'totalopportunityquantity', Type__c = frDonation.TYPE);
         
+        frTestUtil.createTestPost(getTestRequest());
         Test.startTest();
         
         frWSDonationController.syncEntity();
@@ -70,8 +60,7 @@ public class frDonationTest {
         System.assertEquals('Closed Won', newOpportunity.StageName, 'The constant mapping for StageName was not used');
         System.assertEquals(95, newOpportunity.Probability, 'The constant mapping for Probability was not used');
         System.assertEquals(1.5, newOpportunity.TotalOpportunityQuantity, 'The constant mapping for Total Opportunity Quantity was not used');
-        Map<String, Object> body = (Map<String, Object>)JSON.deserializeUntyped(req.requestBody.toString());
-        String expectedNameAndDesc = (String)body.get('name');
+        String expectedNameAndDesc = String.valueOf(getTestRequest().get('name'));
         //assert that we can use the same funraise field to 2 different SF fields
         System.assertEquals(expectedNameAndDesc, newOpportunity.Name, 'The mapping for name should have been applied');
         System.assertEquals(expectedNameAndDesc, newOpportunity.Description, 'The mapping for desc should have been applied');
@@ -79,21 +68,13 @@ public class frDonationTest {
     
     static testMethod void syncEntity_existingDonor() { 
         Contact testContact = frDonorTest.getTestContact();
-        
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(getTestPayload());
-        RestContext.request = req;
-        RestContext.response = res;
         createMapping('name', 'Name');
         createMapping('donation_cretime', 'CloseDate');
+        
+        frTestUtil.createTestPost(getTestRequest());
+        
         Test.startTest();
-        
         frWSDonationController.syncEntity();
-        
         Test.stopTest();
         
         frTestUtil.assertNoErrors();
@@ -105,26 +86,21 @@ public class frDonationTest {
     
     
     static testMethod void syncEntity_CampaignDonation() { 
+        createMapping('name', 'Name');
+        createMapping('donation_cretime', 'CloseDate');
         Contact testContact = frDonorTest.getTestContact();
         
         Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
         insert testCampaign;
+
+        Map<String, Object> request = getTestRequest();
+        request.put('campaignGoalId', 10);
+        request.put('campaignMappingDisabled', false);
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(getTestPayloadCampaign());
-        RestContext.request = req;
-        RestContext.response = res;
-        createMapping('name', 'Name');
-        createMapping('donation_cretime', 'CloseDate');
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        
         frWSDonationController.syncEntity();
-        
         Test.stopTest();
         
         frTestUtil.assertNoErrors();
@@ -143,22 +119,15 @@ public class frDonationTest {
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
         insert testCampaign;
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
-        req.httpMethod = 'POST';
-        Map<String, Object> request = getTestRequest();
-        request.put('status', 'Refunded');
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
         createMapping('name', 'Name');
         createMapping('donation_cretime', 'CloseDate');
+        
+        Map<String, Object> request = getTestRequest();
+        request.put('status', 'Refunded');       
+        frTestUtil.createTestPost(request);
+        
         Test.startTest();
-        
         frWSDonationController.syncEntity();
-        
         Test.stopTest();
         
         frTestUtil.assertNoErrors();        
@@ -168,6 +137,9 @@ public class frDonationTest {
     }
     
     static testMethod void syncEntity_newOpportunityRoleMappings() { 
+        createMapping('name', 'Name');
+        createMapping('donation_cretime', 'CloseDate');
+        
         Contact donor = frDonorTest.getTestContact(false);
         donor.fr_Id__c = '1';
         donor.Email = 'donor@example.com';
@@ -179,25 +151,15 @@ public class frDonationTest {
         teamCaptain.Email = 'teamCaptain@example.com';
         insert new List<Contact>{donor, fundraiser, teamCaptain};
             
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
-        req.httpMethod = 'POST';
         Map<String, Object> request = getTestRequest();
         request.put('opportunityContactMappingDisabled', 'false');
         request.put('donorId', donor.fr_Id__c);
         request.put('fundraiserId', fundraiser.fr_ID__c);
         request.put('teamCaptainId', teamCaptain.fr_ID__c);
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
-        createMapping('name', 'Name');
-        createMapping('donation_cretime', 'CloseDate');
+
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        
         frWSDonationController.syncEntity();
-        
         Test.stopTest();
         
         frTestUtil.assertNoErrors();
@@ -220,6 +182,9 @@ public class frDonationTest {
     }
     
     static testMethod void syncEntity_newOpportunityRoleMappings_missingContacts() { 
+        createMapping('name', 'Name');
+        createMapping('donation_cretime', 'CloseDate');
+        
         Contact donor = frDonorTest.getTestContact(false);
         donor.fr_Id__c = '1';
         donor.Email = 'donor@example.com';
@@ -231,25 +196,15 @@ public class frDonationTest {
         teamCaptain.Email = 'teamCaptain@example.com';
         insert new List<Contact>{donor, fundraiser, teamCaptain};
             
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
-        req.httpMethod = 'POST';
         Map<String, Object> request = getTestRequest();
         request.put('opportunityContactMappingDisabled', 'false');
         request.put('donorId', donor.fr_Id__c);
         request.put('fundraiserId', fundraiser.fr_ID__c+'1');
         request.put('teamCaptainId', teamCaptain.fr_ID__c+'1');
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
-        createMapping('name', 'Name');
-        createMapping('donation_cretime', 'CloseDate');
+        
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        
         frWSDonationController.syncEntity();
-        
         Test.stopTest();
                 
         String oppFrId = String.valueOf(getTestRequest().get('id'));
@@ -260,31 +215,20 @@ public class frDonationTest {
     }
     
     static testMethod void syncEntity_LinkToSubscription() {  
+        createMapping('name', 'Name');
+        createMapping('donation_cretime', 'CloseDate');
+        
         Contact testSupporter = frDonorTest.getTestContact();
         
         Subscription__c subscription = new Subscription__c(Name = 'Test Sub', fr_ID__c = '1234', Supporter__c = testSupporter.Id);
         insert subscription;
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
-        req.httpMethod = 'POST';
-        
         Map<String, Object> request = getTestRequest();
         request.put('subscriptionId', subscription.fr_ID__c);
-        req.requestBody = Blob.valueOf(Json.serialize(request));
         
-        RestContext.request = req;
-        RestContext.response = res;
-        
-        createMapping('name', 'Name');
-        createMapping('donation_cretime', 'CloseDate');
-        
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        
         frWSDonationController.syncEntity();
-        
         Test.stopTest();
         
         frTestUtil.assertNoErrors();
@@ -295,30 +239,17 @@ public class frDonationTest {
     }
     
     static testMethod void syncEntity_LinkToPledge() {  
+        createMapping('name', 'Name');
+        createMapping('donation_cretime', 'CloseDate');
+        
         Contact testSupporter = frDonorTest.getTestContact();
         
         Pledge__c pledge = getTestPledge(testSupporter);
         insert pledge;
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
-        req.httpMethod = 'POST';
-        
-        Map<String, Object> request = getTestRequest();
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        
-        RestContext.request = req;
-        RestContext.response = res;
-        
-        createMapping('name', 'Name');
-        createMapping('donation_cretime', 'CloseDate');
-        
+        frTestUtil.createTestPost(getTestRequest());
         Test.startTest();
-        
         frWSDonationController.syncEntity();
-        
         Test.stopTest();
         
         frTestUtil.assertNoErrors();
@@ -328,29 +259,18 @@ public class frDonationTest {
     }
     
     static testMethod void syncEntity_PledgeCreatesPledge() {  
-        Contact testSupporter = frDonorTest.getTestContact();
-        
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
-        req.httpMethod = 'POST';
-        
-        Map<String, Object> request = getTestRequest();
-        request.put('pledge', true);
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        
-        RestContext.request = req;
-        RestContext.response = res;
-        
         createMapping('name', 'Name');
         createMapping('amount', 'amount');
         createMapping('donation_cretime', 'CloseDate');
         
+        Contact testSupporter = frDonorTest.getTestContact();
+        
+        Map<String, Object> request = getTestRequest();
+        request.put('pledge', true);
+        
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        
         frWSDonationController.syncEntity();
-        
         Test.stopTest();
         
         frTestUtil.assertNoErrors();        
@@ -366,6 +286,9 @@ public class frDonationTest {
     }
     
     static testMethod void syncEntity_PledgeUpdatesPledge() {  
+        createMapping('name', 'Name');
+        createMapping('amount', 'amount');
+        createMapping('donation_cretime', 'CloseDate');
         Contact testSupporter = frDonorTest.getTestContact();
         
         Opportunity existingOpp = getTestOpp();
@@ -384,27 +307,13 @@ public class frDonationTest {
         System.assertEquals(pledge.Pledge_Donation__c +'', pledge.Pledge_Donation_uq__c+'',
                             'The external id unique field should have been updated with the value from the lookup field');
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
-        req.httpMethod = 'POST';
-        
+
         Map<String, Object> request = getTestRequest();
         request.put('pledge', true);
-        req.requestBody = Blob.valueOf(Json.serialize(request));
         
-        RestContext.request = req;
-        RestContext.response = res;
-        
-        createMapping('name', 'Name');
-        createMapping('amount', 'amount');
-        createMapping('donation_cretime', 'CloseDate');
-        
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        
         frWSDonationController.syncEntity();
-        
         Test.stopTest();
         
         frTestUtil.assertNoErrors();
@@ -426,6 +335,10 @@ public class frDonationTest {
 * be an active pledge
 */
     static testMethod void syncEntity_existing_alreadyLinkedToPledge() {  
+        createMapping('name', 'Name');
+        createMapping('amount', 'amount');
+        createMapping('donation_cretime', 'CloseDate');
+        
         Contact testSupporter = frDonorTest.getTestContact();
         Pledge__c pledge = getTestPledge(testSupporter);
         pledge.End_Date__c = Date.today().addDays(-1); //so it's no longer active
@@ -435,27 +348,12 @@ public class frDonationTest {
         existingOpp.Funraise_Pledge__c = pledge.Id;
         insert existingOpp;
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
-        req.httpMethod = 'POST';
-        
         Map<String, Object> request = getTestRequest();
         request.put('id', existingOpp.fr_Id__c);
-        req.requestBody = Blob.valueOf(Json.serialize(request));
         
-        RestContext.request = req;
-        RestContext.response = res;
-        
-        createMapping('name', 'Name');
-        createMapping('amount', 'amount');
-        createMapping('donation_cretime', 'CloseDate');
-        
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        
         frWSDonationController.syncEntity();
-        
         Test.stopTest();
         
         frTestUtil.assertNoErrors();
@@ -471,6 +369,10 @@ public class frDonationTest {
 * then they should get matched together
 */
     static testMethod void syncEntity_oldDonation_matchesInactivePledge() {  
+        createMapping('name', 'Name');
+        createMapping('amount', 'amount');
+        createMapping('donation_cretime', 'CloseDate');
+        
         Contact testSupporter = frDonorTest.getTestContact();
         //get a pledge that is inactive according to dates
         //but is unfulfilled in amount
@@ -478,28 +380,13 @@ public class frDonationTest {
         pledge.Start_Date__c = Date.today().addDays(-5);
         pledge.End_Date__c = Date.today().addDays(-1); 
         insert pledge;
-        
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
-        req.httpMethod = 'POST';
-        
+
         Map<String, Object> request = getTestRequest();
         request.put('donation_cretime', DateTime.now().addDays(-3).getTime());
-        req.requestBody = Blob.valueOf(Json.serialize(request));
         
-        RestContext.request = req;
-        RestContext.response = res;
-        
-        createMapping('name', 'Name');
-        createMapping('amount', 'amount');
-        createMapping('donation_cretime', 'CloseDate');
-        
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        
         frWSDonationController.syncEntity();
-        
         Test.stopTest();
         
         frTestUtil.assertNoErrors();
@@ -515,6 +402,10 @@ public class frDonationTest {
 * then it should not be connected to the pledge
 */
     static testMethod void syncEntity_oldDonation_doesNotMatchInactivePledge() {  
+        createMapping('name', 'Name');
+        createMapping('amount', 'amount');
+        createMapping('donation_cretime', 'CloseDate');
+        
         Contact testSupporter = frDonorTest.getTestContact();
         //get a pledge that is inactive according to dates
         //but is unfulfilled in amount
@@ -522,28 +413,13 @@ public class frDonationTest {
         pledge.Start_Date__c = Date.today().addDays(-5);
         pledge.End_Date__c = Date.today().addDays(-1); 
         insert pledge;
-        
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
-        req.httpMethod = 'POST';
-        
+  
         Map<String, Object> request = getTestRequest();
         request.put('donation_cretime', DateTime.now().getTime());
-        req.requestBody = Blob.valueOf(Json.serialize(request));
         
-        RestContext.request = req;
-        RestContext.response = res;
-        
-        createMapping('name', 'Name');
-        createMapping('amount', 'amount');
-        createMapping('donation_cretime', 'CloseDate');
-        
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        
         frWSDonationController.syncEntity();
-        
         Test.stopTest();
         
         frTestUtil.assertNoErrors();
@@ -558,14 +434,11 @@ public class frDonationTest {
 * only one role will be created, because multiple roles with the same contact can cause issues with reporting
 */
     static testMethod void syncEntity_oppContactRoles_sameSupporter() {  
+        createMapping('name', 'Name');
+        createMapping('amount', 'amount');
+        createMapping('donation_cretime', 'CloseDate');
         Contact testSupporter = frDonorTest.getTestContact();
-        
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donation';
-        req.httpMethod = 'POST';
-        
+
         Map<String, Object> request = getTestRequest();
         request.put('opportunityContactMappingDisabled', false);
         request.put('donorId', testSupporter.fr_Id__c);
@@ -573,19 +446,9 @@ public class frDonationTest {
         request.put('teamCaptainId', testSupporter.fr_Id__c);
         request.put('softCreditSupporterId', testSupporter.fr_Id__c);
                 
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        
-        RestContext.request = req;
-        RestContext.response = res;
-        
-        createMapping('name', 'Name');
-        createMapping('amount', 'amount');
-        createMapping('donation_cretime', 'CloseDate');
-        
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        
         frWSDonationController.syncEntity();
-        
         Test.stopTest();
         
         frTestUtil.assertNoErrors();
@@ -608,17 +471,6 @@ public class frDonationTest {
     
     private static void createMapping(String frField, String sfField) {
         insert new frMapping__c(Name = frField+sfField, fr_Name__c = frField, sf_Name__c = sfField, Type__c = frDonation.TYPE);
-    }
-    
-    private static String getTestPayload() {
-        return Json.serialize(getTestRequest());
-    }
-    
-    private static String getTestPayloadCampaign() {
-        Map<String, Object> testRequest = getTestRequest();
-        testRequest.put('campaignGoalId', 10);
-        testRequest.put('campaignMappingDisabled', false);
-        return Json.serialize(testRequest);
     }
     
     public static Map<String, Object> getTestRequest() {

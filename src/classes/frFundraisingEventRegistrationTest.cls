@@ -57,18 +57,9 @@ public class frFundraisingEventRegistrationTest {
         request.put('transactionId', testTransaction.fr_ID__c);
         request.put('id', funraiseId);
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
         Test.startTest();
-
         frWSFundraisingEventRegistrationCntrlr.syncEntity();
-
         Test.stopTest();
         
         Fundraising_Event_Registration__c registration = [SELECT Id, fr_ID__c, Name, Attended__c, Ticket_Name__c, Ticket_Amount__c,
@@ -101,14 +92,7 @@ public class frFundraisingEventRegistrationTest {
         request.put('guestOfId', testSupporter.fr_Id__c);
         request.put('id', funraiseId);
 
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
         Test.startTest();
         Integer syncAttemptsBefore = [SELECT COUNT() FROM Sync_Attempt__c];
         frWSFundraisingEventRegistrationCntrlr.syncEntity();
@@ -135,14 +119,7 @@ public class frFundraisingEventRegistrationTest {
         request.put('guestOfId', guestOf.fr_Id__c);
         request.put('id', funraiseId);
 
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
         Test.startTest();
         frWSFundraisingEventRegistrationCntrlr.syncEntity();
         Test.stopTest();
@@ -186,14 +163,7 @@ public class frFundraisingEventRegistrationTest {
         request.put('guestOfId', 'nonexistent'); //not matching on guestOf is ok, we will create anyway
         request.put('id', funraiseId);
 
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
         Test.startTest();
         frWSFundraisingEventRegistrationCntrlr.syncEntity();
         Test.stopTest();
@@ -224,14 +194,7 @@ public class frFundraisingEventRegistrationTest {
         request.put('transactionId', 'nonexistent');
         request.put('id', funraiseId);
 
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
         Test.startTest();
         frWSFundraisingEventRegistrationCntrlr.syncEntity();
         Test.stopTest();
@@ -251,14 +214,7 @@ public class frFundraisingEventRegistrationTest {
         request.put('id', existingRegistration.fr_Id__c);
         request.put('deleted', true);
 
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
         Test.startTest();
         frWSFundraisingEventRegistrationCntrlr.syncEntity();
         Test.stopTest();

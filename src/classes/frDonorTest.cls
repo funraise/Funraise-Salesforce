@@ -40,15 +40,6 @@
 @isTest
 public class frDonorTest {
     static testMethod void syncEntity_test() {
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donor';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(getTestPayload());
-        RestContext.request = req;
-        RestContext.response = res;
-        
         createMapping('firstName', 'FirstName');
         createMapping('lastName', 'LastName');
         createMapping('email', 'email');
@@ -58,10 +49,10 @@ public class frDonorTest {
         createMapping('postalCode', 'MailingPostalCode');
         createMapping('country', 'MailingCountry');
         createMapping('donor_cretime', 'BirthDate');
+        
+        frTestUtil.createTestPost(getTestRequest());
         Test.startTest();
-        
         frWSDonorController.syncEntity();
-        
         Test.stopTest();
         
         String frId = String.valueOf(getTestRequest().get('id'));
@@ -72,18 +63,6 @@ public class frDonorTest {
     //If the contact's last name field is blank, we'll assume its because there's no last name in funraise
     //likely meaning it's an institution contact, so we should put the institution name in the last name field
     static testMethod void syncEntity_contactLastNameFallback() {
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donor';
-        req.httpMethod = 'POST';
-        Map<String, Object> requestBody = getTestRequest();
-        requestBody.put('lastName', null);
-        requestBody.put('institutionName', 'Test Inst Name');
-        req.requestBody = Blob.valueOf(Json.serialize(requestBody));
-        RestContext.request = req;
-        RestContext.response = res;
-        
         createMapping('firstName', 'FirstName');
         createMapping('email', 'email');
         createMapping('address1', 'MailingStreet');
@@ -92,35 +71,24 @@ public class frDonorTest {
         createMapping('postalCode', 'MailingPostalCode');
         createMapping('country', 'MailingCountry');
         createMapping('donor_cretime', 'BirthDate');
+        
+        Map<String, Object> request = getTestRequest();
+        request.put('lastName', null);
+        request.put('institutionName', 'Test Inst Name');
+        
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        
         frWSDonorController.syncEntity();
-        
         Test.stopTest();
         
         String frId = String.valueOf(getTestRequest().get('id'));
         Contact newContact = [SELECT Id, fr_ID__c, LastName FROM Contact WHERE fr_Id__c = :frId];
-        System.assertEquals(String.valueOf(requestBody.get('institutionName')), newContact.LastName, 'We expected a fallback so that the contact would still get created');
+        System.assertEquals(String.valueOf(request.get('institutionName')), newContact.LastName, 'We expected a fallback so that the contact would still get created');
     }
     
     //Sync to an existing contact that once the mappings are applied, LastName is empty so Salesforce will throw an exception
     //confirm our fallback works as expected to prevent that exception
     static testMethod void syncEntity_contactLastNameFallback_existing() {
-        Contact existingSupporter = getTestContact();
-        
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donor';
-        req.httpMethod = 'POST';
-        Map<String, Object> requestBody = getTestRequest();
-        requestBody.put('id', existingSupporter.fr_Id__c);
-        requestBody.put('lastName', null);
-        requestBody.put('institutionName', 'Test Inst Name');
-        req.requestBody = Blob.valueOf(Json.serialize(requestBody));
-        RestContext.request = req;
-        RestContext.response = res;
-        
         createMapping('firstName', 'FirstName');
         createMapping('lastName', 'LastName');
         createMapping('email', 'email');
@@ -130,45 +98,43 @@ public class frDonorTest {
         createMapping('postalCode', 'MailingPostalCode');
         createMapping('country', 'MailingCountry');
         createMapping('donor_cretime', 'BirthDate');
+        
+        Contact existingSupporter = getTestContact();
+        
+        Map<String, Object> request = getTestRequest();
+        request.put('id', existingSupporter.fr_Id__c);
+        request.put('lastName', null);
+        request.put('institutionName', 'Test Inst Name');
+
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        
         frWSDonorController.syncEntity();
-        
         Test.stopTest();
         
         String frId = existingSupporter.fr_Id__c;
         Contact newContact = [SELECT Id, fr_ID__c, LastName FROM Contact WHERE fr_Id__c = :frId];
-        System.assertEquals(String.valueOf(requestBody.get('institutionName')), newContact.LastName, 'We expected a fallback so that the contact would still get created');
+        System.assertEquals(String.valueOf(request.get('institutionName')), newContact.LastName, 'We expected a fallback so that the contact would still get created');
     }
     
     static testMethod void syncEntity_existing_match_funraise_id() {
+        createMapping('firstName', 'FirstName');
+        createMapping('lastName', 'LastName');
+        createMapping('email', 'email');
+        createMapping('address1', 'MailingStreet');
+        createMapping('city', 'MailingCity');
+        createMapping('state', 'MailingState');
+        createMapping('postalCode', 'MailingPostalCode');
+        createMapping('country', 'MailingCountry');
+        
         Contact existing = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'testExisting@example.com', fr_ID__c = '856');
         Contact noMatch = new Contact(LastName = 'nomatch', FirstName = 'nomatch', Email = 'nomatch@example.com', fr_ID__c = '111');
         insert new List<Contact>{existing, noMatch};
             
         Integer countBeforeSync = [SELECT COUNT() FROM Contact];
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donor';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(getTestPayload());
-        RestContext.request = req;
-        RestContext.response = res;
-        
-        createMapping('firstName', 'FirstName');
-        createMapping('lastName', 'LastName');
-        createMapping('email', 'email');
-        createMapping('address1', 'MailingStreet');
-        createMapping('city', 'MailingCity');
-        createMapping('state', 'MailingState');
-        createMapping('postalCode', 'MailingPostalCode');
-        createMapping('country', 'MailingCountry');
+        frTestUtil.createTestPost(getTestRequest());
         Test.startTest();
-        
         frWSDonorController.syncEntity();
-        
         Test.stopTest();
         
         String frId = String.valueOf(getTestRequest().get('id'));
@@ -179,21 +145,6 @@ public class frDonorTest {
     }
     
     static testMethod void syncEntity_existing_match_email() {
-        Contact existing = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'alextest02221503@example.com');
-        Contact noMatch = new Contact(LastName = 'nomatch', FirstName = 'nomatch', Email = 'nomatch@example.com', fr_ID__c = '111');
-        insert new List<Contact>{existing, noMatch};
-            
-        Integer countBeforeSync = [SELECT COUNT() FROM Contact];
-        
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donor';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(getTestPayload());
-        RestContext.request = req;
-        RestContext.response = res;
-        
         createMapping('firstName', 'FirstName');
         createMapping('lastName', 'LastName');
         createMapping('email', 'email');
@@ -202,12 +153,19 @@ public class frDonorTest {
         createMapping('state', 'MailingState');
         createMapping('postalCode', 'MailingPostalCode');
         createMapping('country', 'MailingCountry');
+        
+        Contact existing = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'alextest02221503@example.com');
+        Contact noMatch = new Contact(LastName = 'nomatch', FirstName = 'nomatch', Email = 'nomatch@example.com', fr_ID__c = '111');
+        insert new List<Contact>{existing, noMatch};
+            
+        Integer countBeforeSync = [SELECT COUNT() FROM Contact];
+
+        frTestUtil.createTestPost(getTestRequest());
         Test.startTest();
-        
-        frWSDonorController.syncEntity();
-        
+        frWSDonorController.syncEntity();        
         Test.stopTest();
         frTestUtil.assertNoErrors();
+        
         String frId = String.valueOf(getTestRequest().get('id'));
         Contact syncedContact = [SELECT Id, fr_ID__c FROM Contact WHERE fr_Id__c = :frId];
         System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
@@ -216,6 +174,14 @@ public class frDonorTest {
     }
     
     static testMethod void syncEntity_existing_match_address() {
+        createMapping('firstName', 'FirstName');
+        createMapping('lastName', 'LastName');
+        createMapping('email', 'email');
+        createMapping('address1', 'MailingStreet');
+        createMapping('city', 'MailingCity');
+        createMapping('state', 'MailingState');
+        createMapping('postalCode', 'MailingPostalCode');
+        createMapping('country', 'MailingCountry');
         Contact existing = new Contact(LastName = 'test02221503', FirstName = 'alex', Email = 'testExisting@example.com',
                                        MailingStreet = '1234 S Street st',
                                        MailingCity = 'Test City',
@@ -227,29 +193,11 @@ public class frDonorTest {
         Contact noMatch = new Contact(LastName = 'nomatch', FirstName = 'nomatch', Email = 'nomatch@example.com', fr_ID__c = '111');
         insert new List<Contact>{existing, noMatch};
             
-            Integer countBeforeSync = [SELECT COUNT() FROM Contact];
+        Integer countBeforeSync = [SELECT COUNT() FROM Contact];
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donor';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(getTestPayload());
-        RestContext.request = req;
-        RestContext.response = res;
-        
-        createMapping('firstName', 'FirstName');
-        createMapping('lastName', 'LastName');
-        createMapping('email', 'email');
-        createMapping('address1', 'MailingStreet');
-        createMapping('city', 'MailingCity');
-        createMapping('state', 'MailingState');
-        createMapping('postalCode', 'MailingPostalCode');
-        createMapping('country', 'MailingCountry');
+        frTestUtil.createTestPost(getTestRequest());
         Test.startTest();
-        
         frWSDonorController.syncEntity();
-        
         Test.stopTest();
         
         String frId = String.valueOf(getTestRequest().get('id'));
@@ -260,15 +208,6 @@ public class frDonorTest {
     }
     
     static testMethod void syncEntity_badMappings() {
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donor';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(getTestPayload());
-        RestContext.request = req;
-        RestContext.response = res;
-        
         createMapping('firstName', 'FirstName');
         createMapping('lastName', 'LastName');
         createMapping('email', 'email');
@@ -282,10 +221,10 @@ public class frDonorTest {
         createMapping('institutionCategory', 'BirthDate');
         //bad mapping for datetime
         createMapping('p2gScore', 'LastCURequestDate');
+        
+        frTestUtil.createTestPost(getTestRequest());
         Test.startTest();
-        
         frWSDonorController.syncEntity();
-        
         Test.stopTest();
         
         List<Error__c> errors = [SELECT Error__c FROM Error__c];
@@ -320,10 +259,6 @@ public class frDonorTest {
     
     public static Contact getTestContact() {
         return getTestContact(true);
-    }
-    
-    private static String getTestPayload() {
-        return Json.serialize(getTestRequest());
     }
     
     public static Map<String, Object> getTestRequest() {
