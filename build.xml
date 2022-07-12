@@ -1,0 +1,30 @@
+<project name="Salesforce Ant tasks" default="test" basedir="." xmlns:sf="antlib:com.salesforce">
+
+    <property file="local.properties"/>
+    <property file="build.properties"/>
+    <property environment="env"/>
+
+    <!-- Setting default value for username, password and session id properties to empty string 
+         so unset values are treated as empty. Without this, ant expressions such as ${sf.username}
+         will be treated literally.
+    -->
+    <condition property="sf.username" value=""> <not> <isset property="sf.username"/> </not> </condition>
+    <condition property="sf.password" value=""> <not> <isset property="sf.password"/> </not> </condition>
+    <condition property="sf.sessionId" value=""> <not> <isset property="sf.sessionId"/> </not> </condition>
+
+    <taskdef resource="com/salesforce/antlib.xml" uri="antlib:com.salesforce">
+        <classpath>
+            <pathelement location="../ant-salesforce.jar" />        	
+        </classpath>
+    </taskdef>
+	
+    <target name="push">
+      <sf:deploy username="${sf.username}" password="${sf.password}" sessionId="${sf.sessionId}" serverurl="${sf.serverurl}" maxPoll="${sf.maxPoll}" deployRoot="src" rollbackOnError="true"/>
+    </target>
+
+    <target name="pull">
+      <sf:retrieve username="${sf.username}" password="${sf.password}" sessionId="${sf.sessionId}" serverurl="${sf.serverurl}" maxPoll="${sf.maxPoll}" retrieveTarget="src" unpackaged="src/package.xml"/>
+    </target>
+
+	
+</project>
