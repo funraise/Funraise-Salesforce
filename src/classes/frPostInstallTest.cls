@@ -34,15 +34,24 @@
 *
 *
 *
-* CREATED: 9-18-2018 Funraise Inc - https://funraise.io
-* AUTHOR: Mark D. Dufresne
+* CREATED: 2021 Funraise Inc - https://funraise.io
+* AUTHOR: Alex Molina
 */
-
-@RestResource(urlMapping='/v1/task')
-global with sharing class frWSTaskController {
-    
-    @HttpPost
-    global static void syncEntity() {
-        frWSBaseController.syncEntity(frUtil.Entity.TASK);
+@isTest
+public class frPostInstallTest {
+    static testMethod void testJobsScheduled() {
+        //Apex test contexts still pick up regular (non-test) scheduled jobs, so unscheduled them in this test
+        //to confirm they get scheduled as expected from a clean slate
+        for (CronTrigger activeJob : [SELECT Id FROM CronTrigger 
+                                        WHERE State NOT IN ('ERROR', 'DELETED') AND
+                                      CronJobDetail.Name IN :frSyncRequestScheduler.ALL_JOBS]) {
+        	System.abortJob(activeJob.Id);                                  
+        }
+        
+        Test.startTest();
+        new frPostInstall().onInstall(null);
+        Test.stopTest();      
+        Integer actualJobsScheduled = [SELECT COUNT() FROM CronTrigger WHERE State NOT IN ('ERROR', 'DELETED') AND CronJobDetail.Name IN :frSyncRequestScheduler.ALL_JOBS];
+        System.assertEquals(4, actualJobsScheduled, 'There should have been 4 jobs scheduled after the post install method runs');
     }
 }

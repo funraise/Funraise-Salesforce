@@ -40,15 +40,6 @@
 @isTest
 public class frDonorTest {
     static testMethod void syncEntity_test() {
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donor';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(getTestPayload());
-        RestContext.request = req;
-        RestContext.response = res;
-        
         createMapping('firstName', 'FirstName');
         createMapping('lastName', 'LastName');
         createMapping('email', 'email');
@@ -58,36 +49,20 @@ public class frDonorTest {
         createMapping('postalCode', 'MailingPostalCode');
         createMapping('country', 'MailingCountry');
         createMapping('donor_cretime', 'BirthDate');
+        
+        frTestUtil.createTestPost(getTestRequest());
         Test.startTest();
-        
         frWSDonorController.syncEntity();
-        
         Test.stopTest();
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        
-        Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
-                      'There was not an contact Id in the response as expected');
-        Contact newContact = [SELECT Id, fr_ID__c FROM Contact WHERE Id = :contactId];
-        System.assertEquals('856', newContact.fr_ID__c, 'The funraise donor id was not populated to the contact field');
+        String frId = String.valueOf(getTestRequest().get('id'));
+        Integer newContact = [SELECT COUNT() FROM Contact WHERE fr_Id__c = :frId];
+        System.assertEquals(1, newContact, 'The funraise donor id was not populated to the contact field');
     }
     
     //If the contact's last name field is blank, we'll assume its because there's no last name in funraise
     //likely meaning it's an institution contact, so we should put the institution name in the last name field
     static testMethod void syncEntity_contactLastNameFallback() {
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donor';
-        req.httpMethod = 'POST';
-        Map<String, Object> requestBody = getTestRequest();
-        requestBody.put('lastName', null);
-        requestBody.put('institutionName', 'Test Inst Name');
-        req.requestBody = Blob.valueOf(Json.serialize(requestBody));
-        RestContext.request = req;
-        RestContext.response = res;
-        
         createMapping('firstName', 'FirstName');
         createMapping('email', 'email');
         createMapping('address1', 'MailingStreet');
@@ -96,40 +71,24 @@ public class frDonorTest {
         createMapping('postalCode', 'MailingPostalCode');
         createMapping('country', 'MailingCountry');
         createMapping('donor_cretime', 'BirthDate');
+        
+        Map<String, Object> request = getTestRequest();
+        request.put('lastName', null);
+        request.put('institutionName', 'Test Inst Name');
+        
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        
         frWSDonorController.syncEntity();
-        
         Test.stopTest();
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        
-        Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
-                      'There was not an contact Id in the response as expected');
-        Contact newContact = [SELECT Id, fr_ID__c, LastName FROM Contact WHERE Id = :contactId];
-        System.assertEquals('856', newContact.fr_ID__c, 'The funraise donor id was not populated to the contact field');
-        System.assertEquals(String.valueOf(requestBody.get('institutionName')), newContact.LastName, 'We expected a fallback so that the contact would still get created');
+        String frId = String.valueOf(getTestRequest().get('id'));
+        Contact newContact = [SELECT Id, fr_ID__c, LastName FROM Contact WHERE fr_Id__c = :frId];
+        System.assertEquals(String.valueOf(request.get('institutionName')), newContact.LastName, 'We expected a fallback so that the contact would still get created');
     }
     
     //Sync to an existing contact that once the mappings are applied, LastName is empty so Salesforce will throw an exception
     //confirm our fallback works as expected to prevent that exception
     static testMethod void syncEntity_contactLastNameFallback_existing() {
-        Contact existingSupporter = getTestContact();
-        
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donor';
-        req.httpMethod = 'POST';
-        Map<String, Object> requestBody = getTestRequest();
-        requestBody.put('id', existingSupporter.fr_Id__c);
-        requestBody.put('lastName', null);
-        requestBody.put('institutionName', 'Test Inst Name');
-        req.requestBody = Blob.valueOf(Json.serialize(requestBody));
-        RestContext.request = req;
-        RestContext.response = res;
-        
         createMapping('firstName', 'FirstName');
         createMapping('lastName', 'LastName');
         createMapping('email', 'email');
@@ -139,38 +98,25 @@ public class frDonorTest {
         createMapping('postalCode', 'MailingPostalCode');
         createMapping('country', 'MailingCountry');
         createMapping('donor_cretime', 'BirthDate');
+        
+        Contact existingSupporter = getTestContact();
+        
+        Map<String, Object> request = getTestRequest();
+        request.put('id', existingSupporter.fr_Id__c);
+        request.put('lastName', null);
+        request.put('institutionName', 'Test Inst Name');
+
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        
         frWSDonorController.syncEntity();
-        
         Test.stopTest();
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        
-        Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
-                      'There was not an contact Id in the response as expected');
-        Contact newContact = [SELECT Id, fr_ID__c, LastName FROM Contact WHERE Id = :contactId];
-        System.assertEquals(existingSupporter.fr_Id__c, newContact.fr_ID__c, 'The funraise donor id was not populated to the contact field');
-        System.assertEquals(String.valueOf(requestBody.get('institutionName')), newContact.LastName, 'We expected a fallback so that the contact would still get created');
+        String frId = existingSupporter.fr_Id__c;
+        Contact newContact = [SELECT Id, fr_ID__c, LastName FROM Contact WHERE fr_Id__c = :frId];
+        System.assertEquals(String.valueOf(request.get('institutionName')), newContact.LastName, 'We expected a fallback so that the contact would still get created');
     }
     
     static testMethod void syncEntity_existing_match_funraise_id() {
-        Contact existing = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'testExisting@example.com', fr_ID__c = '856');
-        Contact noMatch = new Contact(LastName = 'nomatch', FirstName = 'nomatch', Email = 'nomatch@example.com', fr_ID__c = '111');
-        insert new List<Contact>{existing, noMatch};
-            
-            Integer countBeforeSync = [SELECT COUNT() FROM Contact];
-        
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donor';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(getTestPayload());
-        RestContext.request = req;
-        RestContext.response = res;
-        
         createMapping('firstName', 'FirstName');
         createMapping('lastName', 'LastName');
         createMapping('email', 'email');
@@ -179,39 +125,26 @@ public class frDonorTest {
         createMapping('state', 'MailingState');
         createMapping('postalCode', 'MailingPostalCode');
         createMapping('country', 'MailingCountry');
-        Test.startTest();
         
-        frWSDonorController.syncEntity();
-        
-        Test.stopTest();
-        
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
-        
-        Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
-                      'There was not an contact Id in the response as expected');
-        System.assertEquals(existing.Id, contactId, 'The existing contact should have been used');
-        Contact newContact = [SELECT Id, fr_ID__c, Email FROM Contact WHERE Id = :contactId];
-        Integer countAfterSync = [SELECT COUNT() FROM Contact];
-        System.assertEquals(countBeforeSync, countAfterSync, 'No additional contacts should have been created');
-    }
-    
-    static testMethod void syncEntity_existing_match_email() {
-        Contact existing = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'alextest02221503@example.com');
+        Contact existing = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'testExisting@example.com', fr_ID__c = '856');
         Contact noMatch = new Contact(LastName = 'nomatch', FirstName = 'nomatch', Email = 'nomatch@example.com', fr_ID__c = '111');
         insert new List<Contact>{existing, noMatch};
             
         Integer countBeforeSync = [SELECT COUNT() FROM Contact];
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
+        frTestUtil.createTestPost(getTestRequest());
+        Test.startTest();
+        frWSDonorController.syncEntity();
+        Test.stopTest();
         
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donor';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(getTestPayload());
-        RestContext.request = req;
-        RestContext.response = res;
-        
+        String frId = String.valueOf(getTestRequest().get('id'));
+		Contact syncedContact = [SELECT Id, fr_ID__c, Email FROM Contact WHERE fr_Id__c = :frId];
+        System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
+        Integer countAfterSync = [SELECT COUNT() FROM Contact];
+        System.assertEquals(countBeforeSync, countAfterSync, 'No additional contacts should have been created');
+    }
+    
+    static testMethod void syncEntity_existing_match_email() {
         createMapping('firstName', 'FirstName');
         createMapping('lastName', 'LastName');
         createMapping('email', 'email');
@@ -220,25 +153,35 @@ public class frDonorTest {
         createMapping('state', 'MailingState');
         createMapping('postalCode', 'MailingPostalCode');
         createMapping('country', 'MailingCountry');
+        
+        Contact existing = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'alextest02221503@example.com');
+        Contact noMatch = new Contact(LastName = 'nomatch', FirstName = 'nomatch', Email = 'nomatch@example.com', fr_ID__c = '111');
+        insert new List<Contact>{existing, noMatch};
+            
+        Integer countBeforeSync = [SELECT COUNT() FROM Contact];
+
+        frTestUtil.createTestPost(getTestRequest());
         Test.startTest();
-        
-        frWSDonorController.syncEntity();
-        
+        frWSDonorController.syncEntity();        
         Test.stopTest();
         frTestUtil.assertNoErrors();
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
         
-        Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
-                      'There was not an contact Id in the response as expected');
-        System.assertEquals(existing.Id, contactId, 'The existing contact should have been used');
-        Contact newContact = [SELECT Id, fr_ID__c FROM Contact WHERE Id = :contactId];
+        String frId = String.valueOf(getTestRequest().get('id'));
+        Contact syncedContact = [SELECT Id, fr_ID__c FROM Contact WHERE fr_Id__c = :frId];
+        System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
         Integer countAfterSync = [SELECT COUNT() FROM Contact];
         System.assertEquals(countBeforeSync, countAfterSync, 'No additional contacts should have been created');
-        System.assertEquals('856', newContact.fr_ID__c, 'The funraise Id should be populated on the existing contact matched by email');
     }
     
     static testMethod void syncEntity_existing_match_address() {
+        createMapping('firstName', 'FirstName');
+        createMapping('lastName', 'LastName');
+        createMapping('email', 'email');
+        createMapping('address1', 'MailingStreet');
+        createMapping('city', 'MailingCity');
+        createMapping('state', 'MailingState');
+        createMapping('postalCode', 'MailingPostalCode');
+        createMapping('country', 'MailingCountry');
         Contact existing = new Contact(LastName = 'test02221503', FirstName = 'alex', Email = 'testExisting@example.com',
                                        MailingStreet = '1234 S Street st',
                                        MailingCity = 'Test City',
@@ -250,53 +193,21 @@ public class frDonorTest {
         Contact noMatch = new Contact(LastName = 'nomatch', FirstName = 'nomatch', Email = 'nomatch@example.com', fr_ID__c = '111');
         insert new List<Contact>{existing, noMatch};
             
-            Integer countBeforeSync = [SELECT COUNT() FROM Contact];
+        Integer countBeforeSync = [SELECT COUNT() FROM Contact];
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donor';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(getTestPayload());
-        RestContext.request = req;
-        RestContext.response = res;
-        
-        createMapping('firstName', 'FirstName');
-        createMapping('lastName', 'LastName');
-        createMapping('email', 'email');
-        createMapping('address1', 'MailingStreet');
-        createMapping('city', 'MailingCity');
-        createMapping('state', 'MailingState');
-        createMapping('postalCode', 'MailingPostalCode');
-        createMapping('country', 'MailingCountry');
+        frTestUtil.createTestPost(getTestRequest());
         Test.startTest();
-        
         frWSDonorController.syncEntity();
-        
         Test.stopTest();
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class); 
-        
-        Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
-                      'There was not an contact Id in the response as expected');
-        System.assertEquals(existing.Id, contactId, 'The existing contact should have been used');
-        Contact newContact = [SELECT Id, fr_ID__c FROM Contact WHERE Id = :contactId];
+        String frId = String.valueOf(getTestRequest().get('id'));
+        Contact syncedContact = [SELECT Id, fr_ID__c FROM Contact WHERE fr_Id__c = :frId];
+        System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
         Integer countAfterSync = [SELECT COUNT() FROM Contact];
         System.assertEquals(countBeforeSync, countAfterSync, 'No additional contacts should have been created');
-        System.assertEquals('856', newContact.fr_ID__c, 'The funraise Id should be populated on the existing contact matched by address');
     }
     
     static testMethod void syncEntity_badMappings() {
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/donor';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(getTestPayload());
-        RestContext.request = req;
-        RestContext.response = res;
-        
         createMapping('firstName', 'FirstName');
         createMapping('lastName', 'LastName');
         createMapping('email', 'email');
@@ -310,10 +221,10 @@ public class frDonorTest {
         createMapping('institutionCategory', 'BirthDate');
         //bad mapping for datetime
         createMapping('p2gScore', 'LastCURequestDate');
+        
+        frTestUtil.createTestPost(getTestRequest());
         Test.startTest();
-        
         frWSDonorController.syncEntity();
-        
         Test.stopTest();
         
         List<Error__c> errors = [SELECT Error__c FROM Error__c];
@@ -323,23 +234,15 @@ public class frDonorTest {
         }
         System.assertEquals(2, errors.size(), 'Only 2 bad mapping errors were expected (Date and Datetime fields): Errors:' + errorsStr);
         
-        MockResponse response = (MockResponse) JSON.deserialize(res.responseBody.toString(), MockResponse.class);
         
         //but even with bad field mappings the record should still come over correctly
-        Id contactId = response.id;
-        System.assert(String.isNotBlank(contactId), 
-                      'There was not an contact Id in the response as expected');
-        Contact newContact = [SELECT Id, fr_ID__c FROM Contact WHERE Id = :contactId];
-        
-        System.assertEquals('856', newContact.fr_ID__c, 'The funraise donor id was not populated to the contact field');
+        String frId = String.valueOf(getTestRequest().get('id'));
+        Integer newContacts = [SELECT COUNT() FROM Contact WHERE fr_Id__c = :frId];
+        System.assertEquals(1, newContacts, 'The funraise donor id was not populated to the contact field');
     }
     
     private static void createMapping(String frField, String sfField) {
         insert new frMapping__c(Name = frField+sfField, fr_Name__c = frField, sf_Name__c = sfField, Type__c = frDonor.TYPE);
-    }
-    
-    public class MockResponse {
-        String id;
     }
 
     public static Contact getTestContact(Boolean save) {
@@ -358,11 +261,7 @@ public class frDonorTest {
         return getTestContact(true);
     }
     
-    private static String getTestPayload() {
-        return Json.serialize(getTestRequest());
-    }
-    
-    private static Map<String, Object> getTestRequest() {
+    public static Map<String, Object> getTestRequest() {
         Map<String, Object> request = new Map<String, Object>();
         request.put('id', 856);
         request.put('organizationId', 'ae8d412b-db97-49dc-8c8c-5bfe0f41fc6d');

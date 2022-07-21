@@ -38,34 +38,47 @@
 * AUTHOR: Alex Molina
 */
 
-public class frSubscription {
+public class frSubscription extends frModel implements frSyncable {
     public static final Map<String, Schema.SObjectField> fields = 
         frSchemaUtil.getFields(Subscription__c.getSObjectType().getDescribe().getName());
-    public frSubscription(Map<String, Object> request) {
-        if (Boolean.valueOf(request.get('deleted'))) {
-            deleteSubscription(String.valueOf(request.get('id')));
-        } else {
-            create(request);
-        }
+        
+    public frSubscription(Sync_Attempt__c syncRecord){
+        super(syncRecord);
     }
     
-    public void deleteSubscription(String funraiseId) {
+    public Boolean sync() {
+        Boolean result = false;
+        Map<String, Object> request = 
+            (Map<String, Object>)JSON.deserializeUntyped(syncRecord.Request_Body__c);
+        if (Boolean.valueOf(request.get('deleted'))) {
+            result = deleteSubscription(String.valueOf(request.get('id')));
+        } else {
+            result = create(request);
+        }
+        return result;
+    }
+    
+    private Boolean deleteSubscription(String funraiseId) {
+        Boolean result = false;
         try {
             delete [SELECT id FROM Subscription__c WHERE fr_ID__c = :funraiseId];
+            result = true;
         } catch (DMLException e) {
-            frUtil.logException(frUtil.Entity.SUBSCRIPTION, funraiseId, e);
+            if(createLogRecord) frUtil.logException(frUtil.Entity.SUBSCRIPTION, funraiseId, e);
         }
+        return result;
     }
     
-    public void create(Map<String, Object> request) {
+    private Boolean create(Map<String, Object> request) {
+        Boolean result = false;
         String funraiseId = String.valueOf(request.get('id'));
         String name = String.valueOf(request.get('name'));
         String funraiseSupporterId = String.valueOf(request.get('supporterId'));
         List<Contact> contacts = [SELECT Id from Contact WHERE fr_Id__c = :funraiseSupporterId];
         if(contacts.isEmpty()) {
-            frUtil.logRelationshipError(frUtil.Entity.SUBSCRIPTION, funraiseId, 
+            if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.SUBSCRIPTION, funraiseId, 
                                         frUtil.Entity.SUPPORTER, funraiseSupporterId);
-            return;
+            return result;
         }
         
         Subscription__c subscription = new Subscription__c(
@@ -83,7 +96,7 @@ public class frSubscription {
             if (campaigns.size() > 0) {
                 subscription.Campaign_Goal__c = campaigns.get(0).Id;
             } else {
-                frUtil.logRelationshipError(frUtil.Entity.SUBSCRIPTION, funraiseId, 
+                if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.SUBSCRIPTION, funraiseId, 
                                             frUtil.Entity.CAMPAIGN, goalId);
             }
         }
@@ -104,19 +117,21 @@ public class frSubscription {
             String salesforceFieldName = funraiseFieldName.replaceAll(regex, replacement);
             salesforceFieldName =+ 'funraise__' + salesforceFieldName.capitalize() + '__c';
             Schema.SObjectField field = fields.get(salesforceFieldName);
-            frUtil.write(subscription, field, funraiseFieldName, request.get(funraiseFieldName), funraiseId);
+            frModel.write(subscription, field, funraiseFieldName, request.get(funraiseFieldName), funraiseId);
         }
         
         try {
             Database.upsert(subscription, Subscription__c.Field.fr_ID__c, true);
+            result = true;
         } catch (DMLException ex) {
-            frUtil.logException(frUtil.Entity.SUBSCRIPTION, funraiseId, ex);
-            return;
+            if(createLogRecord) frUtil.logException(frUtil.Entity.SUBSCRIPTION, funraiseId, ex);
+            return result;
         }
         
         if(pledgeAmount != null) {
             frPledge.create(subscription, pledgeAmount);
         }
+        return result;
     }
     
 }

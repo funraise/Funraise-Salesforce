@@ -38,7 +38,7 @@
 * AUTHOR: Jason M. Swenski
 */
 
-public class frDonor extends frModel {
+public class frDonor extends frModel implements frSyncable{
     public static final String TYPE = 'Donor';
     
     public static List<frMapping__c> mappings {
@@ -54,15 +54,17 @@ public class frDonor extends frModel {
     public override List<frMapping__c> getMappings() {
         return mappings;
     }
-    protected override SObject getObject() {
-        return getContact();
-    }
     
-    private String contactId;
-    private String id;
     private Contact c;
     
-    public frDonor(Map<String, Object> request) {
+    public frDonor(Sync_Attempt__c syncRecord){
+        super(syncRecord);
+    }
+    
+    public Boolean sync() {
+        Boolean result = false;
+        Map<String, Object> request = 
+            (Map<String, Object>)JSON.deserializeUntyped(syncRecord.Request_Body__c);
         Contact supporterContact = null;
         String frId = String.valueOf(request.get('id'));
         //try to find a donor that's already been integrated, use their funraise ID
@@ -127,8 +129,7 @@ public class frDonor extends frModel {
         if(supporterContact == null) {
             supporterContact = new Contact(fr_Id__c = frId);
         }
-        setContact(supporterContact);
-        populateFromRequest(request);
+        applyMappings(supporterContact, request);
         
         if(String.isBlank(supporterContact.LastName)) {
             //LastName is required.  If the mappings didn't populate it, try to populate with the institution name
@@ -143,9 +144,12 @@ public class frDonor extends frModel {
             } else { 
                 Database.upsert(supporterContact, Contact.Fields.fr_ID__c, true);
             }
+            result = true;
         } catch (Exception ex) {
-            frUtil.logException(frUtil.Entity.SUPPORTER, frId, ex);
+            if(createLogRecord) frUtil.logException(frUtil.Entity.SUPPORTER, frId, ex);
+
         }
+        return result;
     }
     
     private Contact applyMatch(List<Contact> matchResults, String frId) {
@@ -155,17 +159,5 @@ public class frDonor extends frModel {
             return donor;
         }
         return null;
-    }
-    
-    private void setContact(Contact contact) {
-        this.c = contact;
-    }
-    
-    public Contact getContact() {
-        return c;
-    }
-    
-    public String getContactId() {
-        return getContact() != null ? getContact().Id : null;
     }
 }

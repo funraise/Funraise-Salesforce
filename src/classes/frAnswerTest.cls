@@ -58,20 +58,13 @@ public class frAnswerTest {
         request.put('donationId', opp.fr_Id__c);
         request.put('supporterId', supporter.fr_Id__c);
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/custom-question-answer';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
+
         Test.startTest();
-        
         frWSCustomQuestionAnswerController.syncEntity();
-        
         Test.stopTest();
         frTestUtil.assertNoErrors();
+        
         Answer__c answer = [SELECT Id, fr_ID__c, Answer__c, Question__c, Transaction__c, Supporter__c
                             FROM Answer__c WHERE fr_ID__c = :funraiseId];
         
@@ -95,19 +88,12 @@ public class frAnswerTest {
         request.put('questionId', question.fr_Id__c);
         request.put('registrationId', registration.fr_Id__c);
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/custom-question-answer';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
+
         Test.startTest();
-        
         frWSCustomQuestionAnswerController.syncEntity();
-        
         Test.stopTest();
+        
         frTestUtil.assertNoErrors();
         Answer__c answer = [SELECT Id, fr_ID__c, Answer__c, Question__c, Registration__c
                             FROM Answer__c WHERE fr_ID__c = :funraiseId];
@@ -131,20 +117,13 @@ public class frAnswerTest {
         request.put('questionId', question.fr_Id__c);
         request.put('pageGoalId', campaign.fr_Id__c);
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/custom-question-answer';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
+
         Test.startTest();
-        
         frWSCustomQuestionAnswerController.syncEntity();
-        
         Test.stopTest();
         frTestUtil.assertNoErrors();
+        
         Answer__c answer = [SELECT Id, fr_ID__c, Answer__c, Question__c, Campaign_Page__c
                             FROM Answer__c WHERE fr_ID__c = :funraiseId];
         
@@ -180,20 +159,13 @@ public class frAnswerTest {
         request.put('donationId', opp.fr_Id__c);
         request.put('answer', updatedAnswer);
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/custom-question-answer';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
+
         Test.startTest();
-        
         frWSCustomQuestionAnswerController.syncEntity();
-        
         Test.stopTest();
         frTestUtil.assertNoErrors();
+        
         Answer__c answer = [SELECT Id, fr_ID__c, Answer__c, Question__c, Transaction__c
                             FROM Answer__c WHERE fr_ID__c = :funraiseId];
         
@@ -229,18 +201,10 @@ public class frAnswerTest {
         request.put('donationId', opp.fr_Id__c);
 		request.put('deleted', true);
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/custom-question-answer';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
+
         Test.startTest();
-        
         frWSCustomQuestionAnswerController.syncEntity();
-        
         Test.stopTest();
         frTestUtil.assertNoErrors();
         
@@ -256,22 +220,15 @@ public class frAnswerTest {
         request.put('id', funraiseId);
         request.put('questionId', 'nonexistent');
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/custom-question-answer';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
+
         frTestUtil.assertNoErrors();
         Test.startTest();
-        
         frWSCustomQuestionAnswerController.syncEntity();
-        
         Test.stopTest();
+        
         System.assertEquals(0, [SELECT COUNT() FROM Answer__c], 'Since the question relationship was missing, the answer should not have been created');
-        System.assertEquals(1, [SELECT COUNT() FROM Error__c], 'An error log should have been generated for the missing question');   
+        System.assertEquals(1, [SELECT COUNT() FROM Sync_Attempt__c], 'A sync attempt should have been generated because of the missing question');   
     }
     
     @isTest
@@ -289,25 +246,16 @@ public class frAnswerTest {
         request.put('pageGoalId', badIdValue);
         request.put('registrationId', badIdValue);
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-        
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/custom-question-answer';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
         frTestUtil.assertNoErrors();
+        
         Test.startTest();
-        
         frWSCustomQuestionAnswerController.syncEntity();
-        
         Test.stopTest();
         System.assertEquals(1, [SELECT COUNT() FROM Answer__c], 'The required values were provided so the answer should exist');
-        System.assertEquals(4, [SELECT COUNT() FROM Error__c], 'An error log should have been generated for the missing relationships (supporter, opp, campaign, registration)');   
     }
     
-    private static Map<String, Object> getTestRequest() {
+    public static Map<String, Object> getTestRequest() {
         Map<String, Object> request = new Map<String, Object>();
         request.put('id', 1234);
         request.put('answer', 'Test answer');

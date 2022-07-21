@@ -39,30 +39,13 @@
  */
 @isTest
 public class frFundraisingEventTest {  
-    static testMethod void createEvent_throughWS() {
-        String funraiseId = '25';
-        Map<String, Object> request = new Map<String, Object>();
-        List<Object> startDate = new List<Object> {2019, 05, 11, 9, 0};
-        List<Object> endDate = new List<Object> {2019, 05, 11, 4, 30};
-        request.put('name', 'Test Event');
-        request.put('description', 'This will be a fun fundraising event');
-        request.put('eventStartDate', startDate);
-        request.put('eventEndDate', endDate);
-        request.put('id', funraiseId);
-        request.put('deleted', false);
+    static testMethod void createEvent() {
+        Map<String, Object> request = getTestRequest();
+        String funraiseId = String.valueOf(request.get('id'));
         
-        RestRequest req = new RestRequest();
-        RestResponse res = new RestResponse();
-
-        req.requestURI = 'https://XXXX.salesforce.com/services/apexrest/funraise/v1/fundraising-event';
-        req.httpMethod = 'POST';
-        req.requestBody = Blob.valueOf(Json.serialize(request));
-        RestContext.request = req;
-        RestContext.response = res;
+        frTestUtil.createTestPost(request);
         Test.startTest();
-
         frWSFundraisingEventController.syncEntity();
-
         Test.stopTest();
         
         Fundraising_Event__c newEvent = [SELECT Id, fr_ID__c, Name, Description__c, Start_Date__c, End_Date__c 
@@ -76,17 +59,14 @@ public class frFundraisingEventTest {
     }
     
     static testMethod void createEvent_missingDates() {	
-        String funraiseId = '25';
-        Map<String, Object> request = new Map<String, Object>();
-        request.put('name', 'Test Event');
-        request.put('description', 'This will be a fun fundraising event');
+        Map<String, Object> request = getTestRequest();
+        String funraiseId = String.valueOf(request.get('id'));
         request.put('eventStartDate', null);
         request.put('eventEndDate', null);
-        request.put('id', funraiseId);
-        request.put('deleted', false);
 
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        new frFundraisingEvent(request);
+        frWSFundraisingEventController.syncEntity();
         Test.stopTest();
 
         Fundraising_Event__c newEvent = [SELECT Id, fr_ID__c, Name, Description__c, Start_Date__c, End_Date__c 
@@ -98,23 +78,18 @@ public class frFundraisingEventTest {
     }
     
     static testMethod void createEvent_valueTooLong() {	
-        String funraiseId = '25';
-        Map<String, Object> request = new Map<String, Object>();
-        List<Object> startDate = new List<Object> {2019, 05, 11, 9, 0};
-        List<Object> endDate = new List<Object> {2019, 05, 11, 4, 30};
+        Map<String, Object> request = getTestRequest();
+        String funraiseId = String.valueOf(request.get('id'));
         String name = 'a';
         for(Integer i = 0; i < Fundraising_Event__c.Name.getDescribe().getLength() + 5; i++) {
             name += 'a';
         }
         request.put('name', name);
-        request.put('description', 'This will be a fun fundraising event');
-        request.put('eventStartDate', startDate);
-        request.put('eventEndDate', endDate);
-        request.put('id', funraiseId);
-        request.put('deleted', false);
+
+        frTestUtil.createTestPost(request);
 
         Test.startTest();
-        new frFundraisingEvent(request);
+        frWSFundraisingEventController.syncEntity();
         Test.stopTest();
 
         Fundraising_Event__c newEvent = [SELECT Id, fr_ID__c, Name, Description__c, Start_Date__c, End_Date__c 
@@ -128,46 +103,35 @@ public class frFundraisingEventTest {
     }
     
     static testMethod void createEvent_exception_noFunraiseId() {	
-        Map<String, Object> request = new Map<String, Object>();
-        request.put('name', 'Test Event');
-        request.put('description', 'This will be a fun fundraising event');
-        request.put('eventStartDate', null);
-        request.put('eventEndDate', null);
+        Map<String, Object> request = getTestRequest();
         request.put('id', null);
-        request.put('deleted', false);
 
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        new frFundraisingEvent(request);
+        frWSFundraisingEventController.syncEntity();
         Test.stopTest();
 
         List<Fundraising_Event__c> events = [SELECT Id, fr_ID__c, Name, Description__c, Start_Date__c, End_Date__c 
                                          FROM Fundraising_Event__c];
         System.assertEquals(0, events.size(), 'Should not have created an event with invalid data (no funraise id provided)');
-        Integer errors = [SELECT COUNT() FROM Error__c];
-        System.assertEquals(1, errors, 'We expect an error to be created tracking the failure of creating the event');
+        Integer syncs = [SELECT COUNT() FROM Sync_Attempt__c];
+        System.assertEquals(1, syncs, 'A sync attempt should have been recorded to retry in the case of an exception');
     }
     
     static testMethod void updateEvent_allFields() {	
-        String funraiseId = '25';
         Fundraising_Event__c existingEvent = getTestEvent();
         insert existingEvent;
         
-        Map<String, Object> request = new Map<String, Object>();
-        List<Object> startDate = new List<Object> {2019, 05, 11, 9, 0};
-        List<Object> endDate = new List<Object> {2019, 05, 11, 4, 30};
-        request.put('name', 'Test Event');
-        request.put('description', 'This will be a fun fundraising event');
-        request.put('eventStartDate', startDate);
-        request.put('eventEndDate', endDate);
-        request.put('id', funraiseId);
-        request.put('deleted', false);
+        Map<String, Object> request = getTestRequest();
+        request.put('id', existingEvent.fr_Id__c);
 
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        new frFundraisingEvent(request);
+        frWSFundraisingEventController.syncEntity();
         Test.stopTest();
 
         Fundraising_Event__c newEvent = [SELECT Id, fr_ID__c, Name, Description__c, Start_Date__c, End_Date__c 
-                                         FROM Fundraising_Event__c WHERE fr_ID__c = :funraiseId];
+                                         FROM Fundraising_Event__c WHERE fr_ID__c = :existingEvent.fr_Id__c];
         System.assertEquals(String.valueOf(request.get('name')), newEvent.Name, 'The event name should be the property included in the request');
         System.assertEquals(String.valueOf(request.get('description')), newEvent.Description__c, 'The event description should be the property included in the request');
         DateTime expectedStartDate = DateTime.newInstance(2019, 05, 11, 9, 0, 0);
@@ -177,30 +141,32 @@ public class frFundraisingEventTest {
     }
     
     static testMethod void deleteEvent() {	
-        String funraiseId = '25';
+        Map<String, Object> request = getTestRequest();
+        request.put('deleted', true);
+        String funraiseId = String.valueOf(request.get('id'));
+        
         Fundraising_Event__c existingEvent = new Fundraising_Event__c(Name = 'Test Event', fr_Id__c = funraiseId);
         insert existingEvent;
         
-        Map<String, Object> request = new Map<String, Object>();
-        List<Object> startDate = new List<Object> {2019, 05, 11, 9, 0};
-        List<Object> endDate = new List<Object> {2019, 05, 11, 4, 30};
-        request.put('name', 'Test Event');
-        request.put('description', 'This will be a fun fundraising event');
-        request.put('eventStartDate', startDate);
-        request.put('eventEndDate', endDate);
-        request.put('id', funraiseId);
-        request.put('deleted', true);
-
+        frTestUtil.createTestPost(request);
         Test.startTest();
-        new frFundraisingEvent(request);
-        
-        //confirm that trying to delete a record that doesn't exist in SF also won't throw exceptions
-        request.put('id', funraiseId+'52');
+        frWSFundraisingEventController.syncEntity();
         Test.stopTest();
 
         List<Fundraising_Event__c> events = [SELECT Id, fr_ID__c, Name, Description__c, Start_Date__c, End_Date__c 
                                          FROM Fundraising_Event__c WHERE fr_ID__c = :funraiseId];
         System.assertEquals(0, events.size(), 'There should be no events matching the funraise id since it was marked as deleted');
+    }
+    
+    public static Map<String, Object> getTestRequest() {
+        Map<String, Object> request = new Map<String, Object>();
+        request.put('name', 'Test Event');
+        request.put('description', 'This will be a fun fundraising event');
+        request.put('eventStartDate', new List<Object> {2019, 05, 11, 9, 0});
+        request.put('eventEndDate', new List<Object> {2019, 05, 11, 4, 30});
+        request.put('id', '25');
+        request.put('deleted', false);
+        return request;
     }
     
     public static Fundraising_Event__c getTestEvent() {

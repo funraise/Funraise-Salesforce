@@ -34,15 +34,21 @@
  *
  *
  *
- * CREATED: 2016 Funraise Inc - https://funraise.io
- * AUTHOR: Jason M. Swenski
+ * CREATED: 2021 Funraise Inc - https://funraise.io
+ * AUTHOR: Alex Molina
  */
 
-@RestResource(urlMapping='/v1/donor')
-global with sharing class frWSDonorController {
-
-    @HttpPost
-    global static void syncEntity() {
-        frWSBaseController.syncEntity(frUtil.Entity.SUPPORTER);
+public class frWSBaseController {
+    
+    public static void syncEntity(frUtil.Entity entity) {
+        Sync_Attempt__c syncRecord = new Sync_Attempt__c(
+        	Request_Body__c = RestContext.request.requestBody.toString(),
+            Type__c = entity.name(),
+            Attempts__c = 1
+        );
+        Boolean success = frSyncRequestHandler.sync(syncRecord);
+        if (!success) {
+            insert syncRecord;
+        }
     }
 }

@@ -43,7 +43,6 @@ global with sharing class frWSSubscriptionController {
     
     @HttpPost
     global static void syncEntity() {
-        Map<String, Object> request = (Map<String, Object>)JSON.deserializeUntyped(RestContext.request.requestBody.toString());
-        frSubscription subscription = new frSubscription(request);
+        frWSBaseController.syncEntity(frUtil.Entity.SUBSCRIPTION);
     }
 }

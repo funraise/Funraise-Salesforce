@@ -43,7 +43,6 @@ global with sharing class frWSCampaignController {
     
     @HttpPost
     global static void syncEntity() {
-        Map<String, Object> request = (Map<String, Object>)JSON.deserializeUntyped(RestContext.request.requestBody.toString());
-        frCampaign campaign = new frCampaign(request);
+        frWSBaseController.syncEntity(frUtil.Entity.CAMPAIGN);
     }
 }
