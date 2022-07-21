@@ -103,5 +103,9 @@ public class frSyncRequestHandlerTest {
         frSyncRequestHandler handler = new frSyncRequestHandler();
         Database.executeBatch(handler);
         Test.stopTest();
+        
+        for(Sync_Attempt__c attempt : [SELECT Id, Attempts__c FROM Sync_Attempt__c]) {
+            System.assertEquals(2, attempt.Attempts__c, 'Every attempt should have recorded a new attempt to process');
+        }
     }
 }

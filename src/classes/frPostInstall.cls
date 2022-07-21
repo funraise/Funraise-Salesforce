@@ -40,6 +40,5 @@
 public class frPostInstall implements InstallHandler {
     public void onInstall(InstallContext context) {
         frDataMigration.runMigrations();
-        frSetupController.setupScheduledJobs();
     }
 }

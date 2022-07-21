@@ -38,7 +38,7 @@
  * AUTHOR: Alex Molina
  */
 
-public class frWSBaseController {
+public with sharing class frWSBaseController {
     
     public static void syncEntity(frUtil.Entity entity) {
         Sync_Attempt__c syncRecord = new Sync_Attempt__c(
@@ -49,6 +49,7 @@ public class frWSBaseController {
         Boolean success = frSyncRequestHandler.sync(syncRecord);
         if (!success) {
             insert syncRecord;
+            frSyncRequestHandler.scheduleRetry();
         }
     }
 }

@@ -1,11 +1,55 @@
-public abstract class frModel {
+public with sharing abstract class frModel {
     protected Sync_Attempt__c syncRecord;
+    protected Map<String, Object> requestBody;
     protected Boolean createLogRecord = false;
-
+    
     public frModel(Sync_Attempt__c attempt) {
         this.syncRecord = attempt;
         createLogRecord = attempt.Attempts__c >= frSyncRequestHandler.MAX_ATTEMPTS;
     }
+    
+    protected Map<String, Object> getRequestBody() {
+        if (requestBody == null) {
+            requestBody = (Map<String, Object>)JSON.deserializeUntyped(syncRecord.Request_Body__c);
+        }
+        return requestBody;
+    }
+    
+    protected virtual String getFunraiseId() {
+        return String.valueOf(getRequestBody().get('id'));
+    }
+    
+    protected virtual Boolean requireObjectDeletePermission() {
+        return false;
+    }
+    
+    protected abstract Set<Schema.SObjectField> getFields();
+    protected abstract Set<Schema.SObjectType> getObjects();
+    protected abstract frUtil.Entity getFrType();
+    
+    public boolean checkPermissions() {
+        Boolean success = true;        
+        String error = '';
+        for(Schema.SObjectType objTypeRef : getObjects()) {
+            DescribeSObjectResult objType = objTypeRef.getDescribe();
+            if(!objType.isAccessible() || !objType.isUpdateable() ||  !objType.isCreateable() || (requireObjectDeletePermission() && !objType.isDeletable())) {
+                success = false;
+                error += 'Missing permission for object ' + objType.getLabel() + ' ('+ objType.getName()+')\n';
+            }
+        }
+        for(Schema.SObjectField fieldRef : getFields()) {
+            DescribeFieldResult field = fieldRef.getDescribe();
+            if(!field.isAccessible() ||  !field.isCreateable()) {
+                success = false;
+                error += 'Missing permission for field ' + field.getLabel() + ' ('+ field.getName()+')\n';
+            }
+        }
+        if(!success) {
+            frUtil.logError(getFrType(), getFunraiseId(), error);
+        }
+        return success;
+    }
+    
     
     protected virtual List<frMapping__c> getMappings() {
         return new List<frMapping__c>();
@@ -77,6 +121,8 @@ public abstract class frModel {
                 record.put(field, Integer.valueOf(value));
             } else if(field.getDescribe().getType() == Schema.DisplayType.Percent) {
                 record.put(field, Decimal.valueOf(String.valueOf(value)));
+            } else if(field.getDescribe().getType() == Schema.DisplayType.Boolean) {
+                record.put(field, Boolean.valueOf(String.valueOf(value)));
             } else {
                 write(record, field, value, funraiseId);
             }
@@ -120,7 +166,7 @@ public abstract class frModel {
     }
     
     public static void flushLogs() {
-        if([SELECT COUNT() FROM Error__c] > 200) {
+        if([SELECT COUNT() FROM Error__c LIMIT 250] > 200) {
             deleteLogs();
         }
     }

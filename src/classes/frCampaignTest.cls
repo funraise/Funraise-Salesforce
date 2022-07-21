@@ -81,6 +81,7 @@ public class frCampaignTest {
         frWSCampaignController.syncEntity();
         Test.stopTest();
         
+       	frTestUtil.assertNoErrors();
         Campaign childCampaign = [SELECT Id, fr_ID__c, Name, ParentId FROM Campaign WHERE fr_ID__c = :childGoalId];
         System.assertEquals(childCampaignName, childCampaign.Name, 'The campaign name was not correct');
         System.assertEquals(parentCampaign.Id, childCampaign.ParentId, 'The campaign parentId was not correct');

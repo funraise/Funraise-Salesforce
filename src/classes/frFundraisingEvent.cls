@@ -46,9 +46,9 @@ public class frFundraisingEvent extends frModel implements frSyncable {
     
     public Boolean sync() {
         Boolean result = false;
-        Map<String, Object> request = (Map<String, Object>)JSON.deserializeUntyped(syncRecord.Request_Body__c);
+        Map<String, Object> request = getRequestBody();
         if (Boolean.valueOf(request.get('deleted'))) {
-            result = deleteEvent(String.valueOf(request.get('id')));
+            result = deleteEvent(getFunraiseId());
         } else {
             result = create(request);
         }
@@ -61,14 +61,14 @@ public class frFundraisingEvent extends frModel implements frSyncable {
             delete [SELECT id FROM Fundraising_Event__c WHERE fr_ID__c = :funraiseId];
             result = true;
         } catch (DMLException e) {
-            if (createLogRecord) frUtil.logException(frUtil.Entity.EVENT, funraiseId, e);
+            if (createLogRecord) frUtil.logException(getFrType(), funraiseId, e);
         }
         return result;
     }
     
     private boolean create(Map<String, Object> request) {
         Boolean result = false;
-        String funraiseId = String.valueOf(request.get('id'));
+        String funraiseId = getFunraiseId();
         Fundraising_Event__c event = new Fundraising_Event__c(
         	fr_ID__c = funraiseId,
             Name = frUtil.truncateToFieldLength(Fundraising_Event__c.Name.getDescribe(), String.valueOf(request.get('name'))), 
@@ -81,7 +81,7 @@ public class frFundraisingEvent extends frModel implements frSyncable {
             Database.upsert(event, Fundraising_Event__c.Field.fr_ID__c, true);
             result = true;
         } catch (DMLException e) {
-            if (createLogRecord) frUtil.logException(frUtil.Entity.EVENT, funraiseId, e);
+            if (createLogRecord) frUtil.logException(getFrType(), funraiseId, e);
         }
         return result;
     }
@@ -95,5 +95,30 @@ public class frFundraisingEvent extends frModel implements frSyncable {
             }
         }
         return null;
+    }
+    
+    protected override Boolean requireObjectDeletePermission() {
+        return true;
+    }
+    
+    protected override Set<Schema.SObjectField> getFields() {
+        return new Set<Schema.SObjectField> {
+            	Fundraising_Event__c.fr_ID__c, 
+                Fundraising_Event__c.Name, 
+                Fundraising_Event__c.Description__c, 
+                Fundraising_Event__c.Start_Date__c, 
+                Fundraising_Event__c.End_Date__c
+
+        };
+    }
+    
+    protected override Set<Schema.SObjectType> getObjects() {
+        return new Set<Schema.SObjectType> {
+            Fundraising_Event__c.SObjectType
+        };
+    }
+    
+    protected override frUtil.Entity getFrType() {
+        return frUtil.Entity.EVENT;
     }
 }

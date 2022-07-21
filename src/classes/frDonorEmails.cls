@@ -5,10 +5,9 @@ public class frDonorEmails extends frModel implements frSyncable {
     
     public Boolean sync() {
         Boolean result = false;
-        Map<String, Object> request = 
-            (Map<String, Object>)JSON.deserializeUntyped(syncRecord.Request_Body__c);
+        Map<String, Object> request = getRequestBody();
         
-        String funraiseId = String.valueOf(request.get('id'));
+        String funraiseId = getFunraiseId();
         String supporterFunraiseId = String.valueOf(request.get('donorId'));        
         if (String.isNotBlank(supporterFunraiseId)) {
             List<Contact> contacts = [SELECT Id FROM Contact WHERE fr_ID__c = :supporterFunraiseId];
@@ -31,14 +30,35 @@ public class frDonorEmails extends frModel implements frSyncable {
                     insert emr;
 					result = true;
                 } catch (DMLException ex) {
-                    if(createLogRecord) frUtil.logException(frUtil.Entity.EMAIL, funraiseId, ex);
+                    if(createLogRecord) frUtil.logException(getFrType(), funraiseId, ex);
                 }
             } else {
-                if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.EMAIL, funraiseId, 
+                if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
                                             frUtil.Entity.SUPPORTER, supporterFunraiseId);
             }
         }
         
         return result;
+    }
+    
+    protected override Set<Schema.SObjectField> getFields() {
+        return new Set<Schema.SObjectField> {
+            	EmailMessage.Status,
+                EmailMessage.FromAddress,
+                EmailMessage.FromName,
+                EmailMessage.subject,
+                EmailMessage.MessageDate,
+                EmailMessage.fr_Email_ID__c
+        };
+    }
+    
+    protected override Set<Schema.SObjectType> getObjects() {
+        return new Set<Schema.SObjectType> {
+                EmailMessage.SObjectType
+        };
+    }
+    
+    protected override frUtil.Entity getFrType() {
+        return frUtil.Entity.EMAIL;
     }
 }

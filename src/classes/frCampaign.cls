@@ -45,8 +45,7 @@ public class frCampaign extends frModel implements frSyncable {
     
     public Boolean sync() {
         Boolean result = false;
-        Map<String, Object> request = 
-            (Map<String, Object>)JSON.deserializeUntyped(syncRecord.Request_Body__c);
+        Map<String, Object> request = getRequestBody();
         if (Boolean.valueOf(request.get('deleted'))) {
             result = deleteCampaign(request);
         } else {
@@ -57,7 +56,7 @@ public class frCampaign extends frModel implements frSyncable {
     
     private Boolean deleteCampaign(Map<String, Object> request) {
         Boolean result = false;
-        String goalId = String.valueOf(request.get('goalId'));
+        String goalId = getFunraiseId();
         try {
             List<Campaign> campaigns = [SELECT Id, fr_ID__c, ParentId, 
                                  (SELECT Id, fr_ID__c, ParentId from ChildCampaigns)
@@ -79,14 +78,14 @@ public class frCampaign extends frModel implements frSyncable {
             delete campaignToDelete;
             result = true;
         } catch (DMLException e) {
-            if(createLogRecord) frUtil.logException(frUtil.Entity.CAMPAIGN, goalId, e);
+            if(createLogRecord) frUtil.logException(getFrType(), goalId, e);
         }
         return result;
     }
     
     private Boolean create(Map<String, Object> request) {
         Boolean result = false;
-        String goalId = String.valueOf(request.get('goalId'));
+        String goalId = getFunraiseId();
         
         Campaign newCampaign = new Campaign();
         newCampaign.Name = frUtil.truncateToFieldLength(Campaign.Name.getDescribe(), String.valueOf(request.get('name')));
@@ -101,15 +100,15 @@ public class frCampaign extends frModel implements frSyncable {
             if(parentCampaigns.size() > 0) {
                 newCampaign.ParentId = parentCampaigns.get(0).Id;                
             } else {
-                if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.CAMPAIGN, goalId, 
-                                            frUtil.Entity.CAMPAIGN, parentId);
+                if(createLogRecord) frUtil.logRelationshipError(getFrType(), goalId, 
+                                            getFrType(), parentId);
             }
         }
         try {
             Database.upsert(newCampaign, Campaign.Field.fr_ID__c, true);
             result = true;
         } catch (DMLException e) {
-            if(createLogRecord) frUtil.logException(frUtil.Entity.CAMPAIGN, goalId, e);
+            if(createLogRecord) frUtil.logException(getFrType(), goalId, e);
 			return result;
         }
         
@@ -128,15 +127,47 @@ public class frCampaign extends frModel implements frSyncable {
                         insert fundraiserMember;
                         result = true;
                     } catch (DMLException ex) {
-                        if(createLogRecord) frUtil.logException(frUtil.Entity.CAMPAIGN, goalId, ex);
+                        if(createLogRecord) frUtil.logException(getFrType(), goalId, ex);
                         result = false;
                     }
                 }
             } else {
-                if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.CAMPAIGN, goalId, 
+                if(createLogRecord) frUtil.logRelationshipError(getFrType(), goalId, 
                                             frUtil.Entity.SUPPORTER, supporterFunraiseId);
             }
         }
         return result;
+    }
+    
+    protected override Boolean requireObjectDeletePermission() {
+        return true;
+    }
+    
+    protected virtual override String getFunraiseId() {
+        return String.valueOf(getRequestBody().get('goalId'));
+    }
+    
+    protected override Set<Schema.SObjectField> getFields() {
+        return new Set<Schema.SObjectField> {
+                Campaign.Name,
+                Campaign.Description,
+                Campaign.Status,
+                Campaign.ExpectedRevenue,
+                Campaign.fr_ID__c,
+                Campaign.ParentId,
+                CampaignMember.CampaignId,
+                CampaignMember.ContactId
+        };
+    }
+    
+    protected override Set<Schema.SObjectType> getObjects() {
+        return new Set<Schema.SObjectType> {
+            	Campaign.SObjectType,
+                CampaignMember.SObjectType
+        };
+    }
+    
+    protected override frUtil.Entity getFrType() {
+        return frUtil.Entity.CAMPAIGN;
     }
 }

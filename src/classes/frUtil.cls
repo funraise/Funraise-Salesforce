@@ -46,11 +46,18 @@ public class frUtil {
     
     public static void logError(Entity errObject, String recordId, String error) {
 		String funraiseObject = getObjectFromEnum(errObject);
-        insert new Error__c(
-        	Error__c = error,
-            Funraise_Object__c = funraiseObject,
-            Funraise_Object_Id__c = recordId
-        );
+        try {
+            insert new Error__c(
+                Error__c = frUtil.truncateToFieldLength(Error__c.Error__c.getDescribe(), error),
+                Funraise_Object__c = funraiseObject,
+                Funraise_Object_Id__c = recordId
+            );    
+        } catch (Exception ex) {
+            //the only reason this may fail is SF storage limits
+            System.debug('Failed to create Funraise Error__c log.  Error dump:');
+            System.debug(String.format('Error: {0}, Object: {1}, Object Id: {2}', new List<String>{error, funraiseObject, recordId}));
+        }
+        
     }
     
     private static String getObjectFromEnum(Entity frObject) {

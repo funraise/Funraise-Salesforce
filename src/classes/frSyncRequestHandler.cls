@@ -1,5 +1,6 @@
-public class frSyncRequestHandler implements Database.Batchable<SObject> {
+public with sharing class frSyncRequestHandler implements Database.Batchable<SObject> {
     public static final Integer MAX_ATTEMPTS = 3;
+    public static final Integer BATCH_SIZE = 50;
     public Database.QueryLocator start(Database.BatchableContext bc) {
         Id jobId = bc.getJobId();
 		Id classId = [SELECT ApexClassId FROM AsyncApexJob WHERE id = :jobId][0].ApexClassId;
@@ -7,13 +8,12 @@ public class frSyncRequestHandler implements Database.Batchable<SObject> {
                                       JobType = 'BatchApex'
                                       AND Id != :jobId 
                                       AND Status = 'Processing' 
-                                      AND ApexClassId = :classId 
-                                      ];
+                                      AND ApexClassId = :classId];
         if (otherRunningJobs > 0) {
             //return an empty query locator (with limit 0) to basically no-op
             return Database.getQueryLocator([SELECT Id FROM Sync_Attempt__c LIMIT 0]);
         } else {
-            return Database.getQueryLocator([SELECT Id, Request_Body__c, Attempts__c, Type__c FROM Sync_Attempt__c ORDER BY CreatedDate]);
+            return Database.getQueryLocator([SELECT Id, Request_Body__c, Attempts__c, Type__c FROM Sync_Attempt__c ORDER BY CreatedDate LIMIT 5000]);
         }
     }
     
@@ -43,7 +43,7 @@ public class frSyncRequestHandler implements Database.Batchable<SObject> {
     public static Boolean sync(Sync_Attempt__c attempt) {
         Boolean result = false;
         frSyncable syncInstance = getSyncInstance(attempt);
-        result = syncInstance.sync();
+        result = syncInstance.checkPermissions() && syncInstance.sync();
         return result;
     }
     
@@ -76,6 +76,27 @@ public class frSyncRequestHandler implements Database.Batchable<SObject> {
     }
     
     public void finish(Database.BatchableContext bc) {
-        
+        if([SELECT COUNT() FROM Sync_Attempt__c] > 0) {
+            scheduleRetry();
+        }
+    }
+    
+    public static void scheduleRetry() {
+        Boolean batchScheduled = [SELECT COUNT() From CronTrigger WHERE 
+                                  OwnerId = :UserInfo.getUserId() AND State IN ('WAITING', 'ACQUIRED')
+                                  AND CronJobDetailId IN 
+                                  (SELECT Id FROM CronJobDetail WHERE Name = :getBatchJobName() AND JobType = '7')
+                                 ] > 0;
+        if(!batchScheduled) {
+        	scheduleBatch();
+        }
+    }
+    
+    private static void scheduleBatch() {
+        System.scheduleBatch(new frSyncRequestHandler(), getBatchJobName(), 5, frSyncRequestHandler.BATCH_SIZE);    
+    }
+    
+    private static String getBatchJobName() {
+        return 'Funraise Sync - User: ' + UserInfo.getUserId();
     }
 }

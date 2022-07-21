@@ -77,6 +77,17 @@
         <type>Lookup</type>
     </fields>
     <fields>
+        <fullName>Question_Text__c</fullName>
+        <description>Displays the text of the question that was presented to the supporter</description>
+        <externalId>false</externalId>
+        <formula>Question__r.Description__c</formula>
+        <label>Question Text</label>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
         <fullName>Question__c</fullName>
         <deprecated>false</deprecated>
         <externalId>false</externalId>

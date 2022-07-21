@@ -45,10 +45,8 @@ public class frTask extends frModel implements frSyncable {
     
     public Boolean sync() {
         Boolean result = false;
-        Map<String, Object> request = 
-            (Map<String, Object>)JSON.deserializeUntyped(syncRecord.Request_Body__c);
-       
-        String frTaskId = String.valueOf(request.get('id'));
+        Map<String, Object> request = getRequestBody();
+        String frTaskId = getFunraiseId();
         
         Boolean isDeleted = Boolean.valueOf(request.get('deleted'));
         if(isDeleted){
@@ -60,7 +58,7 @@ public class frTask extends frModel implements frSyncable {
         String donorId = String.valueOf(request.get('donorId'));
         List<Contact> contacts = (List<Contact>)Database.query('select Id, fr_ID__c from Contact where fr_ID__c = :donorId');
         if(contacts.isEmpty()){
-            if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.TASK, frTaskId, 
+            if(createLogRecord) frUtil.logRelationshipError(getFrType(), frTaskId, 
                                         frUtil.Entity.SUPPORTER, donorId);
             return result;
         }
@@ -74,7 +72,7 @@ public class frTask extends frModel implements frSyncable {
             if(!opportunities.isEmpty()){
                 sfTask.WhatId = opportunities.get(0).Id;
             } else {
-                if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.TASK, frTaskId, 
+                if(createLogRecord) frUtil.logRelationshipError(getFrType(), frTaskId, 
                                             frUtil.Entity.DONATION, donationId);
             }
         }
@@ -102,8 +100,35 @@ public class frTask extends frModel implements frSyncable {
             upsert sfTask Task.Fields.fr_Task_ID__c;
             result = true;
         } catch (DMLException ex) {
-            if(createLogRecord) frUtil.logException(frUtil.Entity.TASK, frTaskId, ex);
+            if(createLogRecord) frUtil.logException(getFrType(), frTaskId, ex);
         }
         return result;
     }
-}
+    
+    protected override Boolean requireObjectDeletePermission() {
+        return true;
+    }
+    
+    protected override Set<Schema.SObjectField> getFields() {
+        return new Set<Schema.SObjectField> {
+            	Task.fr_Task_Id__c,
+                Task.Priority,
+                Task.WhoId,
+                Task.WhatId,
+                Task.Subject,
+                Task.Description,
+                Task.ActivityDate,
+                Task.Status,
+                Task.ActivityDate
+        };
+    }
+    
+    protected override Set<Schema.SObjectType> getObjects() {
+        return new Set<Schema.SObjectType> {
+                Task.SObjectType
+        };
+    }
+    
+    protected override frUtil.Entity getFrType() {
+        return frUtil.Entity.TASK;
+    }}

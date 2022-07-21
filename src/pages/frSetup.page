@@ -109,13 +109,5 @@
 			</apex:commandLink>
 		</apex:pageBlockSection>
 	</apex:pageBlock>
-        <apex:pageBlock title="Scheduled Job Maintenance">
-		<apex:pageBlockButtons location="top">
-			<apex:commandButton action="{!setupScheduledJobs}" value="Reschedule Jobs" />
-		</apex:pageBlockButtons>
-		<h2>
-		The scheduled job(s) for the Funraise Managed Package are automatically created.  If you need to rescheduled these jobs, click the above button
-		</h2>
-	</apex:pageBlock>
 	</apex:form>
 </apex:page>

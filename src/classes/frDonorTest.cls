@@ -219,8 +219,6 @@ public class frDonorTest {
         
         //bad mapping for date
         createMapping('institutionCategory', 'BirthDate');
-        //bad mapping for datetime
-        createMapping('p2gScore', 'LastCURequestDate');
         
         frTestUtil.createTestPost(getTestRequest());
         Test.startTest();
@@ -232,7 +230,7 @@ public class frDonorTest {
         for(Error__c error : errors) {
             errorsStr += error.Error__c + '\n';
         }
-        System.assertEquals(2, errors.size(), 'Only 2 bad mapping errors were expected (Date and Datetime fields): Errors:' + errorsStr);
+        System.assertEquals(1, errors.size(), 'Only 1 bad mapping errors were expected (Date field): Errors:' + errorsStr);
         
         
         //but even with bad field mappings the record should still come over correctly

@@ -63,10 +63,9 @@ public class frDonor extends frModel implements frSyncable{
     
     public Boolean sync() {
         Boolean result = false;
-        Map<String, Object> request = 
-            (Map<String, Object>)JSON.deserializeUntyped(syncRecord.Request_Body__c);
+        Map<String, Object> request = getRequestBody();
         Contact supporterContact = null;
-        String frId = String.valueOf(request.get('id'));
+        String frId = getFunraiseId();
         //try to find a donor that's already been integrated, use their funraise ID
         List<Contact> contacts = (List<Contact>)Database.query('select Id, fr_ID__c, LastName from Contact where fr_ID__c = :frId FOR UPDATE');
         if(contacts != null && contacts.size() > 0) {
@@ -146,7 +145,7 @@ public class frDonor extends frModel implements frSyncable{
             }
             result = true;
         } catch (Exception ex) {
-            if(createLogRecord) frUtil.logException(frUtil.Entity.SUPPORTER, frId, ex);
+            if(createLogRecord) frUtil.logException(getFrType(), frId, ex);
 
         }
         return result;
@@ -159,5 +158,35 @@ public class frDonor extends frModel implements frSyncable{
             return donor;
         }
         return null;
+    }
+
+    protected override Set<Schema.SObjectField> getFields() {
+        Map<String, Schema.SObjectField> fields = frSchemaUtil.getFields(Contact.sObjectType.getDescribe().getName());
+        Set<Schema.SObjectField> usedFields = new Set<Schema.SObjectField>();
+        for(frMapping__c mapping : getMappings()) {
+            if(fields.containsKey(mapping.sf_Name__c)) {
+                usedFields.add(fields.get(mapping.sf_Name__c));
+            }
+        }
+        usedFields.add(Contact.fr_Id__c);
+        usedFields.add(Contact.Email);
+        usedFields.add(Contact.FirstName);
+        usedFields.add(Contact.LastName);
+        usedFields.add(Contact.MailingStreet);
+        usedFields.add(Contact.MailingCity);
+        usedFields.add(Contact.MailingState);
+        usedFields.add(Contact.MailingPostalCode);
+        usedFields.add(Contact.MailingCountry);
+        return usedFields;
+    }
+    
+    protected override Set<Schema.SObjectType> getObjects() {
+        return new Set<Schema.SObjectType> {
+            	Contact.SObjectType
+        };
+    }
+    
+    protected override frUtil.Entity getFrType() {
+        return frUtil.Entity.SUPPORTER;
     }
 }

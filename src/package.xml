@@ -32,7 +32,6 @@
         <members>frSubscriptionTest</members>
         <members>frSyncRequestHandler</members>
         <members>frSyncRequestHandlerTest</members>
-        <members>frSyncRequestScheduler</members>
         <members>frSyncable</members>
         <members>frTask</members>
         <members>frUtil</members>

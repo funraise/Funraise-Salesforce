@@ -48,10 +48,9 @@ public class frSubscription extends frModel implements frSyncable {
     
     public Boolean sync() {
         Boolean result = false;
-        Map<String, Object> request = 
-            (Map<String, Object>)JSON.deserializeUntyped(syncRecord.Request_Body__c);
+        Map<String, Object> request = getRequestBody();
         if (Boolean.valueOf(request.get('deleted'))) {
-            result = deleteSubscription(String.valueOf(request.get('id')));
+            result = deleteSubscription(getFunraiseId());
         } else {
             result = create(request);
         }
@@ -64,19 +63,19 @@ public class frSubscription extends frModel implements frSyncable {
             delete [SELECT id FROM Subscription__c WHERE fr_ID__c = :funraiseId];
             result = true;
         } catch (DMLException e) {
-            if(createLogRecord) frUtil.logException(frUtil.Entity.SUBSCRIPTION, funraiseId, e);
+            if(createLogRecord) frUtil.logException(getFrType(), funraiseId, e);
         }
         return result;
     }
     
     private Boolean create(Map<String, Object> request) {
         Boolean result = false;
-        String funraiseId = String.valueOf(request.get('id'));
+        String funraiseId = getFunraiseId();
         String name = String.valueOf(request.get('name'));
         String funraiseSupporterId = String.valueOf(request.get('supporterId'));
         List<Contact> contacts = [SELECT Id from Contact WHERE fr_Id__c = :funraiseSupporterId];
         if(contacts.isEmpty()) {
-            if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.SUBSCRIPTION, funraiseId, 
+            if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
                                         frUtil.Entity.SUPPORTER, funraiseSupporterId);
             return result;
         }
@@ -96,7 +95,7 @@ public class frSubscription extends frModel implements frSyncable {
             if (campaigns.size() > 0) {
                 subscription.Campaign_Goal__c = campaigns.get(0).Id;
             } else {
-                if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.SUBSCRIPTION, funraiseId, 
+                if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
                                             frUtil.Entity.CAMPAIGN, goalId);
             }
         }
@@ -124,7 +123,7 @@ public class frSubscription extends frModel implements frSyncable {
             Database.upsert(subscription, Subscription__c.Field.fr_ID__c, true);
             result = true;
         } catch (DMLException ex) {
-            if(createLogRecord) frUtil.logException(frUtil.Entity.SUBSCRIPTION, funraiseId, ex);
+            if(createLogRecord) frUtil.logException(getFrType(), funraiseId, ex);
             return result;
         }
         
@@ -134,4 +133,49 @@ public class frSubscription extends frModel implements frSyncable {
         return result;
     }
     
+    protected override Boolean requireObjectDeletePermission() {
+        return true;
+    }
+    
+    protected override Set<Schema.SObjectField> getFields() {
+        return new Set<Schema.SObjectField> {
+            	Subscription__c.Name,
+                Subscription__c.fr_ID__c,
+                Subscription__c.Status__c,
+                Subscription__c.Supporter__c,
+                Subscription__c.Payment_Method_Expiration_Date__c,
+                Subscription__c.Payment_Method_Type__c,
+                Subscription__c.Payment_Method_Last_Four__c,
+                Subscription__c.Form_Name__c,
+                Subscription__c.Next_Payment_Date__c,
+                Subscription__c.Frequency__c,
+                Subscription__c.Amount__c,
+                Subscription__c.Currency__c,
+                Subscription__c.Campaign_Page_Name__c,
+                Subscription__c.Allocation_Name__c,
+                Subscription__c.Comment__c,
+                Subscription__c.Note__c,
+                Subscription__c.Dedication__c,
+                Subscription__c.Dedication_Type__c,
+                Subscription__c.Dedication_Name__c,
+                Subscription__c.Dedication_Email__c,
+                Subscription__c.Dedication_Message__c,
+                Subscription__c.Company_Match__c,
+                Subscription__c.Company_Match_Company_Name__c,
+                Subscription__c.Company_Match_Employee_Email__c,
+                Subscription__c.Operations_Tip__c,
+                Subscription__c.Imported__c,
+                Subscription__c.Campaign_Goal__c
+    	};
+    }
+    
+    protected override Set<Schema.SObjectType> getObjects() {
+        return new Set<Schema.SObjectType> {
+                Subscription__c.SObjectType
+        };
+    }
+    
+    protected override frUtil.Entity getFrType() {
+        return frUtil.Entity.SUBSCRIPTION;
+    }
 }

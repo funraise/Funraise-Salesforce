@@ -61,11 +61,10 @@ public class frDonation extends frModel implements frSyncable {
     
     public Boolean sync() {
         Boolean result = false;
-        Map<String, Object> request = 
-            (Map<String, Object>)JSON.deserializeUntyped(syncRecord.Request_Body__c);
+        Map<String, Object> request = getRequestBody();
         o = new Opportunity();
         applyMappings(o, request);
-        String funraiseId = String.valueOf(request.get('id'));
+        String funraiseId = getFunraiseId();
         
         String status = String.valueOf(request.get('status'));
         
@@ -90,7 +89,7 @@ public class frDonation extends frModel implements frSyncable {
                     o.AccountId = supporterContact.AccountId;
                 }
             } else {
-                if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.DONATION, funraiseId, 
+                if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
                                             frUtil.Entity.SUPPORTER, supporterFunraiseId);
             }
         }
@@ -104,7 +103,7 @@ public class frDonation extends frModel implements frSyncable {
                 if (campaigns.size() > 0) {
                     o.CampaignId = campaigns[0].Id;
                 } else {
-                    frUtil.logRelationshipError(frUtil.Entity.DONATION, funraiseId, 
+                    frUtil.logRelationshipError(getFrType(), funraiseId, 
                                                 frUtil.Entity.CAMPAIGN, campaignId);
                 }
             }
@@ -116,7 +115,7 @@ public class frDonation extends frModel implements frSyncable {
             if (subscriptions.size() > 0) {
                 o.Subscription__c = subscriptions.get(0).Id;
             } else {
-                frUtil.logRelationshipError(frUtil.Entity.DONATION, funraiseId, 
+                frUtil.logRelationshipError(getFrType(), funraiseId, 
                                             frUtil.Entity.SUBSCRIPTION, subscriptionId);
             }
         }
@@ -135,7 +134,7 @@ public class frDonation extends frModel implements frSyncable {
             Database.upsert(opp, Opportunity.Fields.fr_Id__c, true);
             result = true;
         } catch (Exception ex) {
-            frUtil.logException(frUtil.Entity.DONATION, funraiseId, ex);
+            frUtil.logException(getFrType(), funraiseId, ex);
         }
         
         if(isPledge && opp.Id != null) {
@@ -147,16 +146,20 @@ public class frDonation extends frModel implements frSyncable {
         }
         return result;
     } 
+    
+    private boolean isContactRoleMappingDisabled() {
+        return getRequestBody().containsKey(META_OPP_CONTACT_MAPPING_KEY) ?
+            Boolean.valueOf(getRequestBody().get(META_OPP_CONTACT_MAPPING_KEY)): true;
+    }
    
     
     private void createOpportunityMapping(Map<String, Object> request) {
-        Boolean mappingDisabled = request.containsKey(META_OPP_CONTACT_MAPPING_KEY) ?
-            Boolean.valueOf(request.get(META_OPP_CONTACT_MAPPING_KEY)): true;
-        if(mappingDisabled) {
+        Boolean contactRoleMappingDisabled = isContactRoleMappingDisabled();
+        if(contactRoleMappingDisabled) {
             return;
         }
         
-        String funraiseId = String.valueOf(request.get('id'));
+        String funraiseId = getFunraiseId();
         String supporterId = String.valueOf(request.get('donorId'));
         
         Set<String> relatedSupporterFunraiseIds = new Set<String>{supporterId};
@@ -223,7 +226,7 @@ public class frDonation extends frModel implements frSyncable {
         try {
             insert newContactRoles;
         } catch (Exception ex) {
-            frUtil.logException(frUtil.Entity.DONATION, funraiseId, ex);
+            frUtil.logException(getFrType(), funraiseId, ex);
         }
     }
     
@@ -232,7 +235,7 @@ public class frDonation extends frModel implements frSyncable {
             return null;
         }
         if(!contactsByFunraiseId.containsKey(funraiseSupporterId)) {
-            frUtil.logRelationshipError(frUtil.Entity.DONATION, funraiseDonationId, 
+            frUtil.logRelationshipError(getFrType(), funraiseDonationId, 
                                         frUtil.Entity.SUPPORTER, funraiseSupporterId,
                                         'Opportunity Contact Role: '+ role);
             return null;
@@ -250,6 +253,43 @@ public class frDonation extends frModel implements frSyncable {
         return this.o != null ? this.o.Id : null;
     }
     
+    protected override Set<Schema.SObjectField> getFields() {
+        Map<String, Schema.SObjectField> fields = frSchemaUtil.getFields(Opportunity.sObjectType.getDescribe().getName());
+        Set<Schema.SObjectField> usedFields = new Set<Schema.SObjectField>();
+        for(frMapping__c mapping : getMappings()) {
+            if(fields.containsKey(mapping.sf_Name__c)) {
+                usedFields.add(fields.get(mapping.sf_Name__c));
+            }
+        }
+        usedFields.add(Opportunity.StageName);
+        usedFields.add(Opportunity.AccountId);
+        usedFields.add(Opportunity.fr_Donor__c);
+        usedFields.add(Opportunity.Subscription__c);
+        usedFields.add(Opportunity.Funraise_Pledge__c);
+        usedFields.add(Opportunity.Funraise_Pledge__c);
+        if(!isContactRoleMappingDisabled()) {
+            usedFields.add(OpportunityContactRole.ContactId);
+            usedFields.add(OpportunityContactRole.OpportunityId);
+            usedFields.add(OpportunityContactRole.Role);
+        }
+        if(frUtil.hasNPSP()) {
+            usedFields.add(fields.get('npsp__Primary_Contact__c'));
+        }
+        return usedFields;
+    }
+    
+    protected override Set<Schema.SObjectType> getObjects() {
+        Set<Schema.SObjectType> usedObjects = new Set<Schema.SObjectType>();
+        usedObjects.add(Opportunity.SObjectType);
+        if(!isContactRoleMappingDisabled()) {
+            usedObjects.add(OpportunityContactRole.SObjectType);
+        }
+        return usedObjects;
+    }
+    
+    protected override frUtil.Entity getFrType() {
+        return frUtil.Entity.DONATION;
+    }
     
     ///CONSTANTS///
 

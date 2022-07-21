@@ -45,10 +45,9 @@ public class frAnswer extends frModel implements frSyncable {
     
     public Boolean sync() {
         Boolean result = false;
-        Map<String, Object> request = 
-            (Map<String, Object>)JSON.deserializeUntyped(syncRecord.Request_Body__c);
+        Map<String, Object> request = getRequestBody();
     	if (Boolean.valueOf(request.get('deleted'))) {
-            result = deleteAnswer(String.valueOf(request.get('id')));
+            result = deleteAnswer(getFunraiseId());
         } else {
             result = create(request);
         }
@@ -61,19 +60,19 @@ public class frAnswer extends frModel implements frSyncable {
             delete [SELECT id FROM Answer__c WHERE fr_ID__c = :funraiseId];
             result = true;
         } catch (DMLException e) {
-            if(createLogRecord) frUtil.logException(frUtil.Entity.ANSWER, funraiseId, e);
+            if(createLogRecord) frUtil.logException(getFrType(), funraiseId, e);
         }
         return result;
     }
     
     private Boolean create(Map<String, Object> request) {
         Boolean result = false;
-        String funraiseId = String.valueOf(request.get('id'));
+        String funraiseId = getFunraiseId();
         
         String questionId = String.valueOf(request.get('questionId'));
         List<Question__c> questions = [SELECT Id from Question__c WHERE fr_Id__c = :questionId];
         if(questions.isEmpty()) {
-            if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.ANSWER, funraiseId, 
+            if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
                                         frUtil.Entity.QUESTION, questionId);
             return result;
         }
@@ -83,7 +82,7 @@ public class frAnswer extends frModel implements frSyncable {
         if(String.isNotBlank(funraiseSupporterId)) {
             List<Contact> contacts = [SELECT Id from Contact WHERE fr_Id__c = :funraiseSupporterId];
             if(contacts.isEmpty()) {
-                if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.ANSWER, funraiseId, 
+                if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
                                             frUtil.Entity.SUPPORTER, funraiseSupporterId);
             } else {
                 supporter = contacts.get(0);
@@ -95,7 +94,7 @@ public class frAnswer extends frModel implements frSyncable {
         if(String.isNotBlank(funraiseTransactionId)) {
             List<Opportunity> transactions = [SELECT Id from Opportunity WHERE fr_Id__c = :funraiseTransactionId];
             if(transactions.isEmpty()) {
-                if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.ANSWER, funraiseId, 
+                if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
                                             frUtil.Entity.DONATION, funraiseTransactionId);
             } else {
                 opp = transactions.get(0);
@@ -107,7 +106,7 @@ public class frAnswer extends frModel implements frSyncable {
         if(String.isNotBlank(funraisePageGoalId)) {
             List<Campaign> pages = [SELECT Id from Campaign WHERE fr_Id__c = :funraisePageGoalId];
             if(pages.isEmpty()) {
-                if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.ANSWER, funraiseId, 
+                if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
                                             frUtil.Entity.CAMPAIGN, funraisePageGoalId);
             } else {
                 page = pages.get(0);
@@ -119,7 +118,7 @@ public class frAnswer extends frModel implements frSyncable {
         if(String.isNotBlank(funraiseRegistrationId)) {
             List<Fundraising_Event_Registration__c> registrations = [SELECT Id from Fundraising_Event_Registration__c WHERE fr_Id__c = :funraiseRegistrationId];
             if(registrations.isEmpty()) {
-                if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.ANSWER, funraiseId, 
+                if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
                                             frUtil.Entity.REGISTRATION, funraiseRegistrationId);
             } else {
                 registration = registrations.get(0);
@@ -143,8 +142,34 @@ public class frAnswer extends frModel implements frSyncable {
             Database.upsert(answer, Answer__c.Field.fr_ID__c, true);
             result = true;
         } catch (DMLException ex) {
-            if(createLogRecord) frUtil.logException(frUtil.Entity.ANSWER, funraiseId, ex);
+            if(createLogRecord) frUtil.logException(getFrType(), funraiseId, ex);
         }   
         return result;
-    } 
+    }
+    
+    protected override Boolean requireObjectDeletePermission() {
+        return true;
+    }
+    
+    protected override Set<Schema.SObjectField> getFields() {
+        return new Set<Schema.SObjectField> {
+                    Answer__c.fr_Id__c,
+                    Answer__c.Answer__c,
+                    Answer__c.Question__c,
+                    Answer__c.Supporter__c,
+                    Answer__c.Transaction__c,
+                    Answer__c.Campaign_Page__c,
+                    Answer__c.Registration__c
+        };
+    }
+    
+    protected override Set<Schema.SObjectType> getObjects() {
+        return new Set<Schema.SObjectType> {
+            	Answer__c.SObjectType
+        };
+    }
+    
+    protected override frUtil.Entity getFrType() {
+        return frUtil.Entity.ANSWER;
+    }
 }

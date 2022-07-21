@@ -46,9 +46,9 @@ public class frFundraisingEventRegistration extends frModel implements frSyncabl
     
     public Boolean sync() {
         Boolean result = false;
-        Map<String, Object> request = (Map<String, Object>)JSON.deserializeUntyped(syncRecord.Request_Body__c);
+        Map<String, Object> request = getRequestBody();
         if (Boolean.valueOf(request.get('deleted'))) {
-            result = deleteRegistration(String.valueOf(request.get('id')));
+            result = deleteRegistration(getFunraiseId());
         } else {
             result = create(request);
         }
@@ -61,18 +61,18 @@ public class frFundraisingEventRegistration extends frModel implements frSyncabl
             delete [SELECT id FROM Fundraising_Event_Registration__c WHERE fr_ID__c = :funraiseId];
             result = true;
         } catch (DMLException e) {
-            if(createLogRecord) frUtil.logException(frUtil.Entity.REGISTRATION, funraiseId, e);
+            if(createLogRecord) frUtil.logException(getFrType(), funraiseId, e);
         }
         return result;
     }
     
     private Boolean create(Map<String, Object> request) {
         Boolean result = false;
-        String funraiseId = String.valueOf(request.get('id'));
+        String funraiseId = getFunraiseId();
         String funraiseEventId = String.valueOf(request.get('eventId'));
         List<Fundraising_Event__c> event = [SELECT Id from Fundraising_Event__c WHERE fr_Id__c = :funraiseEventId];
         if(event.isEmpty()) {
-            if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
+            if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
                                         frUtil.Entity.EVENT, funraiseEventId);
             return result;
         }
@@ -83,7 +83,7 @@ public class frFundraisingEventRegistration extends frModel implements frSyncabl
             supporter = [SELECT Id from Contact WHERE fr_Id__c = :funraiseSupporterId];
             if(supporter.isEmpty()) {
                 //if it wasn't found, log an error but continue
-                if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
+                if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
                                             frUtil.Entity.SUPPORTER, funraiseSupporterId,
                                             'Registration registrant');
             }
@@ -95,7 +95,7 @@ public class frFundraisingEventRegistration extends frModel implements frSyncabl
             guestOf = [SELECT Id from Contact WHERE fr_Id__c = :funraiseGuestOfId];
             if(guestOf.isEmpty()) {
                 //if it wasn't found, log an error but continue
-                if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
+                if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
                                             frUtil.Entity.SUPPORTER, funraiseSupporterId,
                                             'Registration guest of');
                 
@@ -108,7 +108,7 @@ public class frFundraisingEventRegistration extends frModel implements frSyncabl
             transactions = [SELECT Id FROM Opportunity WHERE fr_Id__c = :funraiseTransactionId];
             if(transactions.isEmpty()) {
                 //if it wasn't found, log an error but continue
-                if(createLogRecord) frUtil.logRelationshipError(frUtil.Entity.REGISTRATION, funraiseId, 
+                if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
                                             frUtil.Entity.DONATION, funraiseTransactionId);                
             }
         }
@@ -165,8 +165,41 @@ public class frFundraisingEventRegistration extends frModel implements frSyncabl
             Database.upsert(registration, Fundraising_Event_Registration__c.Field.fr_ID__c, true);
             result = true;
         } catch (DMLException ex) {
-            if(createLogRecord) frUtil.logException(frUtil.Entity.REGISTRATION, funraiseId, ex);
+            if(createLogRecord) frUtil.logException(getFrType(), funraiseId, ex);
         }
         return result;
+    }
+    
+    protected override Boolean requireObjectDeletePermission() {
+        return true;
+    }
+    
+    protected override Set<Schema.SObjectField> getFields() {
+        return new Set<Schema.SObjectField> {
+            	Fundraising_Event_Registration__c.fr_ID__c,
+                Fundraising_Event_Registration__c.Name,
+                Fundraising_Event_Registration__c.Ticket_Name__c,
+                Fundraising_Event_Registration__c.Attended__c,
+                Fundraising_Event_Registration__c.Fundraising_Event__c,
+                Fundraising_Event_Registration__c.Registrant__c,
+                Fundraising_Event_Registration__c.Guest_Of__c,
+                Fundraising_Event_Registration__c.Transaction__c,
+                Fundraising_Event_Registration__c.First_Name__c,
+                Fundraising_Event_Registration__c.Last_Name__c,
+                Fundraising_Event_Registration__c.Phone__c,
+                Fundraising_Event_Registration__c.Email__c,
+                Fundraising_Event_Registration__c.Ticket_Amount__c,
+                Fundraising_Event_Registration__c.Ticket_Tax_Deductible_Amount__c
+        };
+    }
+    
+    protected override Set<Schema.SObjectType> getObjects() {
+        return new Set<Schema.SObjectType> {
+            Fundraising_Event_Registration__c.SObjectType
+        };
+    }
+    
+    protected override frUtil.Entity getFrType() {
+        return frUtil.Entity.REGISTRATION;
     }
 }

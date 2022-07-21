@@ -84,11 +84,10 @@ public class frSetupControllerTest {
 		System.assertEquals(1, countAfterSave, 'The record should have been saved without errors');
 		System.assertEquals(0, countAfterRemove, 'The record should have been removed without errors');
 	}
-
-	static testMethod void test_cancel_validReturnUrl() {
+    
+	static testMethod void test_cancel() {
 		Test.startTest();
 		frSetupController controller = new frSetupController();
-		ApexPages.currentPage().getParameters().put('retURL', EncodingUtil.urlEncode('funraise.io', 'UTF-8'));
 
 		//add some mappings but don't save them to ensure cancelling will not save changes
 		ApexPages.currentPage().getParameters().put('type', frSetupController.DONATION_TYPE);
@@ -96,25 +95,14 @@ public class frSetupControllerTest {
 		frMapping__c donationMapping = controller.donationMappings.get(0);
 		donationMapping.fr_Name__c = 'TestFRDonation';
 		donationMapping.sf_Name__c = 'TestSFDonation';
-
-		PageReference actualCancel = controller.cancel();
-		Test.stopTest();
-
-		System.assertEquals('funraise.io', actualCancel.getUrl());
-		System.assertEquals(0, [SELECT COUNT() FROM frMapping__c]);
-	}
-
-	static testMethod void test_cancel_invalidReturnUrl() {
-		Test.startTest();
-		frSetupController controller = new frSetupController();
-
-		//try with no url param
-		PageReference actualCancelWithNoRetUrl = controller.cancel();
+        PageReference actualCancelWithNoRetUrl = controller.cancel();
 
 		Test.stopTest();
 
 		PageReference expectedCancel = Page.frSetup;
 		System.assertEquals(expectedCancel.getUrl(), actualCancelWithNoRetUrl.getUrl(), 'Cancel did not redirect as expected');
+        System.assertEquals(0, [SELECT COUNT() FROM frMapping__c], 'No mappings should have been saved while cancelling');
+
 	}
 
 	static testMethod void test_defaults() {

@@ -48,11 +48,10 @@ public class frQuestion extends frModel implements frSyncable {
     
     public Boolean sync() {
         Boolean result = false;
-        Map<String, Object> request = 
-            (Map<String, Object>)JSON.deserializeUntyped(syncRecord.Request_Body__c);
+        Map<String, Object> request = getRequestBody();
         
         if (Boolean.valueOf(request.get('deleted'))) {
-            result = deleteQuestion(String.valueOf(request.get('id')));
+            result = deleteQuestion(getFunraiseId());
         } else {
             result = create(request);
         }
@@ -66,14 +65,14 @@ public class frQuestion extends frModel implements frSyncable {
             delete [SELECT id FROM Question__c WHERE fr_ID__c = :funraiseId];
             result = true;
         } catch (DMLException e) {
-            if(createLogRecord) frUtil.logException(frUtil.Entity.QUESTION, funraiseId, e);
+            if(createLogRecord) frUtil.logException(getFrType(), funraiseId, e);
         }
         return result;
     }
     
     public Boolean create(Map<String, Object> request) {
         Boolean result = false;
-        String funraiseId = String.valueOf(request.get('id'));
+        String funraiseId = getFunraiseId();
 		Question__c question = new Question__c(
 			fr_Id__c = funraiseId,
             Name__c = frUtil.truncateToFieldLength(
@@ -94,8 +93,31 @@ public class frQuestion extends frModel implements frSyncable {
             Database.upsert(question, Question__c.Field.fr_ID__c, true);
             result = true;
         } catch (DMLException ex) {
-            if(createLogRecord) frUtil.logException(frUtil.Entity.QUESTION, funraiseId, ex);
+            if(createLogRecord) frUtil.logException(getFrType(), funraiseId, ex);
         }
         return result;
-    } 
+    }
+    
+    protected override Boolean requireObjectDeletePermission() {
+        return true;
+    }
+    
+    protected override Set<Schema.SObjectField> getFields() {
+        return new Set<Schema.SObjectField> {
+            	Question__c.fr_Id__c,
+                Question__c.Name__c,
+                Question__c.Description__c,
+                Question__c.Type__c
+        };
+    }
+    
+    protected override Set<Schema.SObjectType> getObjects() {
+        return new Set<Schema.SObjectType> {
+                Question__c.SObjectType
+        };
+    }
+     
+    protected override frUtil.Entity getFrType() {
+        return frUtil.Entity.QUESTION;
+    }
 }
