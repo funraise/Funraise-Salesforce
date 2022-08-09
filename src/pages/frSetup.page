@@ -50,6 +50,17 @@
 				</apex:column>
 				<apex:column >
 					<apex:facet name="header">
+                        Conflict Resolution
+                    </apex:facet>
+					<apex:selectList value="{!mapping.Conflict_Resolution__c}" size="1">                        
+						<apex:selectOption itemValue="{!MAPPING_OVERWRITE}" itemLabel="Overwrite Existing Data with Funraise Data" />
+                        <apex:selectOption itemValue="{!MAPPING_NO_OVERWRITE}" itemLabel="Do Not Overwrite Existing Data" />
+                        <apex:selectOption itemValue="{!MAPPING_OVERWRITE_NON_NULL}" itemLabel="Only Overwrite Existing Data if Funraise Data is not empty" />
+                        <apex:selectOption itemValue="{!MAPPING_OVERWRITE_RECENT}" itemLabel="Only Overwrite Existing Data if Funraise record was updated more recently" />
+					</apex:selectList> 
+				</apex:column>
+				<apex:column >
+					<apex:facet name="header">
 						Remove
 					</apex:facet>
 					<apex:commandLink action="{!removeMapping}" value="Remove" rendered="{!mapping.id != null}">
@@ -92,6 +103,17 @@
 					</apex:facet>
 					<apex:selectList value="{!mapping.sf_Name__c}" size="1">
 						<apex:selectOptions value="{!donorSFOptions}" />
+					</apex:selectList> 
+				</apex:column>
+				<apex:column >
+					<apex:facet name="header">
+                        Conflict Resolution
+                    </apex:facet>
+					<apex:selectList value="{!mapping.Conflict_Resolution__c}" size="1">                        
+						<apex:selectOption itemValue="overwrite" itemLabel="Overwrite Existing Data with Funraise Data" />
+                        <apex:selectOption itemValue="do_not_overwrite" itemLabel="Do Not Overwrite Existing Data" />
+                        <apex:selectOption itemValue="overwrite_non_null" itemLabel="Only Overwrite Existing Data if Funraise Data is not empty" />
+                        <apex:selectOption itemValue="overwrite_more_recent" itemLabel="Only Overwrite Existing Data if Funraise record was updated more recently" />
 					</apex:selectList> 
 				</apex:column>
 				<apex:column >

@@ -44,7 +44,7 @@ public class frDonor extends frModel implements frSyncable{
     public static List<frMapping__c> mappings {
         get {
             if(mappings == null) {
-                mappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Type__c FROM frMapping__c WHERE Type__c = :TYPE ORDER BY CreatedDate];
+                mappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = :TYPE ORDER BY CreatedDate];
             }
             return mappings;
         }
@@ -55,7 +55,7 @@ public class frDonor extends frModel implements frSyncable{
         return mappings;
     }
     
-    private Contact c;
+    private Contact supporterContact;
     
     public frDonor(Sync_Attempt__c syncRecord){
         super(syncRecord);
@@ -64,7 +64,7 @@ public class frDonor extends frModel implements frSyncable{
     public Boolean sync() {
         Boolean result = false;
         Map<String, Object> request = getRequestBody();
-        Contact supporterContact = null;
+        supporterContact = null;
         String frId = getFunraiseId();
         //try to find a donor that's already been integrated, use their funraise ID
         List<Contact> contacts = (List<Contact>)Database.query('select Id, fr_ID__c, LastName from Contact where fr_ID__c = :frId FOR UPDATE');
@@ -158,6 +158,11 @@ public class frDonor extends frModel implements frSyncable{
             return donor;
         }
         return null;
+    }
+    
+    protected override String getSalesforceId() {
+        return supporterContact != null ? supporterContact.Id : null;
+        
     }
 
     protected override Set<Schema.SObjectField> getFields() {

@@ -1,4 +1,9 @@
 public with sharing abstract class frModel {
+    public static final String MAPPING_OVERWRITE = 'overwrite';
+    public static final String MAPPING_NO_OVERWRITE = 'do_not_overwrite';
+    public static final String MAPPING_OVERWRITE_NON_NULL = 'overwrite_non_null';
+    public static final String MAPPING_OVERWRITE_RECENT = 'overwrite_more_recent';
+    
     protected Sync_Attempt__c syncRecord;
     protected Map<String, Object> requestBody;
     protected Boolean createLogRecord = false;
@@ -19,8 +24,19 @@ public with sharing abstract class frModel {
         return String.valueOf(getRequestBody().get('id'));
     }
     
+    protected virtual String getSalesforceId() {
+        return null;
+    }
+    
     protected virtual Boolean requireObjectDeletePermission() {
         return false;
+    }
+    
+    protected virtual Datetime getUpdtime() {
+        if(getRequestBody().containsKey('updtime')) {
+            return Datetime.newInstance((Long)getRequestBody().get('updtime'));
+        }
+        return null;
     }
     
     protected abstract Set<Schema.SObjectField> getFields();
@@ -56,32 +72,84 @@ public with sharing abstract class frModel {
     }
     
     protected void applyMappings(SObject record, Map<String, Object> request) {
-    	Map<String, Schema.SObjectField> fields = frSchemaUtil.getFields(record.getSObjectType().getDescribe().getName());
-        String funraiseId = String.valueOf(request.get('id'));
+    	String sObjectName = record.getSObjectType().getDescribe().getName();
+        Map<String, Schema.SObjectField> fields = frSchemaUtil.getFields(sObjectName);
         
         //a single funraise field might flow into multiple salesforce fields
-        Map<String, List<frMapping__c>> frNameToSfName = new Map<String, List<frMapping__c>>();
+        Map<String, List<frMapping__c>> frFieldToMappings = new Map<String, List<frMapping__c>>();
         List<frMapping__c> constantMappings = new List<frMapping__c>();
+        Set<String> fieldsToQueryFor = new Set<String>();
+        Boolean needLastModifiedDate = false;
+        
         for(frMapping__c mapping : getMappings()) {
             if(mapping.Is_Constant__c) {
                 constantMappings.add(mapping);
             } else {
                 List<frMapping__c> mappings;
-                if(frNameToSfName.containsKey(mapping.fr_Name__c)) {
-                    mappings = frNameToSfName.get(mapping.fr_Name__c);
+                if(frFieldToMappings.containsKey(mapping.fr_Name__c)) {
+                    mappings = frFieldToMappings.get(mapping.fr_Name__c);
                 } else {
                     mappings = new List<frMapping__c>();
                 }
                 mappings.add(mapping);
-                frNameToSfName.put(mapping.fr_Name__c, mappings);
+                frFieldToMappings.put(mapping.fr_Name__c, mappings);
             }
+            
+            if(mapping.Conflict_Resolution__c == MAPPING_NO_OVERWRITE) {
+                //We need to know the existing values of these fields
+                //if null, we can sync the incoming data.  Otherwise, we don't overwrite
+                fieldsToQueryFor.add(mapping.sf_Name__c);
+            }
+            if(!needLastModifiedDate && mapping.Conflict_Resolution__c == MAPPING_OVERWRITE_RECENT) {
+                needLastModifiedDate = true;
+            }
+        }        
+        if(needLastModifiedDate) {
+        	fieldsToQueryFor.add('LastModifiedDate');    
         }
-
-        for(String fieldName : frNameToSfName.keySet()) {
+        
+        String funraiseId = getFunraiseId();
+        String salesforceId = getSalesforceId();
+        SObject queriedFieldsRecord = null;
+        if(!fieldsToQueryFor.isEmpty()) {
+            String query = 'SELECT ' + String.join(new List<String>(fieldsToQueryFor), ',') 
+                + ' FROM ' + sObjectName + ' WHERE ';
+            if(getSalesforceId() != null) {
+                query += 'Id = :salesforceId';
+            } else {
+                query += 'funraise__fr_Id__c = :funraiseId';
+            }
+            List<SObject> results = Database.query(query);
+            if(results.size() > 0) {
+                queriedFieldsRecord = results.get(0);
+            }    
+        }
+        
+        Boolean isMoreRecent = false;
+        if(needLastModifiedDate && queriedFieldsRecord != null) {
+            Datetime sfRecordUpdtime = (Datetime)queriedFieldsRecord.get('LastModifiedDate');
+            isMoreRecent = getUpdtime() != null ? getUpdtime() > sfRecordUpdtime : false;
+        }
+        
+        for(String fieldName : frFieldToMappings.keySet()) {
             if(request.containsKey(fieldName)) {
-                for(frMapping__c mapping : frNameToSfName.get(fieldName)) {
+                for(frMapping__c mapping : frFieldToMappings.get(fieldName)) {
                     Schema.SObjectField field = fields.get(mapping.sf_Name__c);
-                    write(record, field, mapping.sf_Name__c, request.get(fieldName), funraiseId);                    
+                    Object incomingValue = request.get(fieldName);
+                    Boolean write = false;
+                    if(String.isBlank(mapping.Conflict_Resolution__c) || mapping.Conflict_Resolution__c == MAPPING_OVERWRITE) {
+                    	write = true;	    
+                    } else if (mapping.Conflict_Resolution__c == MAPPING_OVERWRITE_NON_NULL && (incomingValue != null || (incomingValue instanceOf String && String.isNotBlank((String)incomingValue)))) {
+                        write = true;
+                    } else if (mapping.Conflict_Resolution__c == MAPPING_NO_OVERWRITE) {
+                        Object existingValue = queriedFieldsRecord != null ? queriedFieldsRecord.get(field) : null;
+                        write = existingValue == null;
+                    } else if (mapping.Conflict_Resolution__c == MAPPING_OVERWRITE_RECENT && isMoreRecent) {
+                        write = true;
+                    }
+                    if(write) {
+                    	write(record, field, mapping.sf_Name__c, incomingValue, funraiseId);    
+                    }
                 }
             }
         }

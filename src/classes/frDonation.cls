@@ -42,7 +42,7 @@ public class frDonation extends frModel implements frSyncable {
     public static List<frMapping__c> mappings {
         get {
             if(mappings == null) {
-                mappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Type__c FROM frMapping__c WHERE Type__c = :TYPE ORDER BY CreatedDate];
+                mappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = :TYPE ORDER BY CreatedDate];
             }
             return mappings;
         }
@@ -180,7 +180,7 @@ public class frDonation extends frModel implements frSyncable {
         Map<String, Contact> relatedContacts = new Map<String, Contact>();
         Set<String> supportersWithContactRoles = new Set<String>();
         for(Contact relatedContact : [SELECT Id, fr_Id__c, 
-                                      (SELECT Id, Role, ContactId FROM OpportunityContactRoles WHERE OpportunityId = :getOpportunityId()) 
+                                      (SELECT Id, Role, ContactId FROM OpportunityContactRoles WHERE OpportunityId = :getSalesforceId()) 
                                       from Contact WHERE fr_Id__c IN :relatedSupporterFunraiseIds]) {
                                           relatedContacts.put(relatedContact.fr_Id__c, relatedContact);
                                           if(relatedContact.OpportunityContactRoles.size() > 0) {
@@ -244,12 +244,12 @@ public class frDonation extends frModel implements frSyncable {
         Contact supporter = contactsByFunraiseId.get(funraiseSupporterId);
         OpportunityContactRole newRole = new OpportunityContactRole();
         newRole.ContactId = supporter.Id;
-        newRole.OpportunityId = getOpportunityId();
+        newRole.OpportunityId = getSalesforceId();
         newRole.Role = role;
         return newRole;
     }
     
-    public String getOpportunityId() {
+    protected override String getSalesforceId(){
         return this.o != null ? this.o.Id : null;
     }
     
@@ -289,6 +289,13 @@ public class frDonation extends frModel implements frSyncable {
     
     protected override frUtil.Entity getFrType() {
         return frUtil.Entity.DONATION;
+    }
+    
+    protected override Datetime getUpdtime() {
+        if(getRequestBody().containsKey('donation_updtime')) {
+            return Datetime.newInstance((Long)getRequestBody().get('donation_updtime'));
+        }
+        return null;
     }
     
     ///CONSTANTS///
