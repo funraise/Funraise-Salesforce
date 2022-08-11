@@ -291,13 +291,10 @@ public class frDonation extends frModel implements frSyncable {
         return frUtil.Entity.DONATION;
     }
     
-    protected override Datetime getUpdtime() {
-        if(getRequestBody().containsKey('donation_updtime')) {
-            return Datetime.newInstance((Long)getRequestBody().get('donation_updtime'));
-        }
-        return null;
+    protected override String getUpdtimeJsonKey() {
+        return 'donation_updtime';
     }
-    
+
     ///CONSTANTS///
 
     public static final String TYPE = 'Donation';

@@ -105,7 +105,7 @@ public class frDonorTest {
         request.put('id', existingSupporter.fr_Id__c);
         request.put('lastName', null);
         request.put('institutionName', 'Test Inst Name');
-
+        
         frTestUtil.createTestPost(request);
         Test.startTest();
         frWSDonorController.syncEntity();
@@ -138,7 +138,7 @@ public class frDonorTest {
         Test.stopTest();
         
         String frId = String.valueOf(getTestRequest().get('id'));
-		Contact syncedContact = [SELECT Id, fr_ID__c, Email FROM Contact WHERE fr_Id__c = :frId];
+        Contact syncedContact = [SELECT Id, fr_ID__c, Email FROM Contact WHERE fr_Id__c = :frId];
         System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
         Integer countAfterSync = [SELECT COUNT() FROM Contact];
         System.assertEquals(countBeforeSync, countAfterSync, 'No additional contacts should have been created');
@@ -159,7 +159,7 @@ public class frDonorTest {
         insert new List<Contact>{existing, noMatch};
             
         Integer countBeforeSync = [SELECT COUNT() FROM Contact];
-
+        
         frTestUtil.createTestPost(getTestRequest());
         Test.startTest();
         frWSDonorController.syncEntity();        
@@ -253,7 +253,7 @@ public class frDonorTest {
         Map<String, Object> request = getTestRequest();
         request.put('id', existing.fr_Id__c);
         request.put('email', 'example.email.overwrite@example.com');
-
+        
         frTestUtil.createTestPost(request);
         Test.startTest();
         frWSDonorController.syncEntity();        
@@ -282,7 +282,7 @@ public class frDonorTest {
         request.put('id', existing.fr_Id__c);
         request.put('email', newEmail); //should overwrite existing value
         request.put('country', null);  //should not overwrite existing value
-
+        
         frTestUtil.createTestPost(request);
         Test.startTest();
         frWSDonorController.syncEntity();        
@@ -312,7 +312,7 @@ public class frDonorTest {
         request.put('id', existing.fr_Id__c);
         request.put('email', newEmail); //should overwrite existing value
         request.put('updtime', DateTime.now().addDays(1).getTime()); //one day in the future, so it should always be more recent
-
+        
         frTestUtil.createTestPost(request);
         Test.startTest();
         frWSDonorController.syncEntity();        
@@ -341,7 +341,7 @@ public class frDonorTest {
         request.put('id', existing.fr_Id__c);
         request.put('email', newEmail); //should overwrite existing value
         request.put('updtime', DateTime.now().addDays(-50).getTime()); //in the past, so it should not be more recent than Salesforce
-
+        
         frTestUtil.createTestPost(request);
         Test.startTest();
         frWSDonorController.syncEntity();        
@@ -361,7 +361,7 @@ public class frDonorTest {
         insert new frMapping__c(Type__c = frDonor.TYPE, Name = frField+sfField, 
                                 fr_Name__c = frField, sf_Name__c = sfField, Conflict_Resolution__c = conflictResolution);
     }
-
+    
     public static Contact getTestContact(Boolean save) {
         Contact contact = new Contact(
             FirstName = 'Bruce', LastName = 'Wayne', Email = 'bruce@wayne.example.com',

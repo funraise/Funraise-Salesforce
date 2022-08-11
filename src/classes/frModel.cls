@@ -32,9 +32,13 @@ public with sharing abstract class frModel {
         return false;
     }
     
-    protected virtual Datetime getUpdtime() {
-        if(getRequestBody().containsKey('updtime')) {
-            return Datetime.newInstance((Long)getRequestBody().get('updtime'));
+    protected virtual String getUpdtimeJsonKey() {
+        return 'updtime';
+    }
+    
+    private Datetime getUpdtime() {
+        if(getRequestBody().containsKey(getUpdtimeJsonKey())) {
+            return Datetime.newInstance((Long)getRequestBody().get(getUpdtimeJsonKey()));
         }
         return null;
     }
@@ -72,7 +76,7 @@ public with sharing abstract class frModel {
     }
     
     protected void applyMappings(SObject record, Map<String, Object> request) {
-    	String sObjectName = record.getSObjectType().getDescribe().getName();
+        String sObjectName = record.getSObjectType().getDescribe().getName();
         Map<String, Schema.SObjectField> fields = frSchemaUtil.getFields(sObjectName);
         
         //a single funraise field might flow into multiple salesforce fields
@@ -105,7 +109,7 @@ public with sharing abstract class frModel {
             }
         }        
         if(needLastModifiedDate) {
-        	fieldsToQueryFor.add('LastModifiedDate');    
+            fieldsToQueryFor.add('LastModifiedDate');    
         }
         
         String funraiseId = getFunraiseId();
@@ -138,7 +142,7 @@ public with sharing abstract class frModel {
                     Object incomingValue = request.get(fieldName);
                     Boolean write = false;
                     if(String.isBlank(mapping.Conflict_Resolution__c) || mapping.Conflict_Resolution__c == MAPPING_OVERWRITE) {
-                    	write = true;	    
+                        write = true;	    
                     } else if (mapping.Conflict_Resolution__c == MAPPING_OVERWRITE_NON_NULL && (incomingValue != null || (incomingValue instanceOf String && String.isNotBlank((String)incomingValue)))) {
                         write = true;
                     } else if (mapping.Conflict_Resolution__c == MAPPING_NO_OVERWRITE) {
@@ -146,9 +150,12 @@ public with sharing abstract class frModel {
                         write = existingValue == null;
                     } else if (mapping.Conflict_Resolution__c == MAPPING_OVERWRITE_RECENT && isMoreRecent) {
                         write = true;
+                    } else if (String.isNotBlank(mapping.Conflict_Resolution__c) && !VALID_CONFLICT_RESOLUTIONS.contains(mapping.Conflict_Resolution__c)) {
+                        insert new Error__c(Error__c = 'Field mapping exception. Unknown conflict resolution provided. Object type: '+ sObjectName +
+                                            ' - Field: '+field.getDescribe().getName() + 'Conflict Resolution: '+ mapping.Conflict_Resolution__c);
                     }
                     if(write) {
-                    	write(record, field, mapping.sf_Name__c, incomingValue, funraiseId);    
+                        write(record, field, mapping.sf_Name__c, incomingValue, funraiseId);    
                     }
                 }
             }
@@ -157,7 +164,7 @@ public with sharing abstract class frModel {
             Schema.SObjectField field = fields.get(constantMapping.sf_Name__c);
             write(record, field, constantMapping.sf_Name__c, constantMapping.Constant_Value__c, funraiseId);
         }
-
+        
         record.put('fr_ID__c', funraiseId);
     }
     
@@ -208,9 +215,9 @@ public with sharing abstract class frModel {
             record.put(field, value);
         } catch (Exception ex) {
             insert new Error__c(Error__c = 'Field mapping exception. Object type: '+ record.getSObjectType().getDescribe().getName()
-                +' Record Id: '+record.Id+' - Funraise Id: '+ funraiseId + ' - Field: '+field.getDescribe().getName()+' - Value: '+value
-                +' Exception: '+ex
-            );
+                                +' Record Id: '+record.Id+' - Funraise Id: '+ funraiseId + ' - Field: '+field.getDescribe().getName()+' - Value: '+value
+                                +' Exception: '+ex
+                               );
         }
     }
     
@@ -238,9 +245,13 @@ public with sharing abstract class frModel {
             deleteLogs();
         }
     }
-
+    
     @future
     private static void deleteLogs() {
         delete [SELECT Id FROM Error__c ORDER BY CreatedDate DESC LIMIT 10000 OFFSET 100];
     }
+    
+    private static final Set<String> VALID_CONFLICT_RESOLUTIONS = new Set<String>{
+        MAPPING_OVERWRITE, MAPPING_NO_OVERWRITE, MAPPING_OVERWRITE_NON_NULL, MAPPING_OVERWRITE_RECENT
+    };
 }
