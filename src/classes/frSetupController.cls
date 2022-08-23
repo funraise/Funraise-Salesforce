@@ -36,6 +36,31 @@ public with sharing class frSetupController {
         }
         private set;
     }
+    
+    public static String MAPPING_OVERWRITE {
+        get {
+            return frModel.MAPPING_OVERWRITE;
+        }
+        private set;
+    }
+    public static String MAPPING_NO_OVERWRITE {
+        get {
+            return frModel.MAPPING_NO_OVERWRITE;
+        }
+        private set;
+    }
+    public static String MAPPING_OVERWRITE_NON_NULL {
+        get {
+            return frModel.MAPPING_OVERWRITE_NON_NULL;
+        }
+        private set;
+    }
+    public static String MAPPING_OVERWRITE_RECENT  {
+        get {
+            return frModel.MAPPING_OVERWRITE_RECENT;
+        }
+        private set;
+    }
 
 	public List<SelectOption> donationSFOptions {get; set;}
 	public List<SelectOption> donationFROptions {get; set;}

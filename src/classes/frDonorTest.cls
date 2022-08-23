@@ -105,7 +105,7 @@ public class frDonorTest {
         request.put('id', existingSupporter.fr_Id__c);
         request.put('lastName', null);
         request.put('institutionName', 'Test Inst Name');
-
+        
         frTestUtil.createTestPost(request);
         Test.startTest();
         frWSDonorController.syncEntity();
@@ -138,7 +138,7 @@ public class frDonorTest {
         Test.stopTest();
         
         String frId = String.valueOf(getTestRequest().get('id'));
-		Contact syncedContact = [SELECT Id, fr_ID__c, Email FROM Contact WHERE fr_Id__c = :frId];
+        Contact syncedContact = [SELECT Id, fr_ID__c, Email FROM Contact WHERE fr_Id__c = :frId];
         System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
         Integer countAfterSync = [SELECT COUNT() FROM Contact];
         System.assertEquals(countBeforeSync, countAfterSync, 'No additional contacts should have been created');
@@ -159,7 +159,7 @@ public class frDonorTest {
         insert new List<Contact>{existing, noMatch};
             
         Integer countBeforeSync = [SELECT COUNT() FROM Contact];
-
+        
         frTestUtil.createTestPost(getTestRequest());
         Test.startTest();
         frWSDonorController.syncEntity();        
@@ -239,10 +239,129 @@ public class frDonorTest {
         System.assertEquals(1, newContacts, 'The funraise donor id was not populated to the contact field');
     }
     
-    private static void createMapping(String frField, String sfField) {
-        insert new frMapping__c(Name = frField+sfField, fr_Name__c = frField, sf_Name__c = sfField, Type__c = frDonor.TYPE);
+    static testMethod void syncEntity_conflictResolution_noOverwrite() {
+        createMapping('firstName', 'FirstName');
+        createMapping('lastName', 'LastName');
+        createMapping('email', 'email', frModel.MAPPING_NO_OVERWRITE);
+        createMapping('address1', 'MailingStreet');
+        createMapping('city', 'MailingCity');
+        createMapping('state', 'MailingState');
+        createMapping('postalCode', 'MailingPostalCode');
+        createMapping('country', 'MailingCountry');
+        
+        Contact existing = getTestContact(true);
+        Map<String, Object> request = getTestRequest();
+        request.put('id', existing.fr_Id__c);
+        request.put('email', 'example.email.overwrite@example.com');
+        
+        frTestUtil.createTestPost(request);
+        Test.startTest();
+        frWSDonorController.syncEntity();        
+        Test.stopTest();
+        frTestUtil.assertNoErrors();
+        
+        Contact syncedContact = [SELECT Id, fr_ID__c, Email FROM Contact WHERE fr_Id__c = :existing.fr_Id__c];
+        System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
+        System.assertEquals(syncedContact.Email, existing.Email, 'The email should not have changed since the NO_OVERWRITE conflict resolution was used');
     }
-
+    
+    static testMethod void syncEntity_conflictResolution_overwriteNonNull() {
+        createMapping('firstName', 'FirstName');
+        createMapping('lastName', 'LastName');
+        createMapping('email', 'email', frModel.MAPPING_OVERWRITE_NON_NULL);
+        createMapping('address1', 'MailingStreet');
+        createMapping('city', 'MailingCity');
+        createMapping('state', 'MailingState');
+        createMapping('postalCode', 'MailingPostalCode');
+        createMapping('country', 'MailingCountry', frModel.MAPPING_OVERWRITE_NON_NULL);
+        
+        String newEmail = 'example.email.overwrite@example.com';
+        
+        Contact existing = getTestContact(true);
+        Map<String, Object> request = getTestRequest();
+        request.put('id', existing.fr_Id__c);
+        request.put('email', newEmail); //should overwrite existing value
+        request.put('country', null);  //should not overwrite existing value
+        
+        frTestUtil.createTestPost(request);
+        Test.startTest();
+        frWSDonorController.syncEntity();        
+        Test.stopTest();
+        frTestUtil.assertNoErrors();
+        
+        Contact syncedContact = [SELECT Id, fr_ID__c, Email, MailingCountry FROM Contact WHERE fr_Id__c = :existing.fr_Id__c];
+        System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
+        System.assertEquals(syncedContact.Email, newEmail, 'The email should have changed since the OVERWRITE_NON_NULL conflict resolution was used and the incoming value was non null');
+        System.assertEquals(syncedContact.MailingCountry, existing.MailingCountry, 'The country should NOT have changed since the OVERWRITE_NON_NULL conflict resolution was used and the incoming value was null');
+    }
+    
+    static testMethod void syncEntity_conflictResolution_overwriteMoreRecent_isMoreRecent() {
+        createMapping('firstName', 'FirstName');
+        createMapping('lastName', 'LastName');
+        createMapping('email', 'email', frModel.MAPPING_OVERWRITE_RECENT);
+        createMapping('address1', 'MailingStreet');
+        createMapping('city', 'MailingCity');
+        createMapping('state', 'MailingState');
+        createMapping('postalCode', 'MailingPostalCode');
+        createMapping('country', 'MailingCountry');
+        
+        String newEmail = 'example.email.overwrite@example.com';
+        
+        Contact existing = getTestContact(true);
+        Map<String, Object> request = getTestRequest();
+        request.put('id', existing.fr_Id__c);
+        request.put('email', newEmail); //should overwrite existing value
+        request.put('updtime', DateTime.now().addDays(1).getTime()); //one day in the future, so it should always be more recent
+        
+        frTestUtil.createTestPost(request);
+        Test.startTest();
+        frWSDonorController.syncEntity();        
+        Test.stopTest();
+        frTestUtil.assertNoErrors();
+        
+        Contact syncedContact = [SELECT Id, fr_ID__c, Email, MailingCountry FROM Contact WHERE fr_Id__c = :existing.fr_Id__c];
+        System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
+        System.assertEquals(syncedContact.Email, newEmail, 'The email should have changed since the OVERWRITE_RECENT conflict resolution was used and the updtime was more recent than Salesforce');
+    }
+    
+    static testMethod void syncEntity_conflictResolution_overwriteMoreRecent_isNotMoreRecent() {
+        createMapping('firstName', 'FirstName');
+        createMapping('lastName', 'LastName');
+        createMapping('email', 'email', frModel.MAPPING_OVERWRITE_RECENT);
+        createMapping('address1', 'MailingStreet');
+        createMapping('city', 'MailingCity');
+        createMapping('state', 'MailingState');
+        createMapping('postalCode', 'MailingPostalCode');
+        createMapping('country', 'MailingCountry');
+        
+        String newEmail = 'example.email.overwrite@example.com';
+        
+        Contact existing = getTestContact(true);
+        Map<String, Object> request = getTestRequest();
+        request.put('id', existing.fr_Id__c);
+        request.put('email', newEmail); //should overwrite existing value
+        request.put('updtime', DateTime.now().addDays(-50).getTime()); //in the past, so it should not be more recent than Salesforce
+        
+        frTestUtil.createTestPost(request);
+        Test.startTest();
+        frWSDonorController.syncEntity();        
+        Test.stopTest();
+        frTestUtil.assertNoErrors();
+        
+        Contact syncedContact = [SELECT Id, fr_ID__c, Email, MailingCountry FROM Contact WHERE fr_Id__c = :existing.fr_Id__c];
+        System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
+        System.assertEquals(syncedContact.Email, existing.Email, 'The email should not have changed since the OVERWRITE_RECENT conflict resolution was used and the updtime was more recent than Salesforce');
+    }
+    
+    private static void createMapping(String frField, String sfField) {
+        createMapping(frField, sfField, null);
+    }
+    
+    private static void createMapping(String frField, String sfField, String conflictResolution) {
+        insert new frMapping__c(Type__c = frDonor.TYPE, Name = frField+sfField, 
+                                fr_Name__c = frField, sf_Name__c = sfField, Conflict_Resolution__c = conflictResolution);
+    }
+    
     public static Contact getTestContact(Boolean save) {
         Contact contact = new Contact(
             FirstName = 'Bruce', LastName = 'Wayne', Email = 'bruce@wayne.example.com',
@@ -306,6 +425,7 @@ public class frDonorTest {
         request.put('fundraiser', false);
         request.put('donor_tags', 'FeedingPoor EatingFood');
         request.put('donor_cretime', 1487801043597L);
+        request.put('updtime', 1658702180337L);
         return request;
     }
 }

@@ -3,6 +3,20 @@
     <customSettingsType>List</customSettingsType>
     <enableFeeds>false</enableFeeds>
     <fields>
+        <fullName>Conflict_Resolution__c</fullName>
+        <defaultValue>&quot;overwrite&quot;</defaultValue>
+        <deprecated>false</deprecated>
+        <description>How should existing data be reconciled with incoming data from Funraise</description>
+        <externalId>false</externalId>
+        <inlineHelpText>How should existing data be reconciled with incoming data from Funraise</inlineHelpText>
+        <label>Conflict Resolution</label>
+        <length>100</length>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
         <fullName>Constant_Value__c</fullName>
         <deprecated>false</deprecated>
         <externalId>false</externalId>
