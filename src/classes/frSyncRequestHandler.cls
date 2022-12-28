@@ -1,6 +1,6 @@
 public with sharing class frSyncRequestHandler implements Database.Batchable<SObject> {
     public static final Integer MAX_ATTEMPTS = 3;
-    public static final Integer BATCH_SIZE = 50;
+    public static final Integer BATCH_SIZE = 20;
     public Database.QueryLocator start(Database.BatchableContext bc) {
         Id jobId = bc.getJobId();
 		Id classId = [SELECT ApexClassId FROM AsyncApexJob WHERE id = :jobId][0].ApexClassId;

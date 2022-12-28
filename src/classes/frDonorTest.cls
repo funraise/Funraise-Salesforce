@@ -353,6 +353,30 @@ public class frDonorTest {
         System.assertEquals(syncedContact.Email, existing.Email, 'The email should not have changed since the OVERWRITE_RECENT conflict resolution was used and the updtime was more recent than Salesforce');
     }
     
+    static testMethod void syncEntity_conflictResolution_overwriteMoreRecent_noExistingRecord() {
+        createMapping('firstName', 'FirstName', frModel.MAPPING_OVERWRITE_RECENT);
+        createMapping('lastName', 'LastName', frModel.MAPPING_OVERWRITE_RECENT);
+        createMapping('email', 'email', frModel.MAPPING_OVERWRITE_RECENT);
+        createMapping('address1', 'MailingStreet');
+        createMapping('city', 'MailingCity');
+        createMapping('state', 'MailingState');
+        createMapping('postalCode', 'MailingPostalCode');
+        createMapping('country', 'MailingCountry');
+        
+        Map<String, Object> request = getTestRequest();       
+        frTestUtil.createTestPost(request);
+        Test.startTest();
+        frWSDonorController.syncEntity();        
+        Test.stopTest();
+        frTestUtil.assertNoErrors();
+        
+        String frId = String.valueOf(getTestRequest().get('id'));
+        Contact syncedContact = [SELECT Email, FirstName, LastName, fr_ID__c FROM Contact WHERE fr_Id__c = :frId];
+        System.assertEquals(syncedContact.Email, String.valueOf(getTestRequest().get('email')), 'The email from the request should be present on the newly created contact');
+        System.assertEquals(syncedContact.FirstName, String.valueOf(getTestRequest().get('firstName')), 'The firstName from the request should be present on the newly created contact');
+        System.assertEquals(syncedContact.LastName, String.valueOf(getTestRequest().get('lastName')), 'The lastName from the request should be present on the newly created contact');
+    }
+    
     private static void createMapping(String frField, String sfField) {
         createMapping(frField, sfField, null);
     }

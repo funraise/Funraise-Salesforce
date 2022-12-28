@@ -129,7 +129,7 @@ public with sharing abstract class frModel {
             }    
         }
         
-        Boolean isMoreRecent = false;
+        Boolean isMoreRecent = queriedFieldsRecord == null; //if we didn't get a queriedFieldsRecord returned, all fields from Funraise are more recent
         if(needLastModifiedDate && queriedFieldsRecord != null) {
             Datetime sfRecordUpdtime = (Datetime)queriedFieldsRecord.get('LastModifiedDate');
             isMoreRecent = getUpdtime() != null ? getUpdtime() > sfRecordUpdtime : false;

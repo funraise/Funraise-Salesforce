@@ -37,7 +37,7 @@
 * CREATED: 2020 Funraise Inc - https://funraise.io
 * AUTHOR: Alex Molina
 */
-public class frPledge {
+public with sharing class frPledge {
     public static Pledge__c findActive(Id contactId, Date closeDate) {
         List<Pledge__c> possiblePledges = [SELECT Id FROM Pledge__c 
                                          WHERE Supporter__c = :contactId 
