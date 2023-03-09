@@ -101,7 +101,7 @@ public class frSyncRequestHandlerTest {
         
         Test.startTest();
         frSyncRequestHandler handler = new frSyncRequestHandler();
-        Database.executeBatch(handler);
+        Database.executeBatch(handler, frSyncRequestHandler.BATCH_SIZE);
         Test.stopTest();
         
         for(Sync_Attempt__c attempt : [SELECT Id, Attempts__c FROM Sync_Attempt__c]) {
