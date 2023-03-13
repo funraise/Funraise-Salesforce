@@ -69,12 +69,31 @@ public class frDonation extends frModel implements frSyncable {
         String status = String.valueOf(request.get('status'));
         
         if(String.isBlank(o.StageName)) {
+            List<OpportunityStage> stages = [SELECT Id, MasterLabel, IsWon, IsClosed 
+                                             FROM OpportunityStage 
+                                             WHERE IsActive = true 
+                                             ORDER BY SortOrder];
             if (status == PENDING) {
-                o.StageName = PENDING;
+                for (OpportunityStage stage : stages) {
+                    if(!stage.IsWon && !stage.isClosed) {
+                        o.StageName = stage.MasterLabel;
+                        break;
+                    }
+                }
             } else if (status == FAILED || status == REFUNDED) {
-                o.StageName = 'Closed Lost';
+                for (OpportunityStage stage : stages) {
+                    if(!stage.IsWon && stage.isClosed) {
+                        o.StageName = stage.MasterLabel;
+                        break;
+                    }
+                }
             } else {
-                o.StageName = 'Closed Won';
+                for (OpportunityStage stage : stages) {
+                    if(stage.IsWon && stage.isClosed) {
+                        o.StageName = stage.MasterLabel;
+                        break;
+                    }
+                }
             }
         }
         
