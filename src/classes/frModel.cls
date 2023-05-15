@@ -239,18 +239,7 @@ public with sharing abstract class frModel {
             (Integer)localDate.get(2)  //day
         );
     }
-    
-    public static void flushLogs() {
-        if([SELECT COUNT() FROM Error__c LIMIT 250] > 200) {
-            deleteLogs();
-        }
-    }
-    
-    @future
-    private static void deleteLogs() {
-        delete [SELECT Id FROM Error__c ORDER BY CreatedDate DESC LIMIT 10000 OFFSET 100];
-    }
-    
+
     private static final Set<String> VALID_CONFLICT_RESOLUTIONS = new Set<String>{
         MAPPING_OVERWRITE, MAPPING_NO_OVERWRITE, MAPPING_OVERWRITE_NON_NULL, MAPPING_OVERWRITE_RECENT
     };

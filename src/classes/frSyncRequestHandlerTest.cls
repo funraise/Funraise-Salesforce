@@ -39,73 +39,106 @@
 */
 @isTest
 public class frSyncRequestHandlerTest {
-    static testMethod void testProcessAllTypes() {
-        List<Sync_Attempt__c> attempts = new List<Sync_Attempt__c>();
-        attempts.add(new Sync_Attempt__c(
-        	Request_Body__c = Json.serialize(frAnswerTest.getTestRequest()),
-            Type__c = frUtil.Entity.ANSWER.name(),
-            Attempts__c = 1
-        ));
-        attempts.add(new Sync_Attempt__c(
-        	Request_Body__c = Json.serialize(frCampaignTest.getTestRequest()),
-            Type__c = frUtil.Entity.CAMPAIGN.name(),
-            Attempts__c = 1
-        ));
-        attempts.add(new Sync_Attempt__c(
-        	Request_Body__c = Json.serialize(frDonationTest.getTestRequest()),
-            Type__c = frUtil.Entity.DONATION.name(),
-            Attempts__c = 1
-        ));
-        attempts.add(new Sync_Attempt__c(
-        	Request_Body__c = Json.serialize(frDonorTest.getTestRequest()),
-            Type__c = frUtil.Entity.SUPPORTER.name(),
-            Attempts__c = 1
-        ));
-        attempts.add(new Sync_Attempt__c(
-        	Request_Body__c = Json.serialize(frDonorEmailsTest.getTestRequest()),
-            Type__c = frUtil.Entity.EMAIL.name(),
-            Attempts__c = 1
-        ));
-        attempts.add(new Sync_Attempt__c(
-        	Request_Body__c = Json.serialize(frFundraisingEventRegistrationTest.getTestRequest()),
-            Type__c = frUtil.Entity.REGISTRATION.name(),
-            Attempts__c = 1
-        ));
-        attempts.add(new Sync_Attempt__c(
-        	Request_Body__c = Json.serialize(frFundraisingEventTest.getTestRequest()),
-            Type__c = frUtil.Entity.EVENT.name(),
-            Attempts__c = 1
-        ));
-        attempts.add(new Sync_Attempt__c(
-        	Request_Body__c = Json.serialize(frQuestionTest.getTestRequest()),
-            Type__c = frUtil.Entity.QUESTION.name(),
-            Attempts__c = 1
-        ));
-        attempts.add(new Sync_Attempt__c(
-        	Request_Body__c = Json.serialize(frSubscriptionTest.getTestRequest()),
-            Type__c = frUtil.Entity.SUBSCRIPTION.name(),
-            Attempts__c = 1
-        ));
-        attempts.add(new Sync_Attempt__c(
-        	Request_Body__c = Json.serialize(frSubscriptionTest.getTestRequest()),
-            Type__c = frUtil.Entity.SUBSCRIPTION.name(),
-            Attempts__c = 1
-        ));
-        attempts.add(new Sync_Attempt__c(
-        	Request_Body__c = Json.serialize(frWSTaskControllerTest.getTestRequest()),
-            Type__c = frUtil.Entity.TASK.name(),
-            Attempts__c = 1
-        ));
-        
-        insert attempts;
-        
+    private static void testProcess(Sync_Attempt__c attempt) {
+        insert attempt;
         Test.startTest();
         frSyncRequestHandler handler = new frSyncRequestHandler();
         Database.executeBatch(handler, frSyncRequestHandler.BATCH_SIZE);
         Test.stopTest();
         
-        for(Sync_Attempt__c attempt : [SELECT Id, Attempts__c FROM Sync_Attempt__c]) {
-            System.assertEquals(2, attempt.Attempts__c, 'Every attempt should have recorded a new attempt to process');
+        for(Sync_Attempt__c result : [SELECT Id, Attempts__c FROM Sync_Attempt__c]) {
+            System.assertEquals(2, result.Attempts__c, 'Every attempt should have recorded a new attempt to process');
         }
+    }
+    
+    
+    static testMethod void syncAnswer() {
+        Sync_Attempt__c attempt = new Sync_Attempt__c(
+            Request_Body__c = Json.serialize(frAnswerTest.getTestRequest()),
+            Type__c = frUtil.Entity.ANSWER.name(),
+            Attempts__c = 1
+        );
+        testProcess(attempt);
+    }
+    
+    static testMethod void syncCampaign() {
+        Sync_Attempt__c attempt = new Sync_Attempt__c(
+            Request_Body__c = Json.serialize(frCampaignTest.getTestRequest()),
+            Type__c = frUtil.Entity.CAMPAIGN.name(),
+            Attempts__c = 1
+        );
+        testProcess(attempt);
+    }
+    
+    static testMethod void syncDonation() {
+        Sync_Attempt__c attempt = new Sync_Attempt__c(
+            Request_Body__c = Json.serialize(frDonationTest.getTestRequest()),
+            Type__c = frUtil.Entity.DONATION.name(),
+            Attempts__c = 1
+        );
+        testProcess(attempt);
+    }
+    
+    static testMethod void syncSupporter() {
+        Sync_Attempt__c attempt = new Sync_Attempt__c(
+            Request_Body__c = Json.serialize(frDonorTest.getTestRequest()),
+            Type__c = frUtil.Entity.SUPPORTER.name(),
+            Attempts__c = 1
+        );
+        testProcess(attempt);
+    }
+    
+    static testMethod void syncEmail() {
+        Sync_Attempt__c attempt = new Sync_Attempt__c(
+            Request_Body__c = Json.serialize(frDonorEmailsTest.getTestRequest()),
+            Type__c = frUtil.Entity.EMAIL.name(),
+            Attempts__c = 1
+        );
+        testProcess(attempt);
+    }
+    
+    static testMethod void syncRegistration() {
+        Sync_Attempt__c attempt = new Sync_Attempt__c(
+            Request_Body__c = Json.serialize(frFundraisingEventRegistrationTest.getTestRequest()),
+            Type__c = frUtil.Entity.REGISTRATION.name(),
+            Attempts__c = 1
+        );
+        testProcess(attempt);
+    }
+    
+    static testMethod void syncEvent() {
+        Sync_Attempt__c attempt = new Sync_Attempt__c(
+            Request_Body__c = Json.serialize(frFundraisingEventTest.getTestRequest()),
+            Type__c = frUtil.Entity.EVENT.name(),
+            Attempts__c = 1
+        );
+        testProcess(attempt);
+    }
+    
+    static testMethod void syncQuestion() {
+        Sync_Attempt__c attempt = new Sync_Attempt__c(
+            Request_Body__c = Json.serialize(frQuestionTest.getTestRequest()),
+            Type__c = frUtil.Entity.QUESTION.name(),
+            Attempts__c = 1
+        );
+        testProcess(attempt);
+    }
+    
+    static testMethod void syncSubscription() {
+        Sync_Attempt__c attempt = new Sync_Attempt__c(
+            Request_Body__c = Json.serialize(frSubscriptionTest.getTestRequest()),
+            Type__c = frUtil.Entity.SUBSCRIPTION.name(),
+            Attempts__c = 1
+        );
+        testProcess(attempt);
+    }
+    
+    static testMethod void syncTask() {
+        Sync_Attempt__c attempt = new Sync_Attempt__c(
+            Request_Body__c = Json.serialize(frWSTaskControllerTest.getTestRequest()),
+            Type__c = frUtil.Entity.TASK.name(),
+            Attempts__c = 1
+        );
+        testProcess(attempt);
     }
 }

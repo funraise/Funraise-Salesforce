@@ -1,6 +1,6 @@
 public with sharing class frSyncRequestHandler implements Database.Batchable<SObject> {
     public static final Integer MAX_ATTEMPTS = 3;
-    public static final Integer BATCH_SIZE = 20;
+    public static final Integer BATCH_SIZE = 5;
     public Database.QueryLocator start(Database.BatchableContext bc) {
         Id jobId = bc.getJobId();
 		Id classId = [SELECT ApexClassId FROM AsyncApexJob WHERE id = :jobId][0].ApexClassId;
@@ -79,6 +79,18 @@ public with sharing class frSyncRequestHandler implements Database.Batchable<SOb
         if([SELECT COUNT() FROM Sync_Attempt__c] > 0) {
             scheduleRetry();
         }
+        flushLogs();
+    }
+    
+    private static void flushLogs() {
+        if([SELECT COUNT() FROM Error__c LIMIT 250] > 200) {
+            try {
+                delete [SELECT Id FROM Error__c WHERE CreatedDate < LAST_WEEK ORDER BY CreatedDate ASC LIMIT 50];
+            } catch (Exception ex) {
+                System.debug('Funraise encountered an exception when attempting to clear Error__c records');
+                System.debug(ex);
+            }
+        }
     }
     
     public static void scheduleRetry() {
@@ -93,10 +105,16 @@ public with sharing class frSyncRequestHandler implements Database.Batchable<SOb
     }
     
     private static void scheduleBatch() {
-        System.scheduleBatch(new frSyncRequestHandler(), getBatchJobName(), 5, frSyncRequestHandler.BATCH_SIZE);    
+        try {
+        	System.scheduleBatch(new frSyncRequestHandler(), getBatchJobName(), 5, frSyncRequestHandler.BATCH_SIZE);        
+        } catch (Exception ex) {
+            System.debug('Funraise encountered an exception attempting to schedule the batch for retrying incoming data sync');
+            System.debug(ex);
+        }
+        
     }
     
     private static String getBatchJobName() {
-        return 'Funraise Sync - User: ' + UserInfo.getUserId();
+        return 'Funraise Sync - User: ' + UserInfo.getUserId() + DateTime.now().getTime();
     }
 }
