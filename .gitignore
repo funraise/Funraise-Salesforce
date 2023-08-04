@@ -9,3 +9,5 @@ config
 *.sublime-workspace
 /.project
 /salesforce.schema
+.idea/
+*.iml
