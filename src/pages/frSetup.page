@@ -1,7 +1,7 @@
 <apex:page showHeader="true" sidebar="false" controller="frSetupController">
     <apex:pageMessages />
     <apex:form >
-        <apex:pageBlock title="Instructions">
+        <apex:pageBlock title="Instructions" rendered="{!isNonProfitOrg == false}">
             <apex:pageBlockButtons location="top">
                 <apex:commandButton action="{!save}" value="Save Mappings" />
                 <apex:commandButton action="{!cancel}" value="Discard Changes" />
@@ -17,7 +17,23 @@
                 If not, you can select a field value that comes from Funraise
             </h2>
         </apex:pageBlock>
-        <apex:pageBlock title="Donation --> Opportunity">
+        <apex:pageBlock title="Instructions" rendered="{!isNonProfitOrg == true}">
+            <apex:pageBlockButtons location="top">
+                <apex:commandButton action="{!save}" value="Save Mappings" />
+                <apex:commandButton action="{!cancel}" value="Discard Changes" />
+                <apex:commandButton action="{!defaults}" value="Use Default Mappings" onclick="return confirm('This will delete ALL of your current mappings and replace them with the defaults.  Are you sure you want to continue?');" />
+            </apex:pageBlockButtons>
+            <h2>
+                Use this page to define what fields should be populated when a new donation (Gift Transaction) or donor (Person Account) is sent from the 
+                Funraise platform
+            </h2>
+            <br/> <br/>
+            <h2>
+                If you would prefer to hardcode a value for an Gift Transaction or Person Account, check the "Constant?" box and enter the hardcoded value.  
+                If not, you can select a field value that comes from Funraise
+            </h2>
+        </apex:pageBlock>
+        <apex:pageBlock title="Donation --> Opportunity" rendered="{!isNonProfitOrg == false}">
             <apex:pageBlockButtons location="top">
                 <apex:commandButton action="{!donationDefaults}" value="Use Default Mappings" onclick="return confirm('This will delete your current mappings for donation and replace them with the defaults.  Are you sure you want to continue?');" />
             </apex:pageBlockButtons>
@@ -74,7 +90,64 @@
                 </apex:commandLink>
             </apex:pageBlockSection>
         </apex:pageBlock>
-        <apex:pageBlock title="Donor --> Contact">
+        <apex:pageBlock title="Donation --> Gift Transaction" rendered="{!isNonProfitOrg == true}">
+            <!--apex:pageBlockButtons location="top">
+                <apex:commandButton action="{!donationDefaults}" value="Use Default Mappings" onclick="return confirm('This will delete your current mappings for donation and replace them with the defaults.  Are you sure you want to continue?');" />
+            </apex:pageBlockButtons-->
+            <apex:pageBlockSection columns="1">
+                <apex:pageBlockTable value="{!giftTransactionMappings}" var="mapping" id="giftTable" >
+                    <apex:column >
+                        <apex:facet name="header">
+                            Constant?
+                        </apex:facet>
+                        <apex:inputField value="{!mapping.Is_Constant__c}" >
+                            <apex:actionSupport event="onchange" reRender="fr-field-column" />
+                        </apex:inputField>
+                    </apex:column>
+                    <apex:column id="fr-field-column">
+                        <apex:facet name="header">
+                            Value
+                        </apex:facet>
+                        <apex:inputField value="{!mapping.Constant_Value__c}" rendered="{!mapping.Is_Constant__c}" />
+                        <apex:selectList value="{!mapping.fr_Name__c}" size="1" rendered="{!!mapping.Is_Constant__c}">
+                            <apex:selectOptions value="{!donationFROptions}" />
+                        </apex:selectList> 
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">
+                            Gift Transaction Field
+                        </apex:facet>
+                        <apex:selectList value="{!mapping.sf_Name__c}" size="1">
+                            <apex:selectOptions value="{!giftTransactionSFOptions}" />
+                        </apex:selectList> 
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">
+                            Conflict Resolution
+                        </apex:facet>
+                        <apex:selectList value="{!mapping.Conflict_Resolution__c}" size="1">                        
+                            <apex:selectOption itemValue="{!MAPPING_OVERWRITE}" itemLabel="Overwrite Existing Data with Funraise Data" />
+                            <apex:selectOption itemValue="{!MAPPING_NO_OVERWRITE}" itemLabel="Do Not Overwrite Existing Data" />
+                            <apex:selectOption itemValue="{!MAPPING_OVERWRITE_NON_NULL}" itemLabel="Only Overwrite Existing Data if Funraise Data is not empty" />
+                            <apex:selectOption itemValue="{!MAPPING_OVERWRITE_RECENT}" itemLabel="Only Overwrite Existing Data if Funraise record was updated more recently" />
+                        </apex:selectList> 
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">
+                            Remove
+                        </apex:facet>
+                        <apex:commandLink action="{!removeMapping}" value="Remove" rendered="{!mapping.id != null}">
+                            <apex:param name="id" value="{!mapping.Id}" />
+                            <apex:param name="type" value="{!GIFT_TRANSACTION_TYPE}" />
+                        </apex:commandLink>
+                    </apex:column>
+                </apex:pageBlockTable>
+                <apex:commandLink action="{!addMapping}" value="Add Gift Transaction Mapping" reRender="giftTable">
+                    <apex:param name="type" value="{!GIFT_TRANSACTION_TYPE}" />
+                </apex:commandLink>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+        <apex:pageBlock title="Donor --> Contact" rendered="{!personAccountsEnabled == false}">
             <apex:pageBlockButtons location="top">
                 <apex:commandButton action="{!donorDefaults}" value="Use Default Mappings" onclick="return confirm('This will delete your current mappings for donor and replace them with the defaults.  Are you sure you want to continue?');" />
             </apex:pageBlockButtons>
@@ -128,6 +201,120 @@
                 </apex:pageBlockTable>
                 <apex:commandLink action="{!addMapping}" value="Add Donor Mapping" reRender="donorTable">
                     <apex:param name="type" value="{!DONOR_TYPE}" />
+                </apex:commandLink>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+        <apex:pageBlock title="Donor --> Person Account" rendered="{!personAccountsEnabled == true}">
+            <!--apex:pageBlockButtons location="top">
+                <apex:commandButton action="{!donorDefaults}" value="Use Default Mappings" onclick="return confirm('This will delete your current mappings for donor and replace them with the defaults.  Are you sure you want to continue?');" />
+            </apex:pageBlockButtons-->
+            <apex:pageBlockSection columns="1">
+                <apex:pageBlockTable value="{!accMappings}" var="mapping" id="accTable">
+                    <apex:column >
+                        <apex:facet name="header">
+                            Constant?
+                        </apex:facet>
+                        <apex:inputField value="{!mapping.Is_Constant__c}" >
+                            <apex:actionSupport event="onchange" reRender="fr-field-column" />
+                        </apex:inputField>
+                    </apex:column>
+                    <apex:column id="fr-field-column">
+                        <apex:facet name="header">
+                            Value
+                        </apex:facet>
+                        <apex:inputField value="{!mapping.Constant_Value__c}" rendered="{!mapping.Is_Constant__c}" />
+                        <apex:selectList value="{!mapping.fr_Name__c}" size="1" rendered="{!!mapping.Is_Constant__c}">
+                            <apex:selectOptions value="{!donorFROptions}" />
+                        </apex:selectList> 
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">
+                            Person Account Field
+                        </apex:facet>
+                        <apex:selectList value="{!mapping.sf_Name__c}" size="1">
+                            <apex:selectOptions value="{!accSFOptions}" />
+                        </apex:selectList> 
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">
+                            Conflict Resolution
+                        </apex:facet>
+                        <apex:selectList value="{!mapping.Conflict_Resolution__c}" size="1">                        
+                            <apex:selectOption itemValue="overwrite" itemLabel="Overwrite Existing Data with Funraise Data" />
+                            <apex:selectOption itemValue="do_not_overwrite" itemLabel="Do Not Overwrite Existing Data" />
+                            <apex:selectOption itemValue="overwrite_non_null" itemLabel="Only Overwrite Existing Data if Funraise Data is not empty" />
+                            <apex:selectOption itemValue="overwrite_more_recent" itemLabel="Only Overwrite Existing Data if Funraise record was updated more recently" />
+                        </apex:selectList> 
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">
+                            Remove
+                        </apex:facet>
+                        <apex:commandLink action="{!removeMapping}" value="Remove" rendered="{!mapping.id != null}">
+                            <apex:param name="id" value="{!mapping.Id}" />
+                            <apex:param name="type" value="{!PERSON_ACCOUNT_TYPE}" />
+                        </apex:commandLink>
+                    </apex:column>
+                </apex:pageBlockTable>
+                <apex:commandLink action="{!addMapping}" value="Add Person Account Mapping" reRender="accTable">
+                    <apex:param name="type" value="{!PERSON_ACCOUNT_TYPE}" />
+                </apex:commandLink>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+        <apex:pageBlock title="Subscription --> Gift Commitment" rendered="{!isNonProfitOrg == true}">
+            <!--apex:pageBlockButtons location="top">
+                <apex:commandButton action="{!donationDefaults}" value="Use Default Mappings" onclick="return confirm('This will delete your current mappings for donation and replace them with the defaults.  Are you sure you want to continue?');" />
+            </apex:pageBlockButtons-->
+            <apex:pageBlockSection columns="1">
+                <apex:pageBlockTable value="{!giftCommitmentMappings}" var="mapping" id="giftcommitmentTable" >
+                    <apex:column >
+                        <apex:facet name="header">
+                            Constant?
+                        </apex:facet>
+                        <apex:inputField value="{!mapping.Is_Constant__c}" >
+                            <apex:actionSupport event="onchange" reRender="fr-field-column" />
+                        </apex:inputField>
+                    </apex:column>
+                    <apex:column id="fr-field-column">
+                        <apex:facet name="header">
+                            Value
+                        </apex:facet>
+                        <apex:inputField value="{!mapping.Constant_Value__c}" rendered="{!mapping.Is_Constant__c}" />
+                        <apex:selectList value="{!mapping.fr_Name__c}" size="1" rendered="{!!mapping.Is_Constant__c}">
+                            <apex:selectOptions value="{!donationFROptions}" />
+                        </apex:selectList> 
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">
+                            Gift Commitment Field
+                        </apex:facet>
+                        <apex:selectList value="{!mapping.sf_Name__c}" size="1">
+                            <apex:selectOptions value="{!giftCommitmentSFOptions}" />
+                        </apex:selectList> 
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">
+                            Conflict Resolution
+                        </apex:facet>
+                        <apex:selectList value="{!mapping.Conflict_Resolution__c}" size="1">                        
+                            <apex:selectOption itemValue="{!MAPPING_OVERWRITE}" itemLabel="Overwrite Existing Data with Funraise Data" />
+                            <apex:selectOption itemValue="{!MAPPING_NO_OVERWRITE}" itemLabel="Do Not Overwrite Existing Data" />
+                            <apex:selectOption itemValue="{!MAPPING_OVERWRITE_NON_NULL}" itemLabel="Only Overwrite Existing Data if Funraise Data is not empty" />
+                            <apex:selectOption itemValue="{!MAPPING_OVERWRITE_RECENT}" itemLabel="Only Overwrite Existing Data if Funraise record was updated more recently" />
+                        </apex:selectList> 
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">
+                            Remove
+                        </apex:facet>
+                        <apex:commandLink action="{!removeMapping}" value="Remove" rendered="{!mapping.id != null}">
+                            <apex:param name="id" value="{!mapping.Id}" />
+                            <apex:param name="type" value="{!GIFT_COMMITMENT_TYPE}" />
+                        </apex:commandLink>
+                    </apex:column>
+                </apex:pageBlockTable>
+                <apex:commandLink action="{!addMapping}" value="Add Gift Commitment Mapping" reRender="giftcommitmentTable">
+                    <apex:param name="type" value="{!GIFT_COMMITMENT_TYPE}" />
                 </apex:commandLink>
             </apex:pageBlockSection>
         </apex:pageBlock>

@@ -49,6 +49,10 @@ public class frSubscription extends frModel implements frSyncable {
     public Boolean sync() {
         Boolean result = false;
         Map<String, Object> request = getRequestBody();
+        for (String key : request.keySet()) {
+            Object value = request.get(key);
+            System.debug('Key: ' + key + ', Value: ' + value);
+        }
         if (Boolean.valueOf(request.get('deleted'))) {
             result = deleteSubscription(getFunraiseId());
         } else {
@@ -69,26 +73,90 @@ public class frSubscription extends frModel implements frSyncable {
     }
     
     private Boolean create(Map<String, Object> request) {
+        for (String key : request.keySet()) {
+            Object value = request.get(key);
+            System.debug('Key: ' + key + ', Value: ' + value);
+        }
         Boolean result = false;
         String funraiseId = getFunraiseId();
         String name = String.valueOf(request.get('name'));
         String funraiseSupporterId = String.valueOf(request.get('supporterId'));
         List<Contact> contacts = [SELECT Id from Contact WHERE fr_Id__c = :funraiseSupporterId];
-        if(contacts.isEmpty()) {
+        List<Account> accounts;
+        if (Account.SObjectType.getDescribe().fields.getMap().containsKey('IsPersonAccount')) {
+            accounts = [SELECT Id, PersonContactId FROM Account WHERE fr_ID__c = :funraiseSupporterId];
+        }
+        if(contacts.isEmpty() && accounts.isEmpty()) {
             if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
                                         frUtil.Entity.SUPPORTER, funraiseSupporterId);
             return result;
         }
-        
-        Subscription__c subscription = new Subscription__c(
-        	fr_ID__c = funraiseId,
-            Name = frUtil.truncateToFieldLength(
-                Subscription__c.Name.getDescribe(), 
-                String.valueOf(request.get('name'))
-            ), 
-            Supporter__c = contacts.get(0).Id
-        );
-        
+        Subscription__c subscription;
+        //gc check
+        if(contacts.isEmpty() && Schema.getGlobalDescribe().containsKey('gifttransaction')) {
+            SObject gc = null;
+            List<SObject> gcList = Database.query('SELECT Id, Name FROM GiftCommitment WHERE fr_ID__c = :funraiseId');
+            if(gcList.isEmpty()) {
+                gc = Schema.getGlobalDescribe().get('giftcommitment').newSObject();
+            } 
+            else {
+                gc = gcList.get(0);
+            }
+            gc.put('fr_ID__c', funraiseId);
+            gc.put('Name', frUtil.truncateToFieldLength(GiftCommitment.Name.getDescribe(), String.valueOf(request.get('name'))));
+            gc.put('DonorId', accounts.get(0).Id);
+            /*GiftCommitment gc = new GiftCommitment(
+                fr_ID__c = funraiseId,
+                Name = frUtil.truncateToFieldLength(
+                    GiftCommitment.Name.getDescribe(), 
+                    String.valueOf(request.get('name'))
+                ), 
+                DonorId = accounts.get(0).Id
+            );*/
+            System.debug('gc: ' + gc);
+
+            // campaign check for gc
+            String goalId = String.valueOf(request.get('campaignGoalId'));
+            if (String.isNotBlank(goalId)) {
+                List<Campaign> campaigns = [SELECT Id FROM Campaign WHERE fr_ID__c = :goalId];
+                if (campaigns.size() > 0) {
+                    gc.put('CampaignId', campaigns.get(0).Id);
+                    //gc.CampaignId = campaigns.get(0).Id;
+                } else {
+                    if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
+                                                frUtil.Entity.CAMPAIGN, goalId);
+                }
+            }
+
+            String strPledgeAmount2 = String.valueOf(request.get('pledgeAmount'));
+            Decimal pledgeAmount2 = String.isNotBlank(strPledgeAmount2) ? Decimal.valueOf(strPledgeAmount2) : null;
+            applyMappings(gc, request);
+            //upsert gc
+            try {
+                Database.upsert(gc, true);
+                result = true;
+            } catch (DMLException ex) {
+                if(createLogRecord) frUtil.logException(getFrType(), funraiseId, ex);
+                return result;
+            }
+            
+            if(pledgeAmount2 != null) {
+                frPledge.create(gc, pledgeAmount2);
+            }
+            return result;
+        } 
+        else {
+            subscription = new Subscription__c(
+                fr_ID__c = funraiseId,
+                Name = frUtil.truncateToFieldLength(
+                    Subscription__c.Name.getDescribe(), 
+                    String.valueOf(request.get('name'))
+                ), 
+                Supporter__c = contacts.get(0).Id
+            );
+            System.debug('subscription: ' + subscription);
+        }
+
         String goalId = String.valueOf(request.get('campaignGoalId'));
         if (String.isNotBlank(goalId)) {
             List<Campaign> campaigns = [SELECT Id FROM Campaign WHERE fr_ID__c = :goalId];
@@ -118,7 +186,8 @@ public class frSubscription extends frModel implements frSyncable {
             Schema.SObjectField field = fields.get(salesforceFieldName);
             frModel.write(subscription, field, funraiseFieldName, request.get(funraiseFieldName), funraiseId);
         }
-        
+
+
         try {
             Database.upsert(subscription, Subscription__c.Field.fr_ID__c, true);
             result = true;

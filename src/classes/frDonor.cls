@@ -56,6 +56,7 @@ public class frDonor extends frModel implements frSyncable{
     }
     
     private Contact supporterContact;
+    private Account supporterAccount;
     
     public frDonor(Sync_Attempt__c syncRecord){
         super(syncRecord);
@@ -64,89 +65,182 @@ public class frDonor extends frModel implements frSyncable{
     public Boolean sync() {
         Boolean result = false;
         Map<String, Object> request = getRequestBody();
+        System.debug('request: ' + request);
         supporterContact = null;
+        supporterAccount = null;
         String frId = getFunraiseId();
-        //try to find a donor that's already been integrated, use their funraise ID
-        List<Contact> contacts = (List<Contact>)Database.query('select Id, fr_ID__c, LastName from Contact where fr_ID__c = :frId');
-        if(contacts != null && contacts.size() > 0) {
-            supporterContact = contacts.get(0);
-        }
+        System.debug('frId: ' + frId);
+        SObjectType accountType = Account.SObjectType;
         
-        String firstName = String.valueOf(request.get('firstName'));
-        String lastName = String.valueOf(request.get('lastName'));
-        String email = String.valueOf(request.get('email'));
-        if(supporterContact == null) {
-            if(String.isNotBlank(email)) {
-                //try to match on email + name, since not all orgs treat email as unique
-                if(String.isNotBlank(firstName) && String.isNotBlank(lastName)) {
-                    contacts = (List<Contact>)Database.query(
-                        'select Id, fr_ID__c, LastName from Contact where '+
-                        'Email = :email AND FirstName = :firstName AND LastName = :lastName '+
-                        'limit 1'
-                    );
+        //Populate Account if person accounts are enabled 
+        if (accountType.getDescribe().fields.getMap().containsKey('IsPersonAccount')) {
+            List<Account> accounts = (List<Account>)Database.query('select Id, fr_ID__c, LastName from Account where fr_ID__c = :frId');
+            if(accounts != null && accounts.size() > 0) {
+                supporterAccount = accounts.get(0);
+            }
+
+            String firstName = String.valueOf(request.get('firstName'));
+            String lastName = String.valueOf(request.get('lastName'));
+            String email = String.valueOf(request.get('email'));
+
+            if(supporterAccount == null) {
+                if(String.isNotBlank(email)) {
+                    //try to match on email + name, since not all orgs treat email as unique
+                    if(String.isNotBlank(firstName) && String.isNotBlank(lastName)) {
+                        accounts = (List<Account>)Database.query(
+                            'select Id, fr_ID__c, LastName from Account where '+
+                            'PersonEmail = :email AND FirstName = :firstName AND LastName = :lastName '+
+                            'limit 1'
+                        );
+                        supporterAccount = applyAccountMatch(accounts, frId);
+                    }
+                    
+                    //if name wasn't present or no match was found, try on email only
+                    if(supporterAccount == null) {
+                        accounts = (List<Account>)Database.query('select Id, fr_ID__c, LastName from Account where PersonEmail = :email limit 1');
+                        supporterAccount = applyAccountMatch(accounts, frId);                 
+                    }
+                    
+                }
+            }
+            
+            if(supporterAccount == null) {
+                String address1 = String.valueOf(request.get('address1'));
+                String city = String.valueOf(request.get('city'));
+                String state = String.valueOf(request.get('state'));
+                String postalCode = String.valueOf(request.get('postalCode'));
+                String country = String.valueOf(request.get('country'));
+                
+                //name AND street address AND (cityAndState or postalCode) 
+                //need to be populated for us to match
+                Boolean namePresent = String.isNotBlank(firstName) && String.isNotBlank(lastName);
+                Boolean cityAndState = String.isNotBlank(city) && String.isNotBlank(state);
+                if(namePresent && String.isNotBlank(address1) && (cityAndState || String.isNotBlank(postalCode))) {
+                    String byAddress = 'select Id, fr_ID__c, LastName from Account where PersonMailingStreet = :address1' +
+                        ' and FirstName = :firstName' +
+                        ' and LastName = :lastName';
+                    if(cityAndState) {
+                        byAddress += ' and PersonMailingCity = :city' +
+                        ' and PersonMailingState = :state';
+                    }
+                    if(String.isNotBlank(postalCode)) {
+                        byAddress += ' and PersonMailingPostalCode = :postalCode';
+                    }
+                    byAddress += ' limit 1';
+                    
+                    accounts = (List<Account>)Database.query(byAddress);
+                    supporterAccount = applyAccountMatch(accounts, frId);
+                }
+            }
+
+            if(supporterAccount == null) {
+                supporterAccount = new Account(fr_Id__c = frId);
+            }
+            applyMappings(supporterAccount, request);
+            
+            if(String.isBlank(supporterAccount.LastName)) {
+                //LastName is required.  If the mappings didn't populate it, try to populate with the institution name
+                supporterAccount.LastName = String.valueOf(request.get('institutionName') + 'gabetest');
+            }
+            System.debug(supporterAccount);
+            upsert supporterAccount;
+            try {
+                //if we try the upsert using an external id when the contact has an id, 
+                //an exception is thrown
+                if(supporterAccount.Id != null) {
+                    Database.update(supporterAccount, true);
+                } else { 
+                    Database.upsert(supporterAccount, Account.Fields.fr_ID__c, true);
+                }
+                result = true;
+            } catch (Exception ex) {
+                if(createLogRecord) frUtil.logException(getFrType(), frId, ex);
+
+            }
+        }
+        else {
+            //try to find a donor that's already been integrated, use their funraise ID (Contacts) 
+            List<Contact> contacts = (List<Contact>)Database.query('select Id, fr_ID__c, LastName from Contact where fr_ID__c = :frId');
+            if(contacts != null && contacts.size() > 0) {
+                supporterContact = contacts.get(0);
+            }
+            
+            String firstName = String.valueOf(request.get('firstName'));
+            String lastName = String.valueOf(request.get('lastName'));
+            String email = String.valueOf(request.get('email'));
+            if(supporterContact == null) {
+                if(String.isNotBlank(email)) {
+                    //try to match on email + name, since not all orgs treat email as unique
+                    if(String.isNotBlank(firstName) && String.isNotBlank(lastName)) {
+                        contacts = (List<Contact>)Database.query(
+                            'select Id, fr_ID__c, LastName from Contact where '+
+                            'Email = :email AND FirstName = :firstName AND LastName = :lastName '+
+                            'limit 1'
+                        );
+                        supporterContact = applyMatch(contacts, frId);
+                    }
+                    
+                    //if name wasn't present or no match was found, try on email only
+                    if(supporterContact == null) {
+                        contacts = (List<Contact>)Database.query('select Id, fr_ID__c, LastName from Contact where Email = :email limit 1');
+                        supporterContact = applyMatch(contacts, frId);                 
+                    }
+                    
+                }
+            }
+            
+            if(supporterContact == null) {
+                String address1 = String.valueOf(request.get('address1'));
+                String city = String.valueOf(request.get('city'));
+                String state = String.valueOf(request.get('state'));
+                String postalCode = String.valueOf(request.get('postalCode'));
+                String country = String.valueOf(request.get('country'));
+                
+                //name AND street address AND (cityAndState or postalCode) 
+                //need to be populated for us to match
+                Boolean namePresent = String.isNotBlank(firstName) && String.isNotBlank(lastName);
+                Boolean cityAndState = String.isNotBlank(city) && String.isNotBlank(state);
+                if(namePresent && String.isNotBlank(address1) && (cityAndState || String.isNotBlank(postalCode))) {
+                    String byAddress = 'select Id, fr_ID__c, LastName from Contact where MailingStreet = :address1' +
+                        ' and FirstName = :firstName' +
+                        ' and LastName = :lastName';
+                    if(cityAndState) {
+                        byAddress += ' and MailingCity = :city' +
+                        ' and MailingState = :state';
+                    }
+                    if(String.isNotBlank(postalCode)) {
+                        byAddress += ' and MailingPostalCode = :postalCode';
+                    }
+                    byAddress += ' limit 1';
+                    
+                    contacts = (List<Contact>)Database.query(byAddress);
                     supporterContact = applyMatch(contacts, frId);
                 }
-                
-                //if name wasn't present or no match was found, try on email only
-                if(supporterContact == null) {
-                    contacts = (List<Contact>)Database.query('select Id, fr_ID__c, LastName from Contact where Email = :email limit 1');
-                    supporterContact = applyMatch(contacts, frId);                 
-                }
-                
             }
-        }
-        
-        if(supporterContact == null) {
-            String address1 = String.valueOf(request.get('address1'));
-            String city = String.valueOf(request.get('city'));
-            String state = String.valueOf(request.get('state'));
-            String postalCode = String.valueOf(request.get('postalCode'));
-            String country = String.valueOf(request.get('country'));
             
-            //name AND street address AND (cityAndState or postalCode) 
-            //need to be populated for us to match
-            Boolean namePresent = String.isNotBlank(firstName) && String.isNotBlank(lastName);
-            Boolean cityAndState = String.isNotBlank(city) && String.isNotBlank(state);
-            if(namePresent && String.isNotBlank(address1) && (cityAndState || String.isNotBlank(postalCode))) {
-                String byAddress = 'select Id, fr_ID__c, LastName from Contact where MailingStreet = :address1' +
-                    ' and FirstName = :firstName' +
-                    ' and LastName = :lastName';
-                if(cityAndState) {
-                    byAddress += ' and MailingCity = :city' +
-                    ' and MailingState = :state';
-                }
-                if(String.isNotBlank(postalCode)) {
-                    byAddress += ' and MailingPostalCode = :postalCode';
-                }
-                byAddress += ' limit 1';
-                
-                contacts = (List<Contact>)Database.query(byAddress);
-                supporterContact = applyMatch(contacts, frId);
+            if(supporterContact == null) {
+                supporterContact = new Contact(fr_Id__c = frId);
             }
-        }
-        
-        if(supporterContact == null) {
-            supporterContact = new Contact(fr_Id__c = frId);
-        }
-        applyMappings(supporterContact, request);
-        
-        if(String.isBlank(supporterContact.LastName)) {
-            //LastName is required.  If the mappings didn't populate it, try to populate with the institution name
-            supporterContact.LastName = String.valueOf(request.get('institutionName'));
-        }
-        
-        try {
-            //if we try the upsert using an external id when the contact has an id, 
-            //an exception is thrown
-            if(supporterContact.Id != null) {
-                Database.update(supporterContact, true);
-            } else { 
-                Database.upsert(supporterContact, Contact.Fields.fr_ID__c, true);
+            applyMappings(supporterContact, request);
+            
+            if(String.isBlank(supporterContact.LastName)) {
+                //LastName is required.  If the mappings didn't populate it, try to populate with the institution name
+                supporterContact.LastName = String.valueOf(request.get('institutionName'));
             }
-            result = true;
-        } catch (Exception ex) {
-            if(createLogRecord) frUtil.logException(getFrType(), frId, ex);
+            
+            try {
+                //if we try the upsert using an external id when the contact has an id, 
+                //an exception is thrown
+                if(supporterContact.Id != null) {
+                    Database.update(supporterContact, true);
+                } else { 
+                    Database.upsert(supporterContact, Contact.Fields.fr_ID__c, true);
+                }
+                result = true;
+            } catch (Exception ex) {
+                if(createLogRecord) frUtil.logException(getFrType(), frId, ex);
 
+            }
         }
         return result;
     }
@@ -154,6 +248,15 @@ public class frDonor extends frModel implements frSyncable{
     private Contact applyMatch(List<Contact> matchResults, String frId) {
         if(matchResults != null && matchResults.size() > 0) {
             Contact donor = matchResults.get(0);
+            donor.fr_ID__c = frId;
+            return donor;
+        }
+        return null;
+    }
+
+    private Account applyAccountMatch(List<Account> matchResults, String frId) {
+        if(matchResults != null && matchResults.size() > 0) {
+            Account donor = matchResults.get(0);
             donor.fr_ID__c = frId;
             return donor;
         }

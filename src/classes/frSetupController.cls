@@ -5,6 +5,27 @@ public with sharing class frSetupController {
 		}
 		private set;
 	}
+	public static String PERSON_ACCOUNT_TYPE {
+		get {
+			//TODO Put it in the class, maybe a new field on frField to diff between the 2?
+			return 'Person Account';
+		}
+		private set;
+	}
+	public static String GIFT_TRANSACTION_TYPE {
+		get {
+			//TODO Put it in the class, maybe a new field on frField to diff between the 2?
+			return 'Gift Transaction';
+		}
+		private set;
+	}
+	public static String GIFT_COMMITMENT_TYPE {
+		get {
+			//TODO Put it in the class, maybe a new field on frField to diff between the 2?
+			return 'Gift Commitment';
+		}
+		private set;
+	}
 	public static String DONOR_TYPE {
 		get {
 			return frDonor.TYPE;
@@ -69,6 +90,19 @@ public with sharing class frSetupController {
 	public List<SelectOption> donorSFOptions {get; set;}
 	public List<SelectOption> donorFROptions {get; set;}
 	public List<frMapping__c> donorMappings {get; set;}
+
+	public List<SelectOption> accSFOptions {get; set;}
+	public List<frMapping__c> accMappings {get; set;}
+
+	public List<SelectOption> giftTransactionSFOptions {get; set;}
+	public List<frMapping__c> giftTransactionMappings {get; set;}
+
+	public List<SelectOption> giftCommitmentSFOptions {get; set;}
+	public List<SelectOption> giftCommitmentFROptions {get; set;}
+	public List<frMapping__c> giftCommitmentMappings {get; set;}
+
+	public Boolean personAccountsEnabled { get; set; }
+	public Boolean isNonProfitOrg { get; set; }
 	
 	public frSetupController() {
 		SelectOption noneOption = new SelectOption('', '--None--');
@@ -78,8 +112,62 @@ public with sharing class frSetupController {
 		donationFROptions.add(noneOption);
 		donorSFOptions = new List<SelectOption>();
 		donorSFOptions.add(noneOption);
+		accSFOptions = new List<SelectOption>();
+		accSFOptions.add(noneOption);
+		giftTransactionSFOptions = new List<SelectOption>();
+		giftTransactionSFOptions.add(noneOption);
 		donorFROptions = new List<SelectOption>();
 		donorFROptions.add(noneOption);
+		giftCommitmentSFOptions = new List<SelectOption>();
+		giftCommitmentSFOptions.add(noneOption);
+		giftCommitmentFROptions = new List<SelectOption>();
+		giftCommitmentFROptions.add(noneOption);
+		personAccountsEnabled = false;
+		isNonProfitOrg = false;
+
+		//Check for personaccount field on account
+        SObjectType accountType = Account.SObjectType;
+        if (accountType.getDescribe().fields.getMap().containsKey('IsPersonAccount')) {
+            personAccountsEnabled = true;
+			//new account mappings
+			Map<String, Schema.SObjectField> personAccountFields = Account.sObjectType.getDescribe().fields.getMap();
+			for(String fieldName : personAccountFields.keySet()) {
+				Schema.DescribeFieldResult describe = personAccountFields.get(fieldName).getDescribe();
+				if(describe.isUpdateable()) {
+					accSFOptions.add(new SelectOption(fieldName, describe.getLabel()));
+				}
+			}
+			accSFOptions.sort();
+        }
+		//Check for GiftTransaction to see if its a NPC Org
+		if (Schema.getGlobalDescribe().containsKey('gifttransaction')) {
+			isNonProfitOrg = true;
+			Map<String, Schema.SObjectField> giftTransactionFields = GiftTransaction.sObjectType.getDescribe().fields.getMap();
+			for(String fieldName : giftTransactionFields.keySet()) {
+				Schema.DescribeFieldResult describe = giftTransactionFields.get(fieldName).getDescribe();
+				if(describe.isUpdateable()) {
+					//System.debug(fieldName);
+					giftTransactionSFOptions.add(new SelectOption(fieldName, describe.getLabel()));
+				}
+			}
+			giftTransactionSFOptions.sort();
+
+			// gift commitments
+			Map<String, Schema.SObjectField> GiftCommitmentFields = GiftCommitment.sObjectType.getDescribe().fields.getMap();
+			for(String fieldName : GiftCommitmentFields.keySet()) {
+				Schema.DescribeFieldResult describe = GiftCommitmentFields.get(fieldName).getDescribe();
+				if(describe.isUpdateable()) {
+					//System.debug(fieldName);
+					giftCommitmentSFOptions.add(new SelectOption(fieldName, describe.getLabel()));
+				}
+			}
+			giftCommitmentSFOptions.sort();
+
+			for(frField__mdt field : [SELECT DeveloperName, MasterLabel FROM frField__mdt WHERE Type__c = :GIFT_COMMITMENT_TYPE OR Type__c = 'All' ORDER BY MasterLabel]) {
+				giftCommitmentFROptions.add(new SelectOption(field.DeveloperName, field.MasterLabel));
+			}
+		}
+		System.debug('isNonProfitOrg: ' + isNonProfitOrg);
 
 		Map<String, Schema.SObjectField> oppFields = Opportunity.sObjectType.getDescribe().fields.getMap();
 		for(String fieldName : oppFields.keySet()) {
@@ -90,7 +178,7 @@ public with sharing class frSetupController {
 			}
 		}
 		donationSFOptions.sort();
-		for(frField__mdt field : [SELECT DeveloperName, MasterLabel FROM frField__mdt WHERE Type__c = :DONATION_TYPE ORDER BY MasterLabel]) {
+		for(frField__mdt field : [SELECT DeveloperName, MasterLabel FROM frField__mdt WHERE Type__c = :DONATION_TYPE OR Type__c = 'All' ORDER BY MasterLabel]) {
 			donationFROptions.add(new SelectOption(field.DeveloperName, field.MasterLabel));
 		}
 
@@ -104,22 +192,36 @@ public with sharing class frSetupController {
 			}
 		}
 		donorSFOptions.sort();
-		for(frField__mdt field : [SELECT DeveloperName, MasterLabel FROM frField__mdt WHERE Type__c = :DONOR_TYPE ORDER BY MasterLabel]) {
+		for(frField__mdt field : [SELECT DeveloperName, MasterLabel FROM frField__mdt WHERE Type__c = :DONOR_TYPE OR Type__c = 'All' ORDER BY MasterLabel]) {
 			donorFROptions.add(new SelectOption(field.DeveloperName, field.MasterLabel));
 		}
         
 		donationMappings = frDonation.mappings;
 		donorMappings = frDonor.mappings;
+		accMappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = :PERSON_ACCOUNT_TYPE ORDER BY CreatedDate];
+		giftTransactionMappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = :GIFT_TRANSACTION_TYPE ORDER BY CreatedDate];
+		giftCommitmentMappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = :GIFT_COMMITMENT_TYPE ORDER BY CreatedDate];
 	}
 
 	public void addMapping() {
 		String type = ApexPages.currentPage().getParameters().get('type');
+		System.debug('type: ' + type);
 		if(String.isBlank(type)) {
 			return;
 		}
 		if(DONATION_TYPE.equals(type)) {			
 			donationMappings.add(new frMapping__c(Type__c = DONATION_TYPE));
-		} else {
+		} 
+		else if(PERSON_ACCOUNT_TYPE.equals(type)) {
+			accMappings.add(new frMapping__c(Type__c = PERSON_ACCOUNT_TYPE));
+		}
+		else if(GIFT_TRANSACTION_TYPE.equals(type)) {
+			giftTransactionMappings.add(new frMapping__c(Type__c = GIFT_TRANSACTION_TYPE));
+		}
+		else if(GIFT_COMMITMENT_TYPE.equals(type)) {
+			giftCommitmentMappings.add(new frMapping__c(Type__c = GIFT_COMMITMENT_TYPE));
+		}
+		else {
 			donorMappings.add(new frMapping__c(Type__c = DONOR_TYPE));
         }
 	}
@@ -136,6 +238,15 @@ public with sharing class frSetupController {
 		}
 
 		List<frMapping__c> mappings = DONATION_TYPE.equals(type) ? donationMappings : donorMappings;
+		if(PERSON_ACCOUNT_TYPE.equals(type)) {
+			mappings = accMappings;
+		}
+		if (GIFT_TRANSACTION_TYPE.equals(type)) {
+			mappings = giftTransactionMappings;
+		}
+		if (GIFT_COMMITMENT_TYPE.equals(type)) {
+			mappings = giftCommitmentMappings;
+		}
 		for(Integer i = 0; i < mappings.size(); i++) {
 			frMapping__c mapping = mappings.get(i);
 			if(recordId.equals(mapping.id)) {
@@ -157,20 +268,51 @@ public with sharing class frSetupController {
 		List<frMapping__c> upsertList = new List<frMapping__c>();
 		List<frMapping__c> allMappings = new List<frMapping__c>(donationMappings);
 		allMappings.addAll(donorMappings);
+		allMappings.addAll(accMappings);
+		allMappings.addAll(giftTransactionMappings);
+		allMappings.addAll(giftCommitmentMappings);
 		for(frMapping__c mapping : allMappings) {
+
 			if(String.isNotBlank(mapping.sf_Name__c)) {
-                mapping.Name = (mapping.Type__c == DONATION_TYPE ? 'o.' : 'c.') + mapping.sf_Name__c;
+                //mapping.Name = (mapping.Type__c == DONATION_TYPE ? 'o.' : 'c.') + mapping.sf_Name__c;
+				if(mapping.Type__c == DONATION_TYPE) mapping.Name = 'o.' + mapping.sf_Name__c;
+				if(mapping.Type__c == DONOR_TYPE) mapping.Name = 'c.' + mapping.sf_Name__c;
+				if(mapping.Type__c == PERSON_ACCOUNT_TYPE) mapping.Name = 'a.' + mapping.sf_Name__c;
+				if(mapping.Type__c == GIFT_TRANSACTION_TYPE) mapping.Name = 't.' + mapping.sf_Name__c;
+				if(mapping.Type__c == GIFT_COMMITMENT_TYPE) mapping.Name = 's.' + mapping.sf_Name__c;
 				if(mapping.Name.length() > customSettingNameLength) {
 					mapping.Name = mapping.Name.subString(0, customSettingNameLength);
 				}
 				upsertList.add(mapping);
 			}
 		}
-
-		Schema.DescribeSObjectResult describe = frMapping__c.sObjectType.getDescribe();
-		if(upsertList.size() > 0 && describe.isCreateable() && describe.isUpdateable()) {
-			upsert upsertList;
-			addConfirm('Mappings saved successfully');
+		Boolean found = false;
+		for(frMapping__c mapping : accMappings) {
+			if (mapping.sf_Name__c == 'fr_ID__c') {
+				found = true;
+				break;
+			}
+		}
+		for(frMapping__c mapping : giftTransactionMappings) {
+			if (mapping.sf_Name__c == 'fr_ID__c') {
+				found = true;
+				break;
+			}
+		}
+		for(frMapping__c mapping : giftCommitmentMappings) {
+			if (mapping.sf_Name__c == 'fr_ID__c') {
+				found = true;
+				break;
+			}
+		}
+		if(found || isNonProfitOrg != true) {
+			Schema.DescribeSObjectResult describe = frMapping__c.sObjectType.getDescribe();
+			if(upsertList.size() > 0 && describe.isCreateable() && describe.isUpdateable()) {
+				upsert upsertList;
+				addConfirm('Mappings saved successfully');
+			}
+		} else {
+			addError('fr_ID__c Field must be mapped and present on all NPC Objects.');
 		}
 	}
 

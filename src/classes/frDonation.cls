@@ -62,76 +62,180 @@ public class frDonation extends frModel implements frSyncable {
     public Boolean sync() {
         Boolean result = false;
         Map<String, Object> request = getRequestBody();
-        o = new Opportunity();
-        applyMappings(o, request);
-        setOpportunityStage(o, String.valueOf(request.get('status')));
-        
-        String funraiseId = getFunraiseId();       
-        String supporterFunraiseId = String.valueOf(request.get('donorId'));        
-        if (String.isNotBlank(supporterFunraiseId)) {
-            List<Contact> contacts = [SELECT Id, AccountId FROM Contact WHERE fr_ID__c = :supporterFunraiseId];
-            if (contacts.size() > 0) {
-                Contact supporterContact = contacts.get(0);
-                o.fr_Donor__c = supporterContact.Id;
-                if(frUtil.hasNPSP()){
-                    o.put('npsp__Primary_Contact__c', supporterContact.Id);
-                    o.AccountId = supporterContact.AccountId;
-                }
-            } else {
-                if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
-                                            frUtil.Entity.SUPPORTER, supporterFunraiseId);
-            }
+        String frId = getFunraiseId();
+        SObject gt = null;
+        for (String key : request.keySet()) {
+            Object value = request.get(key);
+            System.debug('Key: ' + key + ', Value: ' + value);
         }
-        
-        Boolean campaignMappingDisabled = request.containsKey(META_CAMPAIGN_MAPPING_KEY) ?
-            Boolean.valueOf(request.get(META_CAMPAIGN_MAPPING_KEY)): true;
-        if(!campaignMappingDisabled) {
-            String campaignId = String.valueOf(request.get('campaignGoalId'));
-            if (String.isNotBlank(campaignId)) {
-                List<Campaign> campaigns = [SELECT Id FROM Campaign WHERE fr_ID__c = :campaignId];
-                if (campaigns.size() > 0) {
-                    o.CampaignId = campaigns[0].Id;
+        // Gift Transaction Split
+        if (Schema.getGlobalDescribe().containsKey('gifttransaction')) {
+            //add a check for a dupe transaction?
+            String objectName = 'gifttransaction';  
+            List<SObject> gtList = Database.query('SELECT Id, Name FROM GiftTransaction WHERE fr_ID__c = :frId');
+            if(gtList.isEmpty()) {
+                gt = Schema.getGlobalDescribe().get(objectName).newSObject();
+            } 
+            else {
+                gt = gtList.get(0);
+            }
+            gt.put('Name', String.valueOf(request.get('name')));
+            gt.put('OriginalAmount', (Decimal) request.get('amount'));
+            gt.put('PaymentMethod', String.valueOf(request.get('paymentMethodType')));
+            gt.put('TransactionDueDate', System.today());
+            /*GiftTransaction gt = new GiftTransaction();
+            gt.Name = String.valueOf(request.get('name'));
+            gt.OriginalAmount = (Decimal) request.get('amount');
+            gt.PaymentMethod = String.valueOf(request.get('paymentMethodType'));
+            gt.TransactionDueDate = System.today();*/
+            applyMappings(gt, request);
+            System.debug('out of mappings');
+            //setOpportunityStage(o, String.valueOf(request.get('status'))); TODO: Have a similar function but for gt.Status
+            
+            String funraiseId = getFunraiseId();       
+            String supporterFunraiseId = String.valueOf(request.get('donorId'));   
+            System.debug('supporterFunraiseId: ' + supporterFunraiseId);
+            //Is there a case where  it could be a contact instead of a person account?     
+            if (String.isNotBlank(supporterFunraiseId)) {
+                List<Account> accounts = [SELECT Id FROM Account WHERE fr_ID__c = :supporterFunraiseId];
+                if (accounts.size() > 0) {
+                    Account supporterAccount = accounts.get(0);
+                    //gt.DonorId = supporterAccount.Id;
+                    gt.put('DonorId', supporterAccount.Id);
+                    System.debug(supporterAccount);
+                } else {
+                    if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
+                                                frUtil.Entity.SUPPORTER, supporterFunraiseId);
+                }
+            }
+            
+            Boolean campaignMappingDisabled = request.containsKey(META_CAMPAIGN_MAPPING_KEY) ?
+                Boolean.valueOf(request.get(META_CAMPAIGN_MAPPING_KEY)): true;
+            if(!campaignMappingDisabled) {
+                String campaignId = String.valueOf(request.get('campaignGoalId'));
+                if (String.isNotBlank(campaignId)) {
+                    List<Campaign> campaigns = [SELECT Id FROM Campaign WHERE fr_ID__c = :campaignId];
+                    if (campaigns.size() > 0) {
+                        gt.put('CampaignId', campaigns[0].Id);
+                        //gt.CampaignId = campaigns[0].Id;
+                    } else {
+                        frUtil.logRelationshipError(getFrType(), funraiseId, 
+                                                    frUtil.Entity.CAMPAIGN, campaignId);
+                    }
+                }
+            }
+            
+            String subscriptionId = String.valueOf(request.get('subscriptionId'));
+            if (String.isNotBlank(subscriptionId)) {
+                List<SObject> subscriptions = Database.query('SELECT Id FROM GiftCommitment WHERE fr_ID__c = :subscriptionId');
+                if (subscriptions.size() > 0) {
+                    //gt.GiftCommitmentId = subscriptions.get(0).Id;
+                    gt.put('GiftCommitmentId', subscriptions.get(0).get('Id'));
                 } else {
                     frUtil.logRelationshipError(getFrType(), funraiseId, 
-                                                frUtil.Entity.CAMPAIGN, campaignId);
+                                                frUtil.Entity.SUBSCRIPTION, subscriptionId);
                 }
             }
-        }
-        
-        String subscriptionId = String.valueOf(request.get('subscriptionId'));
-        if (String.isNotBlank(subscriptionId)) {
-            List<Subscription__c> subscriptions = [SELECT Id FROM Subscription__c WHERE fr_ID__c = :subscriptionId];
-            if (subscriptions.size() > 0) {
-                o.Subscription__c = subscriptions.get(0).Id;
-            } else {
-                frUtil.logRelationshipError(getFrType(), funraiseId, 
-                                            frUtil.Entity.SUBSCRIPTION, subscriptionId);
+            
+            Boolean isPledge = Boolean.valueOf(request.get('pledge'));
+            List<SObject> alreadyMappedToPledgeList= Database.query('SELECT id FROM GiftTransaction WHERE fr_Id__c = :funraiseId AND Funraise_Pledge__c != null');
+            Boolean alreadyMappedToPledge = alreadyMappedToPledgeList.size() > 0;
+            if(!isPledge && !alreadyMappedToPledge) {
+                Pledge__c pledge = frPledge.findActive((Id) gt.get('DonorId'), (Date) gt.get('AcknowledgementDate'));
+                NPC_Setting__c npcSetting = NPC_Setting__c.getOrgDefaults();
+                // Access the field (Pledge_Id_Field__c) from the custom setting
+                if (npcSetting != null) {
+                    String pledgeId = npcSetting.NPCFieldName__c;
+                    System.debug('Pledge Id: ' + pledgeId);
+                    if(pledgeId != null) gt.put(pledgeId, pledge != null ? pledge.Id : null);
+                } else {
+                    System.debug('NPC Setting not found at the organization level.');
+                }
+                //gt.Funraise_Pledge__c = pledge != null ? pledge.Id : null;
             }
+            upsert gt;
+            
+            if(isPledge && gt.Id != null) {
+                frPledge.create(gt);
+            }
+            //Is this needed with Gift Transactions?
+            /*if(opp.Id != null) {
+                createOpportunityMapping(request);
+            }*/
         }
-        Opportunity opp = this.o;
-        
-        
-        Boolean isPledge = Boolean.valueOf(request.get('pledge'));
-        Boolean alreadyMappedToPledge = [SELECT COUNT() FROM Opportunity 
-                                         WHERE fr_Id__c = :funraiseId AND Funraise_Pledge__c != null] > 0;
-        if(!isPledge && !alreadyMappedToPledge) {
-            Pledge__c pledge = frPledge.findActive(opp.fr_Donor__c, opp.CloseDate);
-            opp.Funraise_Pledge__c = pledge != null ? pledge.Id : null;
-        }
-        
-        try {
-            Database.upsert(opp, Opportunity.Fields.fr_Id__c, true);
-            result = true;
-        } catch (Exception ex) {
-            frUtil.logException(getFrType(), funraiseId, ex);
-        }
-        
-        if(isPledge && opp.Id != null) {
-            frPledge.create(opp);
-        }
-        
-        if(opp.Id != null) {
-            createOpportunityMapping(request);
+        else {
+            o = new Opportunity();
+            applyMappings(o, request);
+            setOpportunityStage(o, String.valueOf(request.get('status')));
+            
+            String funraiseId = getFunraiseId();       
+            String supporterFunraiseId = String.valueOf(request.get('donorId'));      
+            System.debug('supporterFunraiseId: ' + supporterFunraiseId);  
+            if (String.isNotBlank(supporterFunraiseId)) {
+                List<Contact> contacts = [SELECT Id, AccountId FROM Contact WHERE fr_ID__c = :supporterFunraiseId];
+                if (contacts.size() > 0) {
+                    Contact supporterContact = contacts.get(0);
+                    o.fr_Donor__c = supporterContact.Id;
+                    if(frUtil.hasNPSP()){
+                        o.put('npsp__Primary_Contact__c', supporterContact.Id);
+                        o.AccountId = supporterContact.AccountId;
+                    }
+                } else {
+                    if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
+                                                frUtil.Entity.SUPPORTER, supporterFunraiseId);
+                }
+            }
+            
+            Boolean campaignMappingDisabled = request.containsKey(META_CAMPAIGN_MAPPING_KEY) ?
+                Boolean.valueOf(request.get(META_CAMPAIGN_MAPPING_KEY)): true;
+            if(!campaignMappingDisabled) {
+                String campaignId = String.valueOf(request.get('campaignGoalId'));
+                if (String.isNotBlank(campaignId)) {
+                    List<Campaign> campaigns = [SELECT Id FROM Campaign WHERE fr_ID__c = :campaignId];
+                    if (campaigns.size() > 0) {
+                        o.CampaignId = campaigns[0].Id;
+                    } else {
+                        frUtil.logRelationshipError(getFrType(), funraiseId, 
+                                                    frUtil.Entity.CAMPAIGN, campaignId);
+                    }
+                }
+            }
+            
+            String subscriptionId = String.valueOf(request.get('subscriptionId'));
+            if (String.isNotBlank(subscriptionId)) {
+                List<Subscription__c> subscriptions = [SELECT Id FROM Subscription__c WHERE fr_ID__c = :subscriptionId];
+                if (subscriptions.size() > 0) {
+                    o.Subscription__c = subscriptions.get(0).Id;
+                } else {
+                    frUtil.logRelationshipError(getFrType(), funraiseId, 
+                                                frUtil.Entity.SUBSCRIPTION, subscriptionId);
+                }
+            }
+            Opportunity opp = this.o;
+            
+            
+            Boolean isPledge = Boolean.valueOf(request.get('pledge'));
+            Boolean alreadyMappedToPledge = [SELECT COUNT() FROM Opportunity 
+                                            WHERE fr_Id__c = :funraiseId AND Funraise_Pledge__c != null] > 0;
+            if(!isPledge && !alreadyMappedToPledge) {
+                Pledge__c pledge = frPledge.findActive(opp.fr_Donor__c, opp.CloseDate);
+                opp.Funraise_Pledge__c = pledge != null ? pledge.Id : null;
+            }
+            
+            try {
+                Database.upsert(opp, Opportunity.Fields.fr_Id__c, true);
+                result = true;
+            } catch (Exception ex) {
+                frUtil.logException(getFrType(), funraiseId, ex);
+            }
+            
+            if(isPledge && opp.Id != null) {
+                frPledge.create(opp);
+            }
+            
+            if(opp.Id != null) {
+                createOpportunityMapping(request);
+            }
         }
         return result;
     }
