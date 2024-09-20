@@ -86,4 +86,46 @@ public with sharing class frPledge {
         
         return pledge;
     }
+
+    public static Pledge__c create(SObject gc, Decimal pledgeAmount) {
+        Id relatedId = (Id) gc.get('Id');
+        Pledge__c pledge = new Pledge__c(
+            Name = frUtil.truncateToFieldLength(Pledge__c.Name.getDescribe(), 'Subscription Pledge - ' + (String) gc.get('Name')),
+            Supporter__c = (id) gc.get('DonorId'),
+            Pledge_Amount__c = (Decimal) gc.get('OriginalAmount'),
+            Pledge_Subscription__c = relatedId,
+            Pledge_Subscription_uq__c = relatedId
+        );
+        try {
+            Database.upsert(pledge, Pledge__c.Pledge_Subscription_uq__c , true);
+        } catch (Exception ex) {
+            System.debug(ex);
+            //frUtil.logException(frUtil.Entity.PLEDGE, gc.get('fr_Id__c'), ex);
+        }
+        
+        return pledge;
+    }
+
+    public static Pledge__c create(SObject gt) {
+        Id relatedId = (Id) gt.get('Id');
+        Pledge__c pledge = new Pledge__c(
+            Name = frUtil.truncateToFieldLength(Pledge__c.Name.getDescribe(), (String) gt.get('Name') + ' Pledge'),
+            Supporter__c = (id) gt.get('DonorId'),
+            Pledge_Amount__c = (Decimal) gt.get('OriginalAmount'),
+            Pledge_Donation__c = relatedId,
+            Pledge_Donation_uq__c = relatedId
+        );
+
+        try {
+            Database.upsert(pledge, Pledge__c.Fields.Pledge_Donation_uq__c, true);
+            //gt.Funraise_Pledge__c = pledge.Id;
+            gt.put('DonorId', pledge.Id);
+            update gt;
+        } catch (Exception ex) {
+            System.debug(ex);
+            //frUtil.logException(frUtil.Entity.PLEDGE, gt.get('fr_Id__c'), ex);
+        }
+        
+        return pledge;
+    }
 }
