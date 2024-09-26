@@ -34,6 +34,7 @@
         <members>frSyncRequestHandlerTest</members>
         <members>frSyncable</members>
         <members>frTask</members>
+        <members>frTestUtil</members>
         <members>frUtil</members>
         <members>frWSBaseController</members>
         <members>frWSCampaignController</members>

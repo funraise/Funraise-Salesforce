@@ -13,6 +13,7 @@
     <tabs>Answer__c</tabs>
     <tabs>Fundraising_Event__c</tabs>
     <tabs>Fundraising_Event_Registration__c</tabs>
+    <tabs>standard-Campaign</tabs>
     <tabs>Error__c</tabs>
     <tabs>Pledge__c</tabs>
 </CustomApplication>
