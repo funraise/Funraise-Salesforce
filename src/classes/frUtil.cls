@@ -11,6 +11,22 @@ public class frUtil {
             return false;
         }
     }
+
+    public static Boolean hasPersonAccountsEnabled() {
+        try {
+            return Account.SObjectType.getDescribe().fields.getMap().containsKey('IsPersonAccount');
+        } catch (TypeException te) {
+            return false;
+        }
+    }
+
+    public static Boolean hasNPCobjects() {
+        try {
+            return Schema.getGlobalDescribe().containsKey('gifttransaction');
+        } catch (TypeException te) {
+            return false;
+        }
+    }
     
     public static void logRelationshipError(Entity errObject, String recordId, Entity missingRelationship, String relationshipId) {
         logRelationshipError(errObject, recordId, missingRelationship, relationshipId, null);

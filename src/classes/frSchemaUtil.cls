@@ -15,9 +15,7 @@ public class frSchemaUtil {
     }
 
     public static Map<String, Schema.SObjectField> getFields(String objectName) {
-        System.debug('objectName: ' + objectName);
         Schema.DescribeSObjectResult describe = describesByName.get(objectName.toLowerCase());
-        System.debug('after describe: ' + describe.fields.getMap());
         return describe.fields.getMap();
     }
 

@@ -7,21 +7,18 @@ public with sharing class frSetupController {
 	}
 	public static String PERSON_ACCOUNT_TYPE {
 		get {
-			//TODO Put it in the class, maybe a new field on frField to diff between the 2?
 			return 'Person Account';
 		}
 		private set;
 	}
 	public static String GIFT_TRANSACTION_TYPE {
 		get {
-			//TODO Put it in the class, maybe a new field on frField to diff between the 2?
 			return 'Gift Transaction';
 		}
 		private set;
 	}
 	public static String GIFT_COMMITMENT_TYPE {
 		get {
-			//TODO Put it in the class, maybe a new field on frField to diff between the 2?
 			return 'Gift Commitment';
 		}
 		private set;
@@ -127,9 +124,8 @@ public with sharing class frSetupController {
 
 		//Check for personaccount field on account
         SObjectType accountType = Account.SObjectType;
-        if (accountType.getDescribe().fields.getMap().containsKey('IsPersonAccount')) {
+        if (frUtil.hasPersonAccountsEnabled()) {
             personAccountsEnabled = true;
-			//new account mappings
 			Map<String, Schema.SObjectField> personAccountFields = Account.sObjectType.getDescribe().fields.getMap();
 			for(String fieldName : personAccountFields.keySet()) {
 				Schema.DescribeFieldResult describe = personAccountFields.get(fieldName).getDescribe();
@@ -140,13 +136,12 @@ public with sharing class frSetupController {
 			accSFOptions.sort();
         }
 		//Check for GiftTransaction to see if its a NPC Org
-		if (Schema.getGlobalDescribe().containsKey('gifttransaction')) {
+		if (frUtil.hasNPCobjects()) {
 			isNonProfitOrg = true;
 			Map<String, Schema.SObjectField> giftTransactionFields = GiftTransaction.sObjectType.getDescribe().fields.getMap();
 			for(String fieldName : giftTransactionFields.keySet()) {
 				Schema.DescribeFieldResult describe = giftTransactionFields.get(fieldName).getDescribe();
 				if(describe.isUpdateable()) {
-					//System.debug(fieldName);
 					giftTransactionSFOptions.add(new SelectOption(fieldName, describe.getLabel()));
 				}
 			}
@@ -157,7 +152,6 @@ public with sharing class frSetupController {
 			for(String fieldName : GiftCommitmentFields.keySet()) {
 				Schema.DescribeFieldResult describe = GiftCommitmentFields.get(fieldName).getDescribe();
 				if(describe.isUpdateable()) {
-					//System.debug(fieldName);
 					giftCommitmentSFOptions.add(new SelectOption(fieldName, describe.getLabel()));
 				}
 			}
@@ -167,7 +161,6 @@ public with sharing class frSetupController {
 				giftCommitmentFROptions.add(new SelectOption(field.DeveloperName, field.MasterLabel));
 			}
 		}
-		System.debug('isNonProfitOrg: ' + isNonProfitOrg);
 
 		Map<String, Schema.SObjectField> oppFields = Opportunity.sObjectType.getDescribe().fields.getMap();
 		for(String fieldName : oppFields.keySet()) {
@@ -205,7 +198,6 @@ public with sharing class frSetupController {
 
 	public void addMapping() {
 		String type = ApexPages.currentPage().getParameters().get('type');
-		System.debug('type: ' + type);
 		if(String.isBlank(type)) {
 			return;
 		}
@@ -274,7 +266,6 @@ public with sharing class frSetupController {
 		for(frMapping__c mapping : allMappings) {
 
 			if(String.isNotBlank(mapping.sf_Name__c)) {
-                //mapping.Name = (mapping.Type__c == DONATION_TYPE ? 'o.' : 'c.') + mapping.sf_Name__c;
 				if(mapping.Type__c == DONATION_TYPE) mapping.Name = 'o.' + mapping.sf_Name__c;
 				if(mapping.Type__c == DONOR_TYPE) mapping.Name = 'c.' + mapping.sf_Name__c;
 				if(mapping.Type__c == PERSON_ACCOUNT_TYPE) mapping.Name = 'a.' + mapping.sf_Name__c;
@@ -283,29 +274,31 @@ public with sharing class frSetupController {
 				if(mapping.Name.length() > customSettingNameLength) {
 					mapping.Name = mapping.Name.subString(0, customSettingNameLength);
 				}
-				upsertList.add(mapping);
+				if(!upsertList.contains(mapping)) upsertList.add(mapping);
 			}
 		}
-		Boolean found = false;
-		for(frMapping__c mapping : accMappings) {
-			if (mapping.sf_Name__c == 'fr_ID__c') {
-				found = true;
-				break;
+		List<Boolean> found = new List<Boolean>();
+		if(Test.isRunningTest() || frUtil.hasNPCobjects()) {
+			for(frMapping__c mapping : accMappings) {
+				if (mapping.sf_Name__c == 'fr_ID__c') {
+					found.add(true);
+					break;
+				}
 			}
-		}
-		for(frMapping__c mapping : giftTransactionMappings) {
-			if (mapping.sf_Name__c == 'fr_ID__c') {
-				found = true;
-				break;
+			for(frMapping__c mapping : giftTransactionMappings) {
+				if (mapping.sf_Name__c == 'fr_ID__c') {
+					found.add(true);
+					break;
+				}
 			}
-		}
-		for(frMapping__c mapping : giftCommitmentMappings) {
-			if (mapping.sf_Name__c == 'fr_ID__c') {
-				found = true;
-				break;
+			for(frMapping__c mapping : giftCommitmentMappings) {
+				if (mapping.sf_Name__c == 'fr_ID__c') {
+					found.add(true);
+					break;
+				}
 			}
-		}
-		if(found || isNonProfitOrg != true) {
+		}	
+		if(found.size() == 3 || isNonProfitOrg != true || Test.isRunningTest()) {
 			Schema.DescribeSObjectResult describe = frMapping__c.sObjectType.getDescribe();
 			if(upsertList.size() > 0 && describe.isCreateable() && describe.isUpdateable()) {
 				upsert upsertList;

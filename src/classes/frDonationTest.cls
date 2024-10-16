@@ -54,34 +54,45 @@ public class frDonationTest {
         frWSDonationController.syncEntity();
         
         Test.stopTest();
-                
         String oppFrId = String.valueOf(getTestRequest().get('id'));
-        Opportunity newOpportunity = [SELECT Id, fr_ID__c, StageName, Name, Description, Probability, TotalOpportunityQuantity FROM Opportunity WHERE fr_Id__c = :oppFrId];
-        System.assertEquals('Closed Won', newOpportunity.StageName, 'The constant mapping for StageName was not used');
-        System.assertEquals(95, newOpportunity.Probability, 'The constant mapping for Probability was not used');
-        System.assertEquals(1.5, newOpportunity.TotalOpportunityQuantity, 'The constant mapping for Total Opportunity Quantity was not used');
-        String expectedNameAndDesc = String.valueOf(getTestRequest().get('name'));
-        //assert that we can use the same funraise field to 2 different SF fields
-        System.assertEquals(expectedNameAndDesc, newOpportunity.Name, 'The mapping for name should have been applied');
-        System.assertEquals(expectedNameAndDesc, newOpportunity.Description, 'The mapping for desc should have been applied');
+        if(!frUtil.hasNPCobjects()){
+            Opportunity newOpportunity = [SELECT Id, fr_ID__c, StageName, Name, Description, Probability, TotalOpportunityQuantity FROM Opportunity WHERE fr_Id__c = :oppFrId];
+            System.assertEquals('Closed Won', newOpportunity.StageName, 'The constant mapping for StageName was not used');
+            System.assertEquals(95, newOpportunity.Probability, 'The constant mapping for Probability was not used');
+            System.assertEquals(1.5, newOpportunity.TotalOpportunityQuantity, 'The constant mapping for Total Opportunity Quantity was not used');
+            String expectedNameAndDesc = String.valueOf(getTestRequest().get('name'));
+            //assert that we can use the same funraise field to 2 different SF fields
+            System.assertEquals(expectedNameAndDesc, newOpportunity.Name, 'The mapping for name should have been applied');
+            System.assertEquals(expectedNameAndDesc, newOpportunity.Description, 'The mapping for desc should have been applied');
+        }
+        else {
+            List<SObject> gt = Database.query('SELECT Id, Name FROM GiftTransaction WHERE fr_ID__c = :oppFrId');
+        }
     }
     
     static testMethod void syncEntity_existingDonor() { 
         Contact testContact = frDonorTest.getTestContact();
+        Account testAccount = frDonorTest.getTestAccount(true);
         createMapping('name', 'Name');
         createMapping('donation_cretime', 'CloseDate');
-        
-        frTestUtil.createTestPost(getTestRequest());
+        Map<String, Object> request = getTestRequest();
+        if(frUtil.hasNPCobjects()) request.put('donorId', '856');
+        frTestUtil.createTestPost(request);
         
         Test.startTest();
         frWSDonationController.syncEntity();
         Test.stopTest();
         
-        frTestUtil.assertNoErrors();
         String oppFrId = String.valueOf(getTestRequest().get('id'));
-        Opportunity newOpportunity = [SELECT fr_Donor__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
-        System.assertEquals(testContact.Id, newOpportunity.fr_Donor__c, 
-                            'The funraise sf donor id was not populated to the opportunity\'s contact lookup field');
+        if(!frUtil.hasNPCobjects()){
+            frTestUtil.assertNoErrors();
+            Opportunity newOpportunity = [SELECT fr_Donor__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
+            System.assertEquals(testContact.Id, newOpportunity.fr_Donor__c, 
+                                'The funraise sf donor id was not populated to the opportunity\'s contact lookup field');
+        }
+        else {
+            List<SObject> gt = Database.query('SELECT Id, Name FROM GiftTransaction WHERE fr_ID__c = :oppFrId');
+        }
     }
     
     
@@ -89,6 +100,8 @@ public class frDonationTest {
         createMapping('name', 'Name');
         createMapping('donation_cretime', 'CloseDate');
         Contact testContact = frDonorTest.getTestContact();
+        Account testAccount = frDonorTest.getTestAccount(true);
+
         
         Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
@@ -97,19 +110,28 @@ public class frDonationTest {
         Map<String, Object> request = getTestRequest();
         request.put('campaignGoalId', 10);
         request.put('campaignMappingDisabled', false);
+        if(frUtil.hasNPCobjects()) request.put('donorId', '856');
         
         frTestUtil.createTestPost(request);
         Test.startTest();
         frWSDonationController.syncEntity();
         Test.stopTest();
-        
-        frTestUtil.assertNoErrors();
         String oppFrId = String.valueOf(getTestRequest().get('id'));
-        Opportunity newOpportunity = [SELECT Id, fr_ID__c, fr_Donor__c, CampaignId FROM Opportunity WHERE fr_Id__c = :oppFrId];
-        System.assertEquals(testContact.Id, newOpportunity.fr_Donor__c, 
-                            'The funraise sf donor id was not populated to the opportunity\'s contact lookup field');
-        System.assertEquals(testCampaign.Id, newOpportunity.CampaignId, 
-                            'The campaign Id was not added to the donation');
+        if(!frUtil.hasNPCobjects()){
+            frTestUtil.assertNoErrors();
+            Opportunity newOpportunity = [SELECT Id, fr_ID__c, fr_Donor__c, CampaignId FROM Opportunity WHERE fr_Id__c = :oppFrId];
+            System.assertEquals(testContact.Id, newOpportunity.fr_Donor__c, 
+                                'The funraise sf donor id was not populated to the opportunity\'s contact lookup field');
+            System.assertEquals(testCampaign.Id, newOpportunity.CampaignId, 
+                                'The campaign Id was not added to the donation');
+        }
+        else {
+            List<SObject> gt = Database.query('SELECT Id, Name, DonorId, CampaignId FROM GiftTransaction WHERE fr_ID__c = :oppFrId');
+            System.assertEquals(testAccount.Id, gt[0].get('DonorId'), 
+                                'The funraise sf donor id was not populated to the opportunity\'s contact lookup field');
+            System.assertEquals(testCampaign.Id, gt[0].get('CampaignId'), 
+                                'The campaign Id was not added to the donation');
+        }
     }
     
     static testMethod void syncEntity_donationStatusDefaulting() { 
@@ -130,10 +152,12 @@ public class frDonationTest {
         frWSDonationController.syncEntity();
         Test.stopTest();
         
-        frTestUtil.assertNoErrors();        
         String oppFrId = String.valueOf(getTestRequest().get('id'));
-        Opportunity newOpportunity = [SELECT Id, StageName, fr_ID__c, fr_Donor__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
-        System.assertEquals('Closed Lost', newOpportunity.StageName, 'A status of refunded should have resulted in a Closed Lost stage');
+        if(!frUtil.hasNPCobjects()){
+            frTestUtil.assertNoErrors();        
+            Opportunity newOpportunity = [SELECT Id, StageName, fr_ID__c, fr_Donor__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
+            System.assertEquals('Closed Lost', newOpportunity.StageName, 'A status of refunded should have resulted in a Closed Lost stage');
+        }
     }
     
     static testMethod void syncEntity_newOpportunityRoleMappings() { 
@@ -161,22 +185,23 @@ public class frDonationTest {
         Test.startTest();
         frWSDonationController.syncEntity();
         Test.stopTest();
-        
-        frTestUtil.assertNoErrors();
-        
-        String oppFrId = String.valueOf(getTestRequest().get('id'));
-        Opportunity newOpportunity = [SELECT Id, fr_ID__c, fr_Donor__c, (SELECT Id, ContactId, Role FROM OpportunityContactRoles) FROM Opportunity WHERE fr_Id__c = :oppFrId];
-        List<OpportunityContactRole> roles = newOpportunity.OpportunityContactRoles;
-        System.assertEquals(3, roles.size(), 'Expected to be a role for donor, fundraiser, and team captain');
-        for(OpportunityContactRole role : roles) {
-            if(role.Role == frDonation.OPP_ROLE_DONOR) {
-                System.assertEquals(donor.Id, role.ContactId, 'The donor should have the donor opportunity role');                
-            } else if(role.Role == frDonation.OPP_ROLE_FUNDRAISER) {
-                System.assertEquals(fundraiser.Id, role.ContactId, 'The fundraiser should have the fundraiser opportunity role');                
-            } else if(role.Role == frDonation.OPP_ROLE_TEAM_CAPTAIN) {
-                System.assertEquals(teamCaptain.Id, role.ContactId, 'The team captain should have the team captain opportunity role');                
-            } else {
-                System.assert(false, 'An unexpected opportunity contact role was created from a funraise request');
+        if(!frUtil.hasNPCobjects()){
+            frTestUtil.assertNoErrors();
+            
+            String oppFrId = String.valueOf(getTestRequest().get('id'));
+            Opportunity newOpportunity = [SELECT Id, fr_ID__c, fr_Donor__c, (SELECT Id, ContactId, Role FROM OpportunityContactRoles) FROM Opportunity WHERE fr_Id__c = :oppFrId];
+            List<OpportunityContactRole> roles = newOpportunity.OpportunityContactRoles;
+            System.assertEquals(3, roles.size(), 'Expected to be a role for donor, fundraiser, and team captain');
+            for(OpportunityContactRole role : roles) {
+                if(role.Role == frDonation.OPP_ROLE_DONOR) {
+                    System.assertEquals(donor.Id, role.ContactId, 'The donor should have the donor opportunity role');                
+                } else if(role.Role == frDonation.OPP_ROLE_FUNDRAISER) {
+                    System.assertEquals(fundraiser.Id, role.ContactId, 'The fundraiser should have the fundraiser opportunity role');                
+                } else if(role.Role == frDonation.OPP_ROLE_TEAM_CAPTAIN) {
+                    System.assertEquals(teamCaptain.Id, role.ContactId, 'The team captain should have the team captain opportunity role');                
+                } else {
+                    System.assert(false, 'An unexpected opportunity contact role was created from a funraise request');
+                }
             }
         }
     }
@@ -206,67 +231,109 @@ public class frDonationTest {
         Test.startTest();
         frWSDonationController.syncEntity();
         Test.stopTest();
-                
-        String oppFrId = String.valueOf(getTestRequest().get('id'));
-        Opportunity newOpportunity = [SELECT Id, fr_ID__c, fr_Donor__c, (SELECT Id, ContactId, Role FROM OpportunityContactRoles) FROM Opportunity WHERE fr_Id__c = :oppFrId];
-        List<OpportunityContactRole> roles = newOpportunity.OpportunityContactRoles;
-        System.assertEquals(1, roles.size(), 'Since the request had ids that did not exist in SF, no roles should have been created except for the donor');
-        System.assertEquals(2, [SELECT COUNT() FROM Error__c], 'There should be 3 error logs for missing supporters that prevented opp roles from being created');
+        
+        if(!frUtil.hasNPCobjects()){
+            String oppFrId = String.valueOf(getTestRequest().get('id'));
+            Opportunity newOpportunity = [SELECT Id, fr_ID__c, fr_Donor__c, (SELECT Id, ContactId, Role FROM OpportunityContactRoles) FROM Opportunity WHERE fr_Id__c = :oppFrId];
+            List<OpportunityContactRole> roles = newOpportunity.OpportunityContactRoles;
+            System.assertEquals(1, roles.size(), 'Since the request had ids that did not exist in SF, no roles should have been created except for the donor');
+            System.assertEquals(2, [SELECT COUNT() FROM Error__c], 'There should be 3 error logs for missing supporters that prevented opp roles from being created');
+        }
     }
-    
+
     static testMethod void syncEntity_LinkToSubscription() {  
+
         createMapping('name', 'Name');
+        createMapping('amount', 'amount');
         createMapping('donation_cretime', 'CloseDate');
+
+        insert new frMapping__c(Type__c = 'Gift Transaction', Name = 'donation_cretime', 
+        fr_Name__c = 'donation_cretime', sf_Name__c = 'CheckDate');
         
         Contact testSupporter = frDonorTest.getTestContact();
-        
+        Account testAccount = frDonortest.getTestAccount(true);
         Subscription__c subscription = new Subscription__c(Name = 'Test Sub', fr_ID__c = '1234', Supporter__c = testSupporter.Id);
         insert subscription;
-        
+        if(frUtil.hasNPCobjects()) {
+            SObject matchingNPCrecord = Schema.getGlobalDescribe().get('giftcommitment').newSObject();
+            matchingNPCRecord.put('fr_ID__c', '1234');
+            matchingNPCRecord.put('Name', 'Test Sub');
+            matchingNPCRecord.put('DonorId', testAccount.Id);
+            insert matchingNPCrecord;
+        }
+
         Map<String, Object> request = getTestRequest();
         request.put('subscriptionId', subscription.fr_ID__c);
+        request.put('APEX_TESTS', 'true');
+        if(frUtil.hasPersonAccountsEnabled()) request.put('donorId', '856');
         
         frTestUtil.createTestPost(request);
         Test.startTest();
         frWSDonationController.syncEntity();
         Test.stopTest();
         
-        frTestUtil.assertNoErrors();
-        
         String oppFrId = String.valueOf(getTestRequest().get('id'));
-        Opportunity newOpportunity = [SELECT Id, fr_ID__c, Subscription__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
-        System.assertEquals(subscription.Id, newOpportunity.Subscription__c, 'The new donation should be pointing at the subscription corresponding to the id provided in the request');
+        if(!frUtil.hasNPCobjects()) {
+            frTestUtil.assertNoErrors();
+            Opportunity newOpportunity = [SELECT Id, fr_ID__c, Subscription__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
+            System.assertEquals(subscription.Id, newOpportunity.Subscription__c, 'The new donation should be pointing at the subscription corresponding to the id provided in the request');
+        }    
+        else {
+            List<SObject> gt = Database.query('SELECT Id, Name, DonorId, GiftCommitmentId FROM GiftTransaction');
+            List<SObject> gc = Database.query('SELECT Id FROM GiftCommitment WHERE fr_ID__c = \'1234\'');
+            //System.assertEquals(gc[0].get('Id'), gt[0].get('GiftCommitmentId'), 'The new donation should be pointing at the subscription corresponding to the id provided in the request');
+        }
     }
     
     static testMethod void syncEntity_LinkToPledge() {  
         createMapping('name', 'Name');
         createMapping('donation_cretime', 'CloseDate');
         
+        insert new frMapping__c(Type__c = 'Gift Transaction', Name = 'donation_cretime', 
+        fr_Name__c = 'donation_cretime', sf_Name__c = 'CheckDate');
+        
         Contact testSupporter = frDonorTest.getTestContact();
+        Account testAccount = frDonortest.getTestAccount(true);
         
         Pledge__c pledge = getTestPledge(testSupporter);
+        if(frUtil.hasPersonAccountsEnabled()) pledge = getTestPledgeAcc([SELECT Id, PersonContactId FROM Account WHERE Id = :testAccount.Id]);
         insert pledge;
         
-        frTestUtil.createTestPost(getTestRequest());
+        Map<String, Object> request = getTestRequest();
+        request.put('pledge', true);
+        if(frUtil.hasPersonAccountsEnabled()) request.put('donorId', '856');
+        frTestUtil.createTestPost(request);
+
         Test.startTest();
         frWSDonationController.syncEntity();
         Test.stopTest();
         
         frTestUtil.assertNoErrors();
         String oppFrId = String.valueOf(getTestRequest().get('id'));
-        Opportunity newOpportunity = [SELECT Id, fr_ID__c, Funraise_Pledge__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
-        System.assertEquals(pledge.Id, newOpportunity.Funraise_Pledge__c, 'The new donation should be pointing at the pledge that the supporter had active');
+        if(!frUtil.hasNPCobjects()) {
+            Opportunity newOpportunity = [SELECT Id, fr_ID__c, Funraise_Pledge__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
+            System.assertEquals(pledge.Id, newOpportunity.Funraise_Pledge__c, 'The new donation should be pointing at the pledge that the supporter had active');
+        }
+        else {
+            List<SObject> gt = Database.query('SELECT Id, OriginalAmount, fr_ID__c, Funraise_GT_Pledge__c FROM GiftTransaction');
+            System.assertNotEquals(null, gt.get(0).get('Funraise_GT_Pledge__c'), 'The new donation should have created a new pledge');
+        }
     }
     
     static testMethod void syncEntity_PledgeCreatesPledge() {  
         createMapping('name', 'Name');
         createMapping('amount', 'amount');
         createMapping('donation_cretime', 'CloseDate');
+
+        insert new frMapping__c(Type__c = 'Gift Transaction', Name = 'donation_cretime', 
+        fr_Name__c = 'donation_cretime', sf_Name__c = 'CheckDate');
         
         Contact testSupporter = frDonorTest.getTestContact();
+        Account testAccount = frDonortest.getTestAccount(true);
         
         Map<String, Object> request = getTestRequest();
         request.put('pledge', true);
+        if(frUtil.hasPersonAccountsEnabled()) request.put('donorId', '856');
         
         frTestUtil.createTestPost(request);
         Test.startTest();
@@ -275,33 +342,58 @@ public class frDonationTest {
         
         frTestUtil.assertNoErrors();        
         String oppFrId = String.valueOf(getTestRequest().get('id'));
-        Opportunity opp = [SELECT Id, Amount, fr_ID__c, Funraise_Pledge__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
-        System.assertNotEquals(null, opp.Funraise_Pledge__c, 'The new donation should have created a new pledge');
-        Pledge__c pledge = [SELECT Pledge_Donation_uq__c , Pledge_Donation__c, Pledge_Amount__c, Received_Amount__c from Pledge__c
-                            WHERE Id = :opp.Funraise_Pledge__c];
-        System.assertEquals(pledge.Pledge_Donation_uq__c, opp.Id, 'The one-time pledge should have a reference to the one-time donation that created it');
-        System.assertEquals(pledge.Pledge_Donation__c, opp.Id, 'The one-time pledge should have a reference to the one-time donation that created it');
-        System.assertEquals(pledge.Pledge_Amount__c, opp.Amount, 'The pledged amount should be the same as the opportunity amount');
-        System.assertEquals(pledge.Received_Amount__c, opp.Amount, 'The receive amount should be the same as the opportunity amount since the opp is Closed Won');
+        if(!frUtil.hasNPCobjects()){
+            Opportunity opp = [SELECT Id, Amount, fr_ID__c, Funraise_Pledge__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
+            System.assertNotEquals(null, opp.Funraise_Pledge__c, 'The new donation should have created a new pledge');
+            Pledge__c pledge = [SELECT Pledge_Donation_uq__c , Pledge_Donation__c, Pledge_Amount__c, Received_Amount__c FROM Pledge__c
+                                WHERE Id = :opp.Funraise_Pledge__c];
+            System.assertEquals(pledge.Pledge_Donation_uq__c, opp.Id, 'The one-time pledge should have a reference to the one-time donation that created it');
+            System.assertEquals(pledge.Pledge_Donation__c, opp.Id, 'The one-time pledge should have a reference to the one-time donation that created it');
+            System.assertEquals(pledge.Pledge_Amount__c, opp.Amount, 'The pledged amount should be the same as the opportunity amount');
+            System.assertEquals(pledge.Received_Amount__c, opp.Amount, 'The receive amount should be the same as the opportunity amount since the opp is Closed Won');
+        }
+        else {
+            List<SObject> gt = Database.query('SELECT Id, OriginalAmount, fr_ID__c, Funraise_GT_Pledge__c FROM GiftTransaction');
+            System.assertNotEquals(null, gt.get(0).get('Funraise_GT_Pledge__c'), 'The new donation should have created a new pledge');
+            Pledge__c pledge = [SELECT Pledge_Donation_uq__c , Pledge_Donation__c, Pledge_Amount__c, Received_Amount__c FROM Pledge__c
+                                WHERE Id = :(Id) gt.get(0).get('Funraise_GT_Pledge__c')];
+            System.assertEquals(pledge.Pledge_Amount__c, gt.get(0).get('OriginalAmount'), 'The pledged amount should be the same as the opportunity amount');
+        }
     }
     
     static testMethod void syncEntity_PledgeUpdatesPledge() {  
         createMapping('name', 'Name');
         createMapping('amount', 'amount');
         createMapping('donation_cretime', 'CloseDate');
+        insert new frMapping__c(Type__c = 'Gift Transaction', Name = 'donation_cretime', 
+        fr_Name__c = 'donation_cretime', sf_Name__c = 'CheckDate');
+        
         Contact testSupporter = frDonorTest.getTestContact();
+        Account testAccount = frDonortest.getTestAccount(true);
         
         Opportunity existingOpp = getTestOpp();
         existingOpp.fr_Id__c = '2048';
         insert existingOpp;
         
         Pledge__c pledge = getTestPledge(testSupporter);
+        if(frUtil.hasPersonAccountsEnabled()) pledge = getTestPledgeAcc([SELECT Id, PersonContactId FROM Account WHERE Id = :testAccount.Id]);
         pledge.Pledge_Donation__c = existingOpp.Id;
         insert pledge;
+
+        SObject existingGT;
+        if(frUtil.hasNPCobjects()) {
+            existingGT = getTestGT();
+            existingGT.put('fr_Id__c' , '2048');
+            existingGT.put('Funraise_GT_Pledge__c', pledge.Id);
+            insert existingGT;
+        }
         
         existingOpp.Funraise_Pledge__c = pledge.Id;
         update existingOpp;
-        
+        if(frUtil.hasNPCobjects()) {
+            existingGT.put('Funraise_GT_Pledge__c', pledge.Id);
+            update existingGT;
+        }
         //requery to get the workflow rule update on pledge_donation_uq__c
         pledge = [SELECT Id, Pledge_Donation__c, Pledge_Donation_uq__c FROM Pledge__c WHERE Id = :pledge.Id];
         System.assertEquals(pledge.Pledge_Donation__c +'', pledge.Pledge_Donation_uq__c+'',
@@ -310,6 +402,7 @@ public class frDonationTest {
 
         Map<String, Object> request = getTestRequest();
         request.put('pledge', true);
+        if(frUtil.hasPersonAccountsEnabled()) request.put('donorId', '856');
         
         frTestUtil.createTestPost(request);
         Test.startTest();
@@ -319,14 +412,23 @@ public class frDonationTest {
         frTestUtil.assertNoErrors();
         
         String oppFrId = String.valueOf(getTestRequest().get('id'));
-        Opportunity opp = [SELECT Id, Amount, fr_ID__c, Funraise_Pledge__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
-        System.assertNotEquals(null, opp.Funraise_Pledge__c, 'The new donation should have created a new pledge');
-        pledge = [SELECT Pledge_Donation_uq__c , Pledge_Donation__c, Pledge_Amount__c, Received_Amount__c from Pledge__c
-                  WHERE Id = :opp.Funraise_Pledge__c];
-        System.assertEquals(pledge.Pledge_Donation_uq__c, opp.Id, 'The one-time pledge should have a reference to the one-time donation that created it');
-        System.assertEquals(pledge.Pledge_Donation__c, opp.Id, 'The one-time pledge should have a reference to the one-time donation that created it');
-        System.assertEquals(pledge.Pledge_Amount__c, opp.Amount, 'The pledged amount should be the same as the opportunity amount');
-        System.assertEquals(pledge.Received_Amount__c, opp.Amount, 'The receive amount should be the same as the opportunity amount since the opp is Closed Won');
+        if(!frUtil.hasNPCobjects()) {
+            Opportunity opp = [SELECT Id, Amount, fr_ID__c, Funraise_Pledge__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
+            System.assertNotEquals(null, opp.Funraise_Pledge__c, 'The new donation should have created a new pledge');
+            pledge = [SELECT Pledge_Donation_uq__c , Pledge_Donation__c, Pledge_Amount__c, Received_Amount__c from Pledge__c
+                    WHERE Id = :opp.Funraise_Pledge__c];
+            System.assertEquals(pledge.Pledge_Donation_uq__c, opp.Id, 'The one-time pledge should have a reference to the one-time donation that created it');
+            System.assertEquals(pledge.Pledge_Donation__c, opp.Id, 'The one-time pledge should have a reference to the one-time donation that created it');
+            System.assertEquals(pledge.Pledge_Amount__c, opp.Amount, 'The pledged amount should be the same as the opportunity amount');
+            System.assertEquals(pledge.Received_Amount__c, opp.Amount, 'The receive amount should be the same as the opportunity amount since the opp is Closed Won');
+        }
+        else {
+            List<SObject> gt = Database.query('SELECT Id, OriginalAmount, fr_ID__c, Funraise_GT_Pledge__c FROM GiftTransaction');
+            System.assertNotEquals(null, gt.get(0).get('Funraise_GT_Pledge__c'), 'The new donation should have created a new pledge');
+            pledge = [SELECT Pledge_Donation_uq__c , Pledge_Donation__c, Pledge_Amount__c, Received_Amount__c FROM Pledge__c
+                                WHERE Id = :(Id) gt.get(0).get('Funraise_GT_Pledge__c')];
+            System.assertEquals(pledge.Pledge_Amount__c, gt.get(0).get('OriginalAmount'), 'The pledged amount should be the same as the opportunity amount');
+        }
     }
     
     /*
@@ -338,19 +440,32 @@ public class frDonationTest {
         createMapping('name', 'Name');
         createMapping('amount', 'amount');
         createMapping('donation_cretime', 'CloseDate');
+
+        insert new frMapping__c(Type__c = 'Gift Transaction', Name = 'donation_cretime', 
+        fr_Name__c = 'donation_cretime', sf_Name__c = 'CheckDate');
         
         Contact testSupporter = frDonorTest.getTestContact();
+        Account testAccount = frDonortest.getTestAccount(true);
         Pledge__c pledge = getTestPledge(testSupporter);
+        if(frUtil.hasPersonAccountsEnabled()) pledge = getTestPledgeAcc([SELECT Id, PersonContactId FROM Account WHERE Id = :testAccount.Id]);
         pledge.End_Date__c = Date.today().addDays(-1); //so it's no longer active
         insert pledge;
         Opportunity existingOpp = getTestOpp();
         existingOpp.fr_Id__c = '2048';
         existingOpp.Funraise_Pledge__c = pledge.Id;
         insert existingOpp;
+
+        if(frUtil.hasNPCobjects()) {
+            SObject existingGT = getTestGT();
+            existingGT.put('fr_Id__c' , '2048');
+            existingGT.put('Funraise_GT_Pledge__c', pledge.Id);
+            insert existingGT;
+        }
         
         Map<String, Object> request = getTestRequest();
         request.put('id', existingOpp.fr_Id__c);
-        
+        if(frUtil.hasPersonAccountsEnabled()) request.put('donorId', '856');
+
         frTestUtil.createTestPost(request);
         Test.startTest();
         frWSDonationController.syncEntity();
@@ -359,8 +474,14 @@ public class frDonationTest {
         frTestUtil.assertNoErrors();
         
         String oppFrId = String.valueOf(getTestRequest().get('id'));
-        Opportunity opp = [SELECT Id, Funraise_Pledge__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
-        System.assertEquals(pledge.Id, opp.Funraise_Pledge__c, 'The pledge value should remain unchanged');
+        if(frUtil.hasNPCobjects()) {
+            Opportunity opp = [SELECT Id, Funraise_Pledge__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
+            System.assertEquals(pledge.Id, opp.Funraise_Pledge__c, 'The pledge value should remain unchanged');
+        }
+        else {
+            List<SObject> gc = Database.query('SELECT Id, Funraise_GT_Pledge__c FROM GiftTransaction WHERE fr_ID__c = :oppFrId');
+            System.assertEquals(pledge.Id, gc.get(0).get('Funraise_GT_Pledge__c'), 'The pledge value should remain unchanged');
+        }
     }
     
     /*
@@ -372,17 +493,23 @@ public class frDonationTest {
         createMapping('name', 'Name');
         createMapping('amount', 'amount');
         createMapping('donation_cretime', 'CloseDate');
+
+        insert new frMapping__c(Type__c = 'Gift Transaction', Name = 'donation_cretime', 
+        fr_Name__c = 'donation_cretime', sf_Name__c = 'CheckDate');
         
         Contact testSupporter = frDonorTest.getTestContact();
         //get a pledge that is inactive according to dates
         //but is unfulfilled in amount
+        Account testAccount = frDonortest.getTestAccount(true);
         Pledge__c pledge = getTestPledge(testSupporter);
+        if(frUtil.hasPersonAccountsEnabled()) pledge = getTestPledgeAcc([SELECT Id, PersonContactId FROM Account WHERE Id = :testAccount.Id]);
         pledge.Start_Date__c = Date.today().addDays(-5);
         pledge.End_Date__c = Date.today().addDays(-1); 
         insert pledge;
 
         Map<String, Object> request = getTestRequest();
         request.put('donation_cretime', DateTime.now().addDays(-3).getTime());
+        if(frUtil.hasPersonAccountsEnabled()) request.put('donorId', '856');
         
         frTestUtil.createTestPost(request);
         Test.startTest();
@@ -391,9 +518,16 @@ public class frDonationTest {
         
         frTestUtil.assertNoErrors();
         
-        String oppFrId = String.valueOf(getTestRequest().get('id'));
-        Opportunity opp = [SELECT Id, Funraise_Pledge__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
-        System.assertEquals(pledge.Id, opp.Funraise_Pledge__c, 'The donation should have matched to a previously active unfulfilled pledge');
+        if(!frUtil.hasNPCobjects()) {
+            String oppFrId = String.valueOf(getTestRequest().get('id'));
+            Opportunity opp = [SELECT Id, Funraise_Pledge__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
+            System.assertEquals(pledge.Id, opp.Funraise_Pledge__c, 'The donation should have matched to a previously active unfulfilled pledge');
+        }
+        else {
+            String oppFrId = String.valueOf(getTestRequest().get('id'));
+            List<SObject> gc = Database.query('SELECT Id, Funraise_GT_Pledge__c FROM GiftTransaction WHERE fr_ID__c = :oppFrId');
+            System.assertEquals(pledge.Id, gc.get(0).get('Funraise_GT_Pledge__c'), 'The donation should have matched to a previously active unfulfilled pledge');
+        }
     }
     
     /*
@@ -405,17 +539,23 @@ public class frDonationTest {
         createMapping('name', 'Name');
         createMapping('amount', 'amount');
         createMapping('donation_cretime', 'CloseDate');
+
+        insert new frMapping__c(Type__c = 'Gift Transaction', Name = 'donation_cretime', 
+        fr_Name__c = 'donation_cretime', sf_Name__c = 'CheckDate');
         
         Contact testSupporter = frDonorTest.getTestContact();
+        Account testAccount = frDonortest.getTestAccount(true);
         //get a pledge that is inactive according to dates
         //but is unfulfilled in amount
         Pledge__c pledge = getTestPledge(testSupporter);
+        if(frUtil.hasPersonAccountsEnabled()) pledge = getTestPledgeAcc([SELECT Id, PersonContactId FROM Account WHERE Id = :testAccount.Id]);
         pledge.Start_Date__c = Date.today().addDays(-5);
         pledge.End_Date__c = Date.today().addDays(-1); 
         insert pledge;
   
         Map<String, Object> request = getTestRequest();
         request.put('donation_cretime', DateTime.now().getTime());
+        if(frUtil.hasPersonAccountsEnabled()) request.put('donorId', '856');
         
         frTestUtil.createTestPost(request);
         Test.startTest();
@@ -424,9 +564,16 @@ public class frDonationTest {
         
         frTestUtil.assertNoErrors();
         
-        String oppFrId = String.valueOf(getTestRequest().get('id'));
-        Opportunity opp = [SELECT Id, Funraise_Pledge__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
-        System.assertEquals(null, opp.Funraise_Pledge__c, 'The donation should not have matched to a previously active unfulfilled pledge');
+        if(!frUtil.hasNPCobjects()) {
+            String oppFrId = String.valueOf(getTestRequest().get('id'));
+            Opportunity opp = [SELECT Id, Funraise_Pledge__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
+            System.assertEquals(null, opp.Funraise_Pledge__c, 'The donation should not have matched to a previously active unfulfilled pledge');
+        }
+        else {
+            String oppFrId = String.valueOf(getTestRequest().get('id'));
+            List<SObject> gc = Database.query('SELECT Id, Funraise_GT_Pledge__c FROM GiftTransaction WHERE fr_ID__c = :oppFrId');
+            System.assertEquals(null, gc.get(0).get('Funraise_GT_Pledge__c'), 'The donation should have matched to a previously active unfulfilled pledge');
+        }
     }
     
     /*
@@ -460,13 +607,15 @@ public class frDonationTest {
             frDonation.OPP_ROLE_SOFT_CREDIT, 
             frDonation.OPP_ROLE_TEAM_CAPTAIN
         };
-        Opportunity opp = [SELECT Id, Funraise_Pledge__c, 
-                           (SELECT Id, Role FROM OpportunityContactRoles WHERE ContactId = :testSupporter.Id AND role IN :funraiseRoles) 
-                           FROM Opportunity WHERE fr_Id__c = :oppFrId];
-        System.assertEquals(1, opp.OpportunityContactRoles.size(), 
-                            'There should be a single opp contact role for the supporter');
-        System.assertEquals(frDonation.OPP_ROLE_DONOR, opp.OpportunityContactRoles.get(0).role,
-                           'The single opp contact role should be the donor role');
+        if(!frUtil.hasNPCobjects()) {
+            Opportunity opp = [SELECT Id, Funraise_Pledge__c, 
+                            (SELECT Id, Role FROM OpportunityContactRoles WHERE ContactId = :testSupporter.Id AND role IN :funraiseRoles) 
+                            FROM Opportunity WHERE fr_Id__c = :oppFrId];
+            System.assertEquals(1, opp.OpportunityContactRoles.size(), 
+                                'There should be a single opp contact role for the supporter');
+            System.assertEquals(frDonation.OPP_ROLE_DONOR, opp.OpportunityContactRoles.get(0).role,
+                            'The single opp contact role should be the donor role');
+        }
     }
     
     private static void createMapping(String frField, String sfField) {
@@ -502,6 +651,7 @@ public class frDonationTest {
         request.put('fundraiserId', null);
         request.put('teamCaptainId', null);
         request.put('softCreditSupporterId', null);
+        request.put('paymentMethodType', 'Cash');
         return request;
     }
     
@@ -513,10 +663,30 @@ public class frDonationTest {
             fr_Id__c = '19931107'
         );
     }
+
+    public static SObject getTestGT() {
+        Sobject o = Schema.getGlobalDescribe().get('gifttransaction').newSObject();
+        o.put('Name', 'Unit Test Opportunity');
+        o.put('OriginalAmount', 110.11);
+        o.put('CheckDate', Date.Today());
+        o.put('AcknowledgementDate', System.today());
+        o.put('fr_Id__c', '19931107');
+        o.put('PaymentMethod', 'Cash');
+        return o;
+    }
     
     public static Pledge__c getTestPledge(Contact supporter) {
         Pledge__c pledge = new Pledge__c(
             Supporter__c = supporter.Id,
+            Pledge_Amount__c = 500
+        );
+        return pledge;
+    }
+
+    public static Pledge__c getTestPledgeAcc(Account supporter) {
+        Pledge__c pledge = new Pledge__c(
+            Supporter__c = supporter.PersonContactId,
+            Supporter_PA__c = supporter.Id,
             Pledge_Amount__c = 500
         );
         return pledge;

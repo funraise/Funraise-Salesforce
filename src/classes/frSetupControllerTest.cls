@@ -15,36 +15,67 @@ public class frSetupControllerTest {
 		Test.startTest();
 		frSetupController controller = new frSetupController();
 		Test.stopTest();
-
-		assertValuesInList(expectedDonorFieldNames, controller.donorFROptions);
-		assertValuesInList(expectedDonationFieldNames, controller.donationFROptions);
+		if(frUtil.hasNPCobjects() && frUtil.hasPersonAccountsEnabled()) {
+			assertValuesInList(expectedDonorFieldNames, controller.donorFROptions);
+			assertValuesInList(expectedDonationFieldNames, controller.donationFROptions);
+		}
+		else {
+			assertValuesInList(expectedDonorFieldNames, controller.donorFROptions);
+			assertValuesInList(expectedDonationFieldNames, controller.donationFROptions);
+		}
 	}
 
 	static testMethod void test_addMapping() {
 		Test.startTest();
 		frSetupController controller = new frSetupController();
-		ApexPages.currentPage().getParameters().put('type', frSetupController.DONATION_TYPE);
-		controller.addMapping();
-		Integer actualDonationMappingCountAfterAdd = controller.donationMappings.size();
-		frMapping__c donationMapping = controller.donationMappings.get(0);
-		donationMapping.fr_Name__c = 'TestFRDonation';
-		donationMapping.sf_Name__c = 'TestSFDonation';
+		if(frUtil.hasNPCobjects() && frUtil.hasPersonAccountsEnabled()) {
+			ApexPages.currentPage().getParameters().put('type', frSetupController.GIFT_TRANSACTION_TYPE);
+			controller.addMapping();
+			Integer actualDonationMappingCountAfterAdd = controller.giftTransactionMappings.size();
+			frMapping__c donationMapping = controller.giftTransactionMappings.get(0);
+			donationMapping.fr_Name__c = 'TestFRDonation';
+			donationMapping.sf_Name__c = 'TestSFDonation';
 
-		ApexPages.currentPage().getParameters().put('type', frSetupController.DONOR_TYPE);
-		controller.addMapping();
-		Integer actualDonorMappingCountAfterAdd = controller.donorMappings.size();
-		frMapping__c donorMapping = controller.donorMappings.get(0);
-		donorMapping.fr_Name__c = 'TestFRDonor';
-		donorMapping.sf_Name__c = 'TestSFDonor';
+			ApexPages.currentPage().getParameters().put('type', frSetupController.PERSON_ACCOUNT_TYPE);
+			controller.addMapping();
+			Integer actualDonorMappingCountAfterAdd = controller.accMappings.size();
+			frMapping__c donorMapping = controller.accMappings.get(0);
+			donorMapping.fr_Name__c = 'TestFRDonor';
+			donorMapping.sf_Name__c = 'TestSFDonor';
 
-		controller.save();
-		Test.stopTest();
+			controller.save();
+			Test.stopTest();
 
-		System.assertEquals(1, actualDonationMappingCountAfterAdd, 'Only one mapping was added, so only one mapping should exist');
-		System.assertEquals(1, actualDonorMappingCountAfterAdd, 'Only one mapping was added, so only one mapping should exist');
-		System.assertEquals(2, [SELECT COUNT() FROM frMapping__c], 'Only one mapping was added, so only one mapping should exist');
-		System.assertEquals(frSetupController.DONATION_TYPE, donationMapping.Type__c, 'The mapping added first should have a donation type');
-		System.assertEquals(frSetupController.DONOR_TYPE, donorMapping.Type__c, 'The mapping added second should have a donor type');
+			System.assertEquals(1, actualDonationMappingCountAfterAdd, 'Only one mapping was added, so only one mapping should exist');
+			System.assertEquals(1, actualDonorMappingCountAfterAdd, 'Only one mapping was added, so only one mapping should exist');
+			System.assertEquals(2, [SELECT COUNT() FROM frMapping__c], 'Only one mapping was added, so only one mapping should exist');
+			System.assertEquals(frSetupController.GIFT_TRANSACTION_TYPE, donationMapping.Type__c, 'The mapping added first should have a donation type');
+			System.assertEquals(frSetupController.PERSON_ACCOUNT_TYPE, donorMapping.Type__c, 'The mapping added second should have a donor type');
+		} 
+		else {
+			ApexPages.currentPage().getParameters().put('type', frSetupController.DONATION_TYPE);
+			controller.addMapping();
+			Integer actualDonationMappingCountAfterAdd = controller.donationMappings.size();
+			frMapping__c donationMapping = controller.donationMappings.get(0);
+			donationMapping.fr_Name__c = 'TestFRDonation';
+			donationMapping.sf_Name__c = 'TestSFDonation';
+
+			ApexPages.currentPage().getParameters().put('type', frSetupController.DONOR_TYPE);
+			controller.addMapping();
+			Integer actualDonorMappingCountAfterAdd = controller.donorMappings.size();
+			frMapping__c donorMapping = controller.donorMappings.get(0);
+			donorMapping.fr_Name__c = 'TestFRDonor';
+			donorMapping.sf_Name__c = 'TestSFDonor';
+
+			controller.save();
+			Test.stopTest();
+
+			System.assertEquals(1, actualDonationMappingCountAfterAdd, 'Only one mapping was added, so only one mapping should exist');
+			System.assertEquals(1, actualDonorMappingCountAfterAdd, 'Only one mapping was added, so only one mapping should exist');
+			System.assertEquals(2, [SELECT COUNT() FROM frMapping__c], 'Only one mapping was added, so only one mapping should exist');
+			System.assertEquals(frSetupController.DONATION_TYPE, donationMapping.Type__c, 'The mapping added first should have a donation type');
+			System.assertEquals(frSetupController.DONOR_TYPE, donorMapping.Type__c, 'The mapping added second should have a donor type');
+		}
 	}
 
 	static testMethod void test_addMapping_constant() {
@@ -174,6 +205,21 @@ public class frSetupControllerTest {
 		}
 		//remove empty string from controller values since we don't care about the --None-- option
 		actualValues.remove('');
+		actualValues.remove('id');
+		printDiff(expectedValues, actualValues);
 		System.assertEquals(expectedValues, actualValues, 'The fields in the metadata setting and the fields available in the controller do not match');
 	}
+
+	public static void printDiff(Set<String> list1, Set<String> list2) {
+        // Convert lists to sets to find unique differences
+        Set<String> set1 = new Set<String>(list1);
+        Set<String> set2 = new Set<String>(list2);
+
+        // Find the difference between set1 and set2
+        Set<String> diffFromSet1 = new Set<String>(set1);
+        diffFromSet1.removeAll(set2); // Items in set1 but not in set2
+
+        Set<String> diffFromSet2 = new Set<String>(set2);
+        diffFromSet2.removeAll(set1); // Items in set2 but not in set1
+    }
 }

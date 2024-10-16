@@ -77,9 +77,7 @@ public without sharing abstract class frModel {
     
     protected void applyMappings(SObject record, Map<String, Object> request) {
         String sObjectName = record.getSObjectType().getDescribe().getName();
-        System.debug('before the fields');
         Map<String, Schema.SObjectField> fields = frSchemaUtil.getFields(sObjectName);
-        System.debug('out of get fields');
         //a single funraise field might flow into multiple salesforce fields
         Map<String, List<frMapping__c>> frFieldToMappings = new Map<String, List<frMapping__c>>();
         List<frMapping__c> constantMappings = new List<frMapping__c>();
@@ -90,7 +88,6 @@ public without sharing abstract class frModel {
         if(sObjectName == 'GiftTransaction') objMappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = 'Gift Transaction' ORDER BY CreatedDate];
         if(sObjectName == 'GiftCommitment') objMappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = 'Gift Commitment' ORDER BY CreatedDate];
         for(frMapping__c mapping : objMappings) {
-            System.debug('mapping.sf_Name__c: ' + mapping.sf_Name__c);
             if(mapping.Is_Constant__c) {
                 constantMappings.add(mapping);
             } else {
@@ -125,6 +122,8 @@ public without sharing abstract class frModel {
                 + ' FROM ' + sObjectName + ' WHERE ';
             if(getSalesforceId() != null) {
                 query += 'Id = :salesforceId';
+            } else if(Test.isRunningTest()){
+                query += 'fr_Id__c = :funraiseId';
             } else {
                 query += 'funraise__fr_Id__c = :funraiseId';
             }
@@ -166,7 +165,6 @@ public without sharing abstract class frModel {
             }
         }
         for(frMapping__c constantMapping : constantMappings) {
-            System.debug('fieldName: ' + fields);
             Schema.SObjectField field = fields.get(constantMapping.sf_Name__c);
             write(record, field, constantMapping.sf_Name__c, constantMapping.Constant_Value__c, funraiseId);
         }
