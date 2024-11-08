@@ -12,17 +12,9 @@ public class frUtil {
         }
     }
 
-    public static Boolean hasPersonAccountsEnabled() {
-        try {
-            return Account.SObjectType.getDescribe().fields.getMap().containsKey('IsPersonAccount');
-        } catch (TypeException te) {
-            return false;
-        }
-    }
-
     public static Boolean hasNPCobjects() {
         try {
-            return Schema.getGlobalDescribe().containsKey('gifttransaction');
+            return Schema.getGlobalDescribe().containsKey('gifttransaction') && Account.SObjectType.getDescribe().fields.getMap().containsKey('IsPersonAccount');
         } catch (TypeException te) {
             return false;
         }
@@ -100,6 +92,12 @@ public class frUtil {
             funraiseObject = 'Question';
         } else if (frObject == Entity.ANSWER) {
             funraiseObject = 'Question Answer';
+        } else if (frObject == Entity.GIFTTRANSACTION) {
+            funraiseObject = 'Gift Transaction';
+        } else if (frObject == Entity.PERSONACCOUNT) {
+            funraiseObject = 'Person Account';
+        } else if (frObject == Entity.GIFTCOMMITMENT) {
+            funraiseObject = 'Gift Commitment';
         }
         return funraiseObject;
     }
@@ -115,7 +113,10 @@ public class frUtil {
         TASK,
         PLEDGE,
         QUESTION,
-        ANSWER
+        ANSWER,
+        GIFTTRANSACTION,
+        GIFTCOMMITMENT,
+        PERSONACCOUNT
     }
     
 }

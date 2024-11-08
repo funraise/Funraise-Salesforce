@@ -15,7 +15,7 @@ public class frSetupControllerTest {
 		Test.startTest();
 		frSetupController controller = new frSetupController();
 		Test.stopTest();
-		if(frUtil.hasNPCobjects() && frUtil.hasPersonAccountsEnabled()) {
+		if(frUtil.hasNPCobjects()) {
 			assertValuesInList(expectedDonorFieldNames, controller.donorFROptions);
 			assertValuesInList(expectedDonationFieldNames, controller.donationFROptions);
 		}
@@ -28,7 +28,7 @@ public class frSetupControllerTest {
 	static testMethod void test_addMapping() {
 		Test.startTest();
 		frSetupController controller = new frSetupController();
-		if(frUtil.hasNPCobjects() && frUtil.hasPersonAccountsEnabled()) {
+		if(frUtil.hasNPCobjects()) {
 			ApexPages.currentPage().getParameters().put('type', frSetupController.GIFT_TRANSACTION_TYPE);
 			controller.addMapping();
 			Integer actualDonationMappingCountAfterAdd = controller.giftTransactionMappings.size();

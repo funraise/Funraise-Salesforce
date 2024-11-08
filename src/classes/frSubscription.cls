@@ -71,11 +71,14 @@ public class frSubscription extends frModel implements frSyncable {
     private Boolean create(Map<String, Object> request) {
         Boolean result = false;
         String funraiseId = getFunraiseId();
+        for (String key : request.keySet()) {
+            System.debug('Key: ' + key + ', Value: ' + request.get(key));
+        }
         String name = String.valueOf(request.get('name'));
         String funraiseSupporterId = String.valueOf(request.get('supporterId'));
         List<Contact> contacts = [SELECT Id from Contact WHERE fr_Id__c = :funraiseSupporterId];
         List<Account> accounts;
-        if (frUtil.hasPersonAccountsEnabled()) {
+        if (frUtil.hasNPCobjects()) {
             accounts = [SELECT Id, PersonContactId FROM Account WHERE fr_ID__c = :funraiseSupporterId];
         }
         if(contacts.isEmpty() && accounts.isEmpty()) {
@@ -186,39 +189,51 @@ public class frSubscription extends frModel implements frSyncable {
     }
     
     protected override Set<Schema.SObjectField> getFields() {
-        return new Set<Schema.SObjectField> {
-            	Subscription__c.Name,
-                Subscription__c.fr_ID__c,
-                Subscription__c.Status__c,
-                Subscription__c.Supporter__c,
-                Subscription__c.Payment_Method_Expiration_Date__c,
-                Subscription__c.Payment_Method_Type__c,
-                Subscription__c.Payment_Method_Last_Four__c,
-                Subscription__c.Form_Name__c,
-                Subscription__c.Next_Payment_Date__c,
-                Subscription__c.Frequency__c,
-                Subscription__c.Amount__c,
-                Subscription__c.Currency__c,
-                Subscription__c.Campaign_Page_Name__c,
-                Subscription__c.Allocation_Name__c,
-                Subscription__c.Comment__c,
-                Subscription__c.Note__c,
-                Subscription__c.Dedication__c,
-                Subscription__c.Dedication_Type__c,
-                Subscription__c.Dedication_Name__c,
-                Subscription__c.Dedication_Email__c,
-                Subscription__c.Dedication_Message__c,
-                Subscription__c.Company_Match__c,
-                Subscription__c.Company_Match_Company_Name__c,
-                Subscription__c.Company_Match_Employee_Email__c,
-                Subscription__c.Operations_Tip__c,
-                Subscription__c.Imported__c,
-                Subscription__c.Campaign_Goal__c
-    	};
+        if(frUtil.hasNPCobjects()) {
+            Map<String, Schema.SObjectField> fieldMap = Schema.getGlobalDescribe().get('giftcommitment').getDescribe().fields.getMap();
+            Set<Schema.SObjectField> usedFields = new Set<Schema.SObjectField>();
+            for(frMapping__c mapping : getMappings()) {
+                if(fields.containsKey(mapping.sf_Name__c)) {
+                    usedFields.add(fields.get(mapping.sf_Name__c));
+                }
+            }
+            return usedFields;
+        }
+        else{
+            return new Set<Schema.SObjectField> {
+                    Subscription__c.Name,
+                    Subscription__c.fr_ID__c,
+                    Subscription__c.Status__c,
+                    Subscription__c.Supporter__c,
+                    Subscription__c.Payment_Method_Expiration_Date__c,
+                    Subscription__c.Payment_Method_Type__c,
+                    Subscription__c.Payment_Method_Last_Four__c,
+                    Subscription__c.Form_Name__c,
+                    Subscription__c.Next_Payment_Date__c,
+                    Subscription__c.Frequency__c,
+                    Subscription__c.Amount__c,
+                    Subscription__c.Currency__c,
+                    Subscription__c.Campaign_Page_Name__c,
+                    Subscription__c.Allocation_Name__c,
+                    Subscription__c.Comment__c,
+                    Subscription__c.Note__c,
+                    Subscription__c.Dedication__c,
+                    Subscription__c.Dedication_Type__c,
+                    Subscription__c.Dedication_Name__c,
+                    Subscription__c.Dedication_Email__c,
+                    Subscription__c.Dedication_Message__c,
+                    Subscription__c.Company_Match__c,
+                    Subscription__c.Company_Match_Company_Name__c,
+                    Subscription__c.Company_Match_Employee_Email__c,
+                    Subscription__c.Operations_Tip__c,
+                    Subscription__c.Imported__c,
+                    Subscription__c.Campaign_Goal__c
+            };
+        }
     }
     
     protected override Set<Schema.SObjectType> getObjects() {
-        if(!frUtil.hasPersonAccountsEnabled()) {
+        if(frUtil.hasNPCobjects()) {
             return new Set<Schema.SObjectType> {
                 Schema.getGlobalDescribe().get('giftcommitment')
             };
@@ -231,6 +246,7 @@ public class frSubscription extends frModel implements frSyncable {
     }
     
     protected override frUtil.Entity getFrType() {
-        return frUtil.Entity.SUBSCRIPTION;
+        if(frUtil.hasNPCobjects()) frUtil.Entity.GIFTCOMMITMENT;
+        else return frUtil.Entity.SUBSCRIPTION;
     }
 }

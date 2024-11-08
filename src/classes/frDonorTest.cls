@@ -56,7 +56,7 @@ public class frDonorTest {
         Test.stopTest();
         
         String frId = String.valueOf(getTestRequest().get('id'));
-        if(!frUtil.hasPersonAccountsEnabled()) {
+        if(!frUtil.hasNPCobjects()) {
             Integer newContact = [SELECT COUNT() FROM Contact WHERE fr_Id__c = :frId];
             System.assertEquals(1, newContact, 'The funraise donor id was not populated to the contact field');
         }
@@ -87,7 +87,7 @@ public class frDonorTest {
         Test.stopTest();
         
         String frId = String.valueOf(getTestRequest().get('id'));
-        if(!frUtil.hasPersonAccountsEnabled()) {
+        if(!frUtil.hasNPCobjects()) {
             Contact newContact = [SELECT Id, fr_ID__c, LastName FROM Contact WHERE fr_Id__c = :frId];
             System.assertEquals(String.valueOf(request.get('institutionName')), newContact.LastName, 'We expected a fallback so that the contact would still get created');
         }
@@ -122,7 +122,7 @@ public class frDonorTest {
         Test.stopTest();
         
         String frId = existingSupporter.fr_Id__c;
-        if(!frUtil.hasPersonAccountsEnabled()) {
+        if(!frUtil.hasNPCobjects()) {
             Contact newContact = [SELECT Id, fr_ID__c, LastName FROM Contact WHERE fr_Id__c = :frId];
             System.assertEquals(String.valueOf(request.get('institutionName')), newContact.LastName, 'We expected a fallback so that the contact would still get created');
         }
@@ -158,7 +158,7 @@ public class frDonorTest {
         Test.stopTest();
         
         String frId = String.valueOf(getTestRequest().get('id'));
-        if(!frUtil.hasPersonAccountsEnabled()) {
+        if(!frUtil.hasNPCobjects()) {
             Contact syncedContact = [SELECT Id, fr_ID__c, Email FROM Contact WHERE fr_Id__c = :frId];
             System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
             Integer countAfterSync = [SELECT COUNT() FROM Contact];
@@ -187,7 +187,7 @@ public class frDonorTest {
 
         Account existingacc = new Account(LastName = 'Test', FirstName = 'Existing', fr_ID__c = '856');
         Account noMatchacc = new Account(LastName = 'nomatch', FirstName = 'nomatch', fr_ID__c = '111');
-        if(frUtil.hasPersonAccountsEnabled()) {
+        if(frUtil.hasNPCobjects()) {
             existingacc.put('PersonEmail', 'alextest02221503@example.com');
             noMatchacc.put('PersonEmail', 'alextest02221503@example.com');
         }
@@ -202,7 +202,7 @@ public class frDonorTest {
         frTestUtil.assertNoErrors();
         
         String frId = String.valueOf(getTestRequest().get('id'));
-        if(!frUtil.hasPersonAccountsEnabled()) {
+        if(!frUtil.hasNPCobjects()) {
             Contact syncedContact = [SELECT Id, fr_ID__c FROM Contact WHERE fr_Id__c = :frId];
             System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
             Integer countAfterSync = [SELECT COUNT() FROM Contact];
@@ -237,7 +237,7 @@ public class frDonorTest {
 
         Account existingacc = new Account(LastName = 'test02221503', FirstName = 'alex', fr_ID__c = '856');
         Account noMatchacc = new Account(LastName = 'nomatch', FirstName = 'nomatch', fr_ID__c = '111');
-        if(frUtil.hasPersonAccountsEnabled()) {
+        if(frUtil.hasNPCobjects()) {
             existingacc.put('PersonMailingStreet', '1234 S Street st');
             existingacc.put('PersonMailingCity', 'Test City');
             existingacc.put('PersonMailingState', 'AZ');
@@ -254,7 +254,7 @@ public class frDonorTest {
         Test.stopTest();
         
         String frId = String.valueOf(getTestRequest().get('id'));
-        if(!frUtil.hasPersonAccountsEnabled()) {
+        if(!frUtil.hasNPCobjects()) {
             Contact syncedContact = [SELECT Id, fr_ID__c FROM Contact WHERE fr_Id__c = :frId];
         System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
         Integer countAfterSync = [SELECT COUNT() FROM Contact];
@@ -295,7 +295,7 @@ public class frDonorTest {
         
         //but even with bad field mappings the record should still come over correctly
         String frId = String.valueOf(getTestRequest().get('id'));
-        if(!frUtil.hasPersonAccountsEnabled()) {
+        if(!frUtil.hasNPCobjects()) {
             Integer newContacts = [SELECT COUNT() FROM Contact WHERE fr_Id__c = :frId];
             System.assertEquals(1, newContacts, 'The funraise donor id was not populated to the contact field');
         }
@@ -329,7 +329,7 @@ public class frDonorTest {
         Test.stopTest();
         frTestUtil.assertNoErrors();
         
-        if(!frUtil.hasPersonAccountsEnabled()) {
+        if(!frUtil.hasNPCobjects()) {
             Contact syncedContact = [SELECT Id, fr_ID__c, Email FROM Contact WHERE fr_Id__c = :existing.fr_Id__c];
             System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
             System.assertEquals(syncedContact.Email, existing.Email, 'The email should not have changed since the NO_OVERWRITE conflict resolution was used');
@@ -373,7 +373,7 @@ public class frDonorTest {
         Test.stopTest();
         frTestUtil.assertNoErrors();
 
-        if(!frUtil.hasPersonAccountsEnabled()) {
+        if(!frUtil.hasNPCobjects()) {
             Contact syncedContact = [SELECT Id, fr_ID__c, Email, MailingCountry FROM Contact WHERE fr_Id__c = :existing.fr_Id__c];
             System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
             System.assertEquals(syncedContact.Email, newEmail, 'The email should have changed since the OVERWRITE_NON_NULL conflict resolution was used and the incoming value was non null');
@@ -415,7 +415,7 @@ public class frDonorTest {
         Test.stopTest();
         frTestUtil.assertNoErrors();
 
-        if(!frUtil.hasPersonAccountsEnabled()) {
+        if(!frUtil.hasNPCobjects()) {
             Contact syncedContact = [SELECT Id, fr_ID__c, Email, MailingCountry FROM Contact WHERE fr_Id__c = :existing.fr_Id__c];
             System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
             System.assertEquals(syncedContact.Email, newEmail, 'The email should have changed since the OVERWRITE_RECENT conflict resolution was used and the updtime was more recent than Salesforce');
@@ -454,7 +454,7 @@ public class frDonorTest {
         Test.stopTest();
         frTestUtil.assertNoErrors();
         
-        if(!frUtil.hasPersonAccountsEnabled()) {
+        if(!frUtil.hasNPCobjects()) {
             Contact syncedContact = [SELECT Id, fr_ID__c, Email, MailingCountry FROM Contact WHERE fr_Id__c = :existing.fr_Id__c];
             System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
             System.assertEquals(syncedContact.Email, newEmail, 'The email should have changed since the OVERWRITE_RECENT conflict resolution was used and the updtime was more recent than Salesforce');
@@ -486,7 +486,7 @@ public class frDonorTest {
         frTestUtil.assertNoErrors();
         
         String frId = String.valueOf(getTestRequest().get('id'));
-        if(!frUtil.hasPersonAccountsEnabled()) {
+        if(!frUtil.hasNPCobjects()) {
             Contact syncedContact = [SELECT Email, FirstName, LastName, fr_ID__c FROM Contact WHERE fr_Id__c = :frId];
             System.assertEquals(syncedContact.Email, String.valueOf(getTestRequest().get('email')), 'The email from the request should be present on the newly created contact');
             System.assertEquals(syncedContact.FirstName, String.valueOf(getTestRequest().get('firstName')), 'The firstName from the request should be present on the newly created contact');

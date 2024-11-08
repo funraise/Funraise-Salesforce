@@ -42,7 +42,6 @@ public class frDonation extends frModel implements frSyncable {
     public static List<frMapping__c> mappings {
         get {
             String objType = TYPE;
-            if(frUtil.hasNPCobjects()) objType = 'Gift Transaction';
             if(mappings == null) {
                 mappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = :objType ORDER BY CreatedDate];
             }
@@ -56,7 +55,6 @@ public class frDonation extends frModel implements frSyncable {
     }
     
     private SObject o;
-    private SObject gt;
     
     public frDonation(Sync_Attempt__c syncRecord){
         super(syncRecord);
@@ -66,6 +64,9 @@ public class frDonation extends frModel implements frSyncable {
         //create Sobject
         Boolean result = false;
         Map<String, Object> request = getRequestBody();
+        for (String key : request.keySet()) {
+            System.debug('Key: ' + key + ', Value: ' + request.get(key));
+        }
         String frId = getFunraiseId();
 
         if(!frUtil.hasNPCobjects()) {
@@ -90,7 +91,7 @@ public class frDonation extends frModel implements frSyncable {
         applyMappings(o, request);
         String funraiseId = getFunraiseId();       
         String supporterFunraiseId = String.valueOf(request.get('donorId')); 
-        String supporterObjName = frUtil.hasPersonAccountsEnabled() ? 'Account' : 'Contact';
+        String supporterObjName = frUtil.hasNPCobjects() ? 'Account' : 'Contact';
         String subsciptionObjName = frUtil.hasNPCobjects() ? 'GiftCommitment' : 'Subscription__c';
         
         //connect supporter
@@ -99,6 +100,9 @@ public class frDonation extends frModel implements frSyncable {
             if (supporters.size() > 0) {
                 SObject supporter = supporters.get(0);
                 o.put('DonorId', supporter.get('Id'));
+                if(frUtil.hasNPSP()){
+                    o.put('npsp__Primary_Contact__c', supporter.Id);
+                }
             } else {
                 if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
                                             frUtil.Entity.SUPPORTER, supporterFunraiseId);
@@ -124,7 +128,8 @@ public class frDonation extends frModel implements frSyncable {
         if (String.isNotBlank(subscriptionId)) {
             List<SObject> subscriptions = Database.query('SELECT Id FROM ' + subsciptionObjName + ' WHERE fr_ID__c = :subscriptionId');
             if (subscriptions.size() > 0) {
-                o.put('GiftCommitmentId', subscriptions.get(0).get('Id'));
+                if(!frUtil.hasNPCobjects()) o.Subscription__c = subscriptions.get(0).Id;
+                else o.put('GiftCommitmentId', subscriptions.get(0).get('Id'));
             } else {
                 frUtil.logRelationshipError(getFrType(), funraiseId, 
                                             frUtil.Entity.SUBSCRIPTION, subscriptionId);
@@ -159,7 +164,8 @@ public class frDonation extends frModel implements frSyncable {
 
         //upsert
         try {
-            Database.upsert(o, true);
+            if(!frUtil.hasNPCobjects()) Database.upsert(opp, Opportunity.Fields.fr_Id__c, true);
+            else Database.upsert(o, true);
             result = true;
         } catch (Exception ex) {
             frUtil.logException(getFrType(), funraiseId, ex);
@@ -336,7 +342,7 @@ public class frDonation extends frModel implements frSyncable {
     
     protected override String getSalesforceId(){
         if(frUtil.hasNPCobjects()) {
-            return this.gt != null ? (String) this.gt.get('Id') : null; 
+            return this.o != null ? (String) this.o.get('Id') : null; 
         }
         else {
             return this.o != null ? this.o.Id : null;
@@ -401,7 +407,7 @@ public class frDonation extends frModel implements frSyncable {
 
     ///CONSTANTS///
 
-    public static final String TYPE = 'Donation';
+    public static final String TYPE = frUtil.hasNPCobjects() ?  'Gift Transaction' : 'Donation';
     
     //Donation statuses
     private static final String COMPLETE = 'Complete';

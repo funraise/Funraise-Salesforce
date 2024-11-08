@@ -124,7 +124,7 @@ public with sharing class frSetupController {
 
 		//Check for personaccount field on account
         SObjectType accountType = Account.SObjectType;
-        if (frUtil.hasPersonAccountsEnabled()) {
+        if (frUtil.hasNPCobjects()) {
             personAccountsEnabled = true;
 			Map<String, Schema.SObjectField> personAccountFields = Account.sObjectType.getDescribe().fields.getMap();
 			for(String fieldName : personAccountFields.keySet()) {

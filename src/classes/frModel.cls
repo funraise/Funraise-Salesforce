@@ -217,7 +217,10 @@ public without sharing abstract class frModel {
             }
             record.put(field, value);
         } catch (Exception ex) {
-            System.debug('field: ' + ex);
+            insert new Error__c(Error__c = 'Field mapping exception. Object type: '+ record.getSObjectType().getDescribe().getName()
+                                +' Record Id: '+record.Id+' - Funraise Id: '+ funraiseId + ' - Field: '+field.getDescribe().getName()+' - Value: '+value
+                                +' Exception: '+ex
+                               );
         }
     }
     
