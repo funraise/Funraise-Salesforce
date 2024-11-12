@@ -1,4 +1,4 @@
-public without sharing abstract class frModel {
+public with sharing abstract class frModel {
     public static final String MAPPING_OVERWRITE = 'overwrite';
     public static final String MAPPING_NO_OVERWRITE = 'do_not_overwrite';
     public static final String MAPPING_OVERWRITE_NON_NULL = 'overwrite_non_null';
@@ -217,7 +217,10 @@ public without sharing abstract class frModel {
             }
             record.put(field, value);
         } catch (Exception ex) {
-            System.debug('field: ' + ex);
+            insert new Error__c(Error__c = 'Field mapping exception. Object type: '+ record.getSObjectType().getDescribe().getName()
+                                +' Record Id: '+record.Id+' - Funraise Id: '+ funraiseId + ' - Field: '+field.getDescribe().getName()+' - Value: '+value
+                                +' Exception: '+ex
+                               );
         }
     }
     

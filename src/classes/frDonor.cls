@@ -39,12 +39,11 @@
 */
 
 public class frDonor extends frModel implements frSyncable{
-    public static final String TYPE = 'Donor';
+    public static final String TYPE = frUtil.hasNPCobjects() ? 'Person Account' : 'Donor';
     
     public static List<frMapping__c> mappings {
         get {
             String objType = TYPE;
-            if(frUtil.hasPersonAccountsEnabled()) objType = 'Person Account';
             if(mappings == null) {
                 mappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = :objType ORDER BY CreatedDate];
             }
@@ -67,12 +66,15 @@ public class frDonor extends frModel implements frSyncable{
     public Boolean sync() {
         Boolean result = false;
         Map<String, Object> request = getRequestBody();
+        for (String key : request.keySet()) {
+            System.debug('Key: ' + key + ', Value: ' + request.get(key));
+        }
         String frId = getFunraiseId();
     
         SObject supporter = null; // Generic SObject for both Account and Contact
         String sObjectType; // To track whether we're dealing with Account or Contact
         
-        Boolean isPersonAccount = frUtil.hasPersonAccountsEnabled();
+        Boolean isPersonAccount = frUtil.hasNPCobjects();
     
         // Check if Person Accounts are enabled and set the appropriate SObject type
         if (isPersonAccount) {
@@ -104,6 +106,20 @@ public class frDonor extends frModel implements frSyncable{
             if (String.isNotBlank(firstName) && String.isNotBlank(lastName)) {
                 query += ' AND FirstName = :firstName AND LastName = :lastName';
             }
+            query += ' LIMIT 1';
+    
+            records = Database.query(query);
+            if(isPersonAccount) {
+                supporter = applyAccountMatch(records, frId);
+            }
+            else {
+                supporter = applyMatch(records, frId);
+            }
+        }
+        //match on just email
+        if (supporter == null && String.isNotBlank(email)) {
+            String query = 'SELECT Id, fr_ID__c, LastName FROM ' + sObjectType + ' WHERE ' + emailField + ' = :email';
+    
             query += ' LIMIT 1';
     
             records = Database.query(query);
@@ -225,7 +241,7 @@ public class frDonor extends frModel implements frSyncable{
         usedFields.add(Contact.MailingState);
         usedFields.add(Contact.MailingPostalCode);
         usedFields.add(Contact.MailingCountry);
-        if(frUtil.hasPersonAccountsEnabled()) {
+        if(frUtil.hasNPCobjects()) {
             usedFields = new Set<Schema.SObjectField>();
             fields = frSchemaUtil.getFields(Account.sObjectType.getDescribe().getName());
             for(frMapping__c mapping : getMappings()) {
@@ -238,7 +254,7 @@ public class frDonor extends frModel implements frSyncable{
     }
     
     protected override Set<Schema.SObjectType> getObjects() {
-        if(!frUtil.hasPersonAccountsEnabled()) {
+        if(!frUtil.hasNPCobjects()) {
             return new Set<Schema.SObjectType> {
                     Contact.SObjectType
             };
