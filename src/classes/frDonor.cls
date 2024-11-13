@@ -66,18 +66,15 @@ public class frDonor extends frModel implements frSyncable{
     public Boolean sync() {
         Boolean result = false;
         Map<String, Object> request = getRequestBody();
-        for (String key : request.keySet()) {
-            System.debug('Key: ' + key + ', Value: ' + request.get(key));
-        }
         String frId = getFunraiseId();
     
         SObject supporter = null; // Generic SObject for both Account and Contact
         String sObjectType; // To track whether we're dealing with Account or Contact
         
-        Boolean isPersonAccount = frUtil.hasNPCobjects();
+        Boolean isNPC = frUtil.hasNPCobjects();
     
         // Check if Person Accounts are enabled and set the appropriate SObject type
-        if (isPersonAccount) {
+        if (isNPC) {
             sObjectType = 'Account';
         } else {
             sObjectType = 'Contact';
@@ -97,7 +94,7 @@ public class frDonor extends frModel implements frSyncable{
         String email = String.valueOf(request.get('email'));
     
         // Dynamic email field based on whether Person Accounts are enabled
-        String emailField = isPersonAccount ? 'PersonEmail' : 'Email';
+        String emailField = isNPC ? 'PersonEmail' : 'Email';
     
         // Match based on email and names
         if (supporter == null && String.isNotBlank(email)) {
@@ -109,7 +106,7 @@ public class frDonor extends frModel implements frSyncable{
             query += ' LIMIT 1';
     
             records = Database.query(query);
-            if(isPersonAccount) {
+            if(isNPC) {
                 supporter = applyAccountMatch(records, frId);
             }
             else {
@@ -123,7 +120,7 @@ public class frDonor extends frModel implements frSyncable{
             query += ' LIMIT 1';
     
             records = Database.query(query);
-            if(isPersonAccount) {
+            if(isNPC) {
                 supporter = applyAccountMatch(records, frId);
             }
             else {
@@ -141,10 +138,10 @@ public class frDonor extends frModel implements frSyncable{
             Boolean namePresent = String.isNotBlank(firstName) && String.isNotBlank(lastName);
             Boolean cityAndState = String.isNotBlank(city) && String.isNotBlank(state);
     
-            String mailingStreetField = isPersonAccount ? 'PersonMailingStreet' : 'MailingStreet';
-            String mailingCityField = isPersonAccount ? 'PersonMailingCity' : 'MailingCity';
-            String mailingStateField = isPersonAccount ? 'PersonMailingState' : 'MailingState';
-            String mailingPostalCodeField = isPersonAccount ? 'PersonMailingPostalCode' : 'MailingPostalCode';
+            String mailingStreetField = isNPC ? 'PersonMailingStreet' : 'MailingStreet';
+            String mailingCityField = isNPC ? 'PersonMailingCity' : 'MailingCity';
+            String mailingStateField = isNPC ? 'PersonMailingState' : 'MailingState';
+            String mailingPostalCodeField = isNPC ? 'PersonMailingPostalCode' : 'MailingPostalCode';
     
             if (namePresent && String.isNotBlank(address1) && (cityAndState || String.isNotBlank(postalCode))) {
                 String byAddress = 'SELECT Id, fr_ID__c, LastName FROM ' + sObjectType + 
@@ -165,7 +162,7 @@ public class frDonor extends frModel implements frSyncable{
     
         // If no match, create a new record
         if (supporter == null) {
-            if(isPersonAccount) {
+            if(isNPC) {
                 supporter = new Account(fr_Id__c = frId);
             } 
             else {
@@ -179,13 +176,13 @@ public class frDonor extends frModel implements frSyncable{
         if (String.isBlank((String)supporter.get('LastName'))) {
             supporter.put('LastName', String.valueOf(request.get('institutionName')));
         }
-        Database.upsert(supporter, true);
         // Perform upsert operation
         try {
             if (supporter.Id != null) {
                 Database.update(supporter, true);
             } else {
-                Database.upsert(supporter, true);
+                if(frUtil.hasNPCobjects()) Database.upsert(supporter, true);
+                else Database.upsert(supporter, Contact.Fields.fr_ID__c, true);
             }
             result = true;
         } catch (Exception ex) {

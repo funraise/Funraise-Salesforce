@@ -10,7 +10,7 @@ public with sharing abstract class frModel {
     
     public frModel(Sync_Attempt__c attempt) {
         this.syncRecord = attempt;
-        createLogRecord = attempt.Attempts__c >= 3;
+        createLogRecord = attempt.Attempts__c >= frSyncRequestHandler.MAX_ATTEMPTS;
     }
     
     protected Map<String, Object> getRequestBody() {

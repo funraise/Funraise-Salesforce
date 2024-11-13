@@ -111,8 +111,7 @@ public with sharing class frPledge {
         try {
             Database.upsert(pledge, Pledge__c.Pledge_Subscription_uq__c , true);
         } catch (Exception ex) {
-            System.debug(ex);
-            //frUtil.logException(frUtil.Entity.PLEDGE, gc.get('fr_Id__c'), ex);
+            frUtil.logException(frUtil.Entity.PLEDGE, (String) gc.get('fr_Id__c'), ex);
         }
         
         return pledge;
@@ -135,8 +134,7 @@ public with sharing class frPledge {
             gt.put('Funraise_GT_Pledge__c', pledge.Id);
             update gt;
         } catch (Exception ex) {
-            System.debug(ex);
-            //frUtil.logException(frUtil.Entity.PLEDGE, gt.get('fr_Id__c'), ex);
+            frUtil.logException(frUtil.Entity.PLEDGE, (String) gt.get('fr_Id__c'), ex);
         }
         
         return pledge;

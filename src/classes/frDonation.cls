@@ -64,14 +64,10 @@ public class frDonation extends frModel implements frSyncable {
         //create Sobject
         Boolean result = false;
         Map<String, Object> request = getRequestBody();
-        for (String key : request.keySet()) {
-            System.debug('Key: ' + key + ', Value: ' + request.get(key));
-        }
         String frId = getFunraiseId();
 
         if(!frUtil.hasNPCobjects()) {
             o = new Opportunity();
-            applyMappings(o, request);
             setOpportunityStage((Opportunity) o, String.valueOf(request.get('status')));
         } 
         else {
@@ -101,7 +97,8 @@ public class frDonation extends frModel implements frSyncable {
             else supporters = [SELECT Id, AccountId FROM Contact WHERE fr_ID__c = :supporterFunraiseId];
             if (supporters.size() > 0) {
                 SObject supporter = supporters.get(0);
-                o.put('DonorId', supporter.get('Id'));
+                if(!frUtil.hasNPCobjects()) o.put('fr_Donor__c', supporter.get('Id'));
+                else o.put('DonorId', supporter.get('Id'));
                 if(frUtil.hasNPSP()){
                     o.put('npsp__Primary_Contact__c', supporter.get('Id'));
                     o.put('AccountId', supporter.get('AccountId'));
@@ -146,12 +143,16 @@ public class frDonation extends frModel implements frSyncable {
             Boolean alreadyMappedToPledge = alreadyMappedToPledgeList.size() > 0;
             if(!isPledge && !alreadyMappedToPledge) {
                 Pledge__c pledge = frPledge.findActiveAcc((Id) o.get('DonorId'), (Date) o.get('CheckDate'));
-                NPC_Setting__c npcSetting = NPC_Setting__c.getOrgDefaults();
-                if (npcSetting != null && pledge != null) {
-                    String pledgeId = npcSetting.NPCFieldName__c;
-                    o.put('Funraise_GT_Pledge__c', pledge.id);
+                if (pledge != null) {
+                    try {
+                        if(frUtil.hasNPCobjects() && Schema.getGlobalDescribe().get('gifttransaction').getDescribe().fields.getMap().containsKey('Funraise_GT_Pledge__c')) o.put('Funraise_GT_Pledge__c', pledge.id);
+                        else o.put('Funraise_Pledge__c', pledge.id);
+                    } catch (Exception ex) {
+                        frUtil.logException(getFrType(), funraiseId, ex);
+                    }
                 } else {
-                    System.debug('NPC Setting not found at the organization level.');
+                    frUtil.logRelationshipError(getFrType(), funraiseId, 
+                                            frUtil.Entity.SUBSCRIPTION, subscriptionId);
                 }
             }
         }
