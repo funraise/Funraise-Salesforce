@@ -78,10 +78,6 @@ public class frDonation extends frModel implements frSyncable {
             else {
                 o = gtList.get(0);
             }
-            o.put('Name', String.valueOf(request.get('name')));
-            o.put('OriginalAmount', (Decimal) request.get('amount'));
-            o.put('PaymentMethod', String.valueOf(request.get('paymentMethodType')));
-            o.put('AcknowledgementDate', System.today());
         }
 
         applyMappings(o, request);
@@ -145,7 +141,7 @@ public class frDonation extends frModel implements frSyncable {
                 Pledge__c pledge = frPledge.findActiveAcc((Id) o.get('DonorId'), (Date) o.get('CheckDate'));
                 if (pledge != null) {
                     try {
-                        if(frUtil.hasNPCobjects() && Schema.getGlobalDescribe().get('gifttransaction').getDescribe().fields.getMap().containsKey('Funraise_GT_Pledge__c')) o.put('Funraise_GT_Pledge__c', pledge.id);
+                        if(frUtil.hasNPCobjects()) o.put('Funraise_GT_Pledge__c', pledge.id);
                         else o.put('Funraise_Pledge__c', pledge.id);
                     } catch (Exception ex) {
                         frUtil.logException(getFrType(), funraiseId, ex);

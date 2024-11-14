@@ -308,15 +308,19 @@ public class frDonorTest {
     static testMethod void syncEntity_conflictResolution_noOverwrite() {
         createMapping('firstName', 'FirstName');
         createMapping('lastName', 'LastName');
-        createMapping('email', 'email', frModel.MAPPING_NO_OVERWRITE);
-        createMapping('address1', 'MailingStreet');
-        createMapping('city', 'MailingCity');
-        createMapping('state', 'MailingState');
-        createMapping('postalCode', 'MailingPostalCode');
-        createMapping('country', 'MailingCountry');
 
-        insert new frMapping__c(Type__c = 'Person Account', Name = 'email+email', 
-                                fr_Name__c = 'email', sf_Name__c = 'PersonEmail', Conflict_Resolution__c = frModel.MAPPING_NO_OVERWRITE);
+        if(!frUtil.hasNPCobjects()) {
+            createMapping('email', 'email', frModel.MAPPING_NO_OVERWRITE);
+            createMapping('address1', 'MailingStreet');
+            createMapping('city', 'MailingCity');
+            createMapping('state', 'MailingState');
+            createMapping('postalCode', 'MailingPostalCode');
+            createMapping('country', 'MailingCountry');
+        }
+        else {
+            insert new frMapping__c(Type__c = 'Person Account', Name = 'email+email', 
+            fr_Name__c = 'email', sf_Name__c = 'personemail', Conflict_Resolution__c = frModel.MAPPING_NO_OVERWRITE);
+        }
         
         Contact existing = getTestContact(true);
         Account existingacc = getTestAccount(true);
@@ -468,16 +472,18 @@ public class frDonorTest {
     static testMethod void syncEntity_conflictResolution_overwriteMoreRecent_noExistingRecord() {
         createMapping('firstName', 'FirstName', frModel.MAPPING_OVERWRITE_RECENT);
         createMapping('lastName', 'LastName', frModel.MAPPING_OVERWRITE_RECENT);
-        createMapping('email', 'email', frModel.MAPPING_OVERWRITE_RECENT);
-        createMapping('address1', 'MailingStreet');
-        createMapping('city', 'MailingCity');
-        createMapping('state', 'MailingState');
-        createMapping('postalCode', 'MailingPostalCode');
-        createMapping('country', 'MailingCountry');
-
-        insert new frMapping__c(Type__c = 'Person Account', Name = 'email+email', 
-        fr_Name__c = 'email', sf_Name__c = 'PersonEmail', Conflict_Resolution__c = frModel.MAPPING_OVERWRITE_RECENT);
-        
+        if(!frUtil.hasNPCobjects()) {
+            createMapping('email', 'email', frModel.MAPPING_OVERWRITE_RECENT);
+            createMapping('address1', 'MailingStreet');
+            createMapping('city', 'MailingCity');
+            createMapping('state', 'MailingState');
+            createMapping('postalCode', 'MailingPostalCode');
+            createMapping('country', 'MailingCountry');
+        }
+        else {
+            insert new frMapping__c(Type__c = 'Person Account', Name = 'email+email', 
+            fr_Name__c = 'email', sf_Name__c = 'PersonEmail', Conflict_Resolution__c = frModel.MAPPING_OVERWRITE_RECENT);
+        }
         Map<String, Object> request = getTestRequest();       
         frTestUtil.createTestPost(request);
         Test.startTest();

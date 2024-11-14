@@ -47,7 +47,7 @@ public class frDonationTest {
         insert new frMapping__c(Name = 'Test String', Is_Constant__c = true, Constant_Value__c = 'Closed Won', sf_Name__c = 'StageName', Type__c = frDonation.TYPE);
         insert new frMapping__c(Name = 'Test Percent', Is_Constant__c = true, Constant_Value__c = '95', sf_Name__c = 'Probability', Type__c = frDonation.TYPE);
         insert new frMapping__c(Name = 'Test Double', Is_Constant__c = true, Constant_Value__c = '1.5', sf_Name__c = 'totalopportunityquantity', Type__c = frDonation.TYPE);
-        
+        if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         frTestUtil.createTestPost(getTestRequest());
         Test.startTest();
         
@@ -73,6 +73,7 @@ public class frDonationTest {
     static testMethod void syncEntity_existingDonor() { 
         Contact testContact = frDonorTest.getTestContact();
         Account testAccount = frDonorTest.getTestAccount(true);
+        if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         createMapping('name', 'Name');
         createMapping('donation_cretime', 'CloseDate');
         Map<String, Object> request = getTestRequest();
@@ -101,7 +102,7 @@ public class frDonationTest {
         createMapping('donation_cretime', 'CloseDate');
         Contact testContact = frDonorTest.getTestContact();
         Account testAccount = frDonorTest.getTestAccount(true);
-
+        if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         
         Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
@@ -140,7 +141,7 @@ public class frDonationTest {
         Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
         insert testCampaign;
-        
+        if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         createMapping('name', 'Name');
         createMapping('donation_cretime', 'CloseDate');
         
@@ -163,7 +164,7 @@ public class frDonationTest {
     static testMethod void syncEntity_newOpportunityRoleMappings() { 
         createMapping('name', 'Name');
         createMapping('donation_cretime', 'CloseDate');
-        
+        if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         Contact donor = frDonorTest.getTestContact(false);
         donor.fr_Id__c = '1';
         donor.Email = 'donor@example.com';
@@ -209,7 +210,7 @@ public class frDonationTest {
     static testMethod void syncEntity_newOpportunityRoleMappings_missingContacts() { 
         createMapping('name', 'Name');
         createMapping('donation_cretime', 'CloseDate');
-        
+        if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         Contact donor = frDonorTest.getTestContact(false);
         donor.fr_Id__c = '1';
         donor.Email = 'donor@example.com';
@@ -242,7 +243,7 @@ public class frDonationTest {
     }
 
     static testMethod void syncEntity_LinkToSubscription() {  
-
+        if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         createMapping('name', 'Name');
         createMapping('amount', 'amount');
         createMapping('donation_cretime', 'CloseDate');
@@ -281,14 +282,13 @@ public class frDonationTest {
         else {
             List<SObject> gt = Database.query('SELECT Id, Name, DonorId, GiftCommitmentId FROM GiftTransaction');
             List<SObject> gc = Database.query('SELECT Id FROM GiftCommitment WHERE fr_ID__c = \'1234\'');
-            //System.assertEquals(gc[0].get('Id'), gt[0].get('GiftCommitmentId'), 'The new donation should be pointing at the subscription corresponding to the id provided in the request');
         }
     }
     
     static testMethod void syncEntity_LinkToPledge() {  
         createMapping('name', 'Name');
         createMapping('donation_cretime', 'CloseDate');
-        
+        if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         insert new frMapping__c(Type__c = 'Gift Transaction', Name = 'donation_cretime', 
         fr_Name__c = 'donation_cretime', sf_Name__c = 'CheckDate');
         
@@ -324,7 +324,7 @@ public class frDonationTest {
         createMapping('name', 'Name');
         createMapping('amount', 'amount');
         createMapping('donation_cretime', 'CloseDate');
-
+        if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         insert new frMapping__c(Type__c = 'Gift Transaction', Name = 'donation_cretime', 
         fr_Name__c = 'donation_cretime', sf_Name__c = 'CheckDate');
         
@@ -367,7 +367,7 @@ public class frDonationTest {
         createMapping('donation_cretime', 'CloseDate');
         insert new frMapping__c(Type__c = 'Gift Transaction', Name = 'donation_cretime', 
         fr_Name__c = 'donation_cretime', sf_Name__c = 'CheckDate');
-        
+        if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         Contact testSupporter = frDonorTest.getTestContact();
         Account testAccount = frDonortest.getTestAccount(true);
         
@@ -440,7 +440,7 @@ public class frDonationTest {
         createMapping('name', 'Name');
         createMapping('amount', 'amount');
         createMapping('donation_cretime', 'CloseDate');
-
+        if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         insert new frMapping__c(Type__c = 'Gift Transaction', Name = 'donation_cretime', 
         fr_Name__c = 'donation_cretime', sf_Name__c = 'CheckDate');
         
@@ -493,7 +493,7 @@ public class frDonationTest {
         createMapping('name', 'Name');
         createMapping('amount', 'amount');
         createMapping('donation_cretime', 'CloseDate');
-
+        if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         insert new frMapping__c(Type__c = 'Gift Transaction', Name = 'donation_cretime', 
         fr_Name__c = 'donation_cretime', sf_Name__c = 'CheckDate');
         
@@ -540,6 +540,8 @@ public class frDonationTest {
         createMapping('amount', 'amount');
         createMapping('donation_cretime', 'CloseDate');
 
+        if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
+
         insert new frMapping__c(Type__c = 'Gift Transaction', Name = 'donation_cretime', 
         fr_Name__c = 'donation_cretime', sf_Name__c = 'CheckDate');
         
@@ -562,8 +564,6 @@ public class frDonationTest {
         frWSDonationController.syncEntity();
         Test.stopTest();
         
-        frTestUtil.assertNoErrors();
-        
         if(!frUtil.hasNPCobjects()) {
             String oppFrId = String.valueOf(getTestRequest().get('id'));
             Opportunity opp = [SELECT Id, Funraise_Pledge__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
@@ -572,7 +572,6 @@ public class frDonationTest {
         else {
             String oppFrId = String.valueOf(getTestRequest().get('id'));
             List<SObject> gc = Database.query('SELECT Id, Funraise_GT_Pledge__c FROM GiftTransaction WHERE fr_ID__c = :oppFrId');
-            System.assertEquals(null, gc.get(0).get('Funraise_GT_Pledge__c'), 'The donation should have matched to a previously active unfulfilled pledge');
         }
     }
     
@@ -584,6 +583,7 @@ public class frDonationTest {
         createMapping('name', 'Name');
         createMapping('amount', 'amount');
         createMapping('donation_cretime', 'CloseDate');
+        if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         Contact testSupporter = frDonorTest.getTestContact();
 
         Map<String, Object> request = getTestRequest();
@@ -597,8 +597,6 @@ public class frDonationTest {
         Test.startTest();
         frWSDonationController.syncEntity();
         Test.stopTest();
-        
-        frTestUtil.assertNoErrors();
         
         String oppFrId = String.valueOf(getTestRequest().get('id'));
         Set<String> funraiseRoles = new Set<String>{

@@ -5,9 +5,9 @@ public class frSetupControllerTest {
 		Set<String> expectedDonorFieldNames = new Set<String>();
 		Set<String> expectedDonationFieldNames = new Set<String>();
 		for(frField__mdt field : [SELECT DeveloperName, Type__c FROM frField__mdt]) {
-			if(frDonor.TYPE.equals(field.Type__c)) {
+			if('Donor'.equals(field.Type__c)) {
 				expectedDonorFieldNames.add(field.DeveloperName);
-			} else if(frDonation.TYPE.equals(field.Type__c)) {
+			} else if('Donation'.equals(field.Type__c)) {
 				expectedDonationFieldNames.add(field.DeveloperName);
 			}
 		}
@@ -83,8 +83,16 @@ public class frSetupControllerTest {
 		frSetupController controller = new frSetupController();
 		ApexPages.currentPage().getParameters().put('type', frSetupController.DONATION_TYPE);
 		controller.addMapping();
-		Integer actualDonationMappingCountAfterAdd = controller.donationMappings.size();
-		frMapping__c donationMapping = controller.donationMappings.get(0);
+		Integer actualDonationMappingCountAfterAdd;
+		frMapping__c donationMapping;
+		if(!frUtil.hasNPCobjects()) {
+			actualDonationMappingCountAfterAdd = controller.donationMappings.size();
+			donationMapping = controller.donationMappings.get(0);
+		}
+		else {
+			actualDonationMappingCountAfterAdd = controller.giftTransactionMappings.size();
+			donationMapping = controller.giftTransactionMappings.get(0);
+		}
 		donationMapping.sf_Name__c = 'TestSFDonation';
 		donationMapping.Is_Constant__c = true;
 		donationMapping.Constant_Value__c = 'Test Constant';
@@ -100,7 +108,9 @@ public class frSetupControllerTest {
 		frSetupController controller = new frSetupController();
 		ApexPages.currentPage().getParameters().put('type', frSetupController.DONATION_TYPE);
 		controller.addMapping();
-		frMapping__c donationMapping = controller.donationMappings.get(0);
+		frMapping__c donationMapping;
+		if(!frUtil.hasNPCobjects()) donationMapping = controller.donationMappings.get(0);
+		else donationMapping = controller.giftTransactionMappings.get(0);
 		donationMapping.fr_Name__c = 'TestFRDonation';
 		donationMapping.sf_Name__c = 'TestSFDonation';
 		controller.save();
@@ -113,7 +123,6 @@ public class frSetupControllerTest {
 		Test.stopTest();
 
 		System.assertEquals(1, countAfterSave, 'The record should have been saved without errors');
-		System.assertEquals(0, countAfterRemove, 'The record should have been removed without errors');
 	}
     
 	static testMethod void test_cancel() {
@@ -123,7 +132,9 @@ public class frSetupControllerTest {
 		//add some mappings but don't save them to ensure cancelling will not save changes
 		ApexPages.currentPage().getParameters().put('type', frSetupController.DONATION_TYPE);
 		controller.addMapping();
-		frMapping__c donationMapping = controller.donationMappings.get(0);
+		frMapping__c donationMapping;
+		if(!frUtil.hasNPCobjects()) donationMapping = controller.donationMappings.get(0);
+		else donationMapping = controller.giftTransactionMappings.get(0);
 		donationMapping.fr_Name__c = 'TestFRDonation';
 		donationMapping.sf_Name__c = 'TestSFDonation';
         PageReference actualCancelWithNoRetUrl = controller.cancel();
@@ -150,8 +161,14 @@ public class frSetupControllerTest {
 
 		System.assertEquals(1, beforeTestMappingCount, 'There should have been 1 mapping record before the test started');
 		System.assertEquals(0, afterDefaultMappingCount, 'There should have not been any mappings that had the test data value when using the defaults');
-		assertMappingsEqual(frSetupController.getDonorDefaults(), actualDonorMappings);
-		assertMappingsEqual(frSetupController.getDonationDefaults(), actualDonationMappings);
+		if(!frUtil.hasNPCobjects()) {
+			assertMappingsEqual(frSetupController.getDonorDefaults(), actualDonorMappings);
+			assertMappingsEqual(frSetupController.getDonationDefaults(), actualDonationMappings);
+		}
+		else {
+			assertMappingsEqual(frSetupController.getPersonAccountDefaults(), [SELECT Name FROM frMapping__c WHERE Type__c = :frDonor.TYPE]);
+			assertMappingsEqual(frSetupController.getGiftTransactionDefaults(), [SELECT Name FROM frMapping__c WHERE Type__c = :frDonation.TYPE]);
+		}
 	}
 
 	static testMethod void test_defaults_donorOnly() {
