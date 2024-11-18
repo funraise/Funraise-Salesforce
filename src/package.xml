@@ -65,6 +65,7 @@
         <members>Activity.fr_Task_ID__c</members>
         <members>Campaign.fr_ID__c</members>
         <members>Contact.fr_ID__c</members>
+        <members>Account.fr_ID__c</members>
         <members>EmailMessage.fr_Email_ID__c</members>
         <members>Opportunity.Funraise_Pledge__c</members>
         <members>Opportunity.Subscription__c</members>
