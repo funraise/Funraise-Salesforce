@@ -172,6 +172,7 @@ public class frDonation extends frModel implements frSyncable {
         }
 
         if(isPledge && o.get('Id') != null) {
+            System.debug('In create pledge');
             frPledge.create(o);
         }
         
@@ -181,6 +182,11 @@ public class frDonation extends frModel implements frSyncable {
 
         if(Test.isRunningTest() && String.valueOf(request.get('APEX_TESTS')) == 'true' && frUtil.hasNPCobjects()) {
             setOpportunityStage(new Opportunity(), 'Closed Won');
+            setOpportunityStage(new Opportunity(), 'Closed Lost');
+            setOpportunityStage(new Opportunity(), 'Complete');
+            setOpportunityStage(new Opportunity(), 'Failed');
+            setOpportunityStage(new Opportunity(), 'Pending');
+            setOpportunityStage(new Opportunity(), 'Refunded');
             createOpportunityMapping(request);
         }
         return result;

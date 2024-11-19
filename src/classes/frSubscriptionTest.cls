@@ -42,7 +42,8 @@ public class frSubscriptionTest {
     static testMethod void createSubscription_noCampaign() {
         Contact testSupporter = frDonorTest.getTestContact();
         Account testAccount = frDonorTest.getTestAccount(true);
-                
+        testAccount.put('fr_ID__c', '123456');
+        update testAccount;
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
         request.put('supporterId', testSupporter.fr_ID__c);
@@ -104,7 +105,8 @@ public class frSubscriptionTest {
     static testMethod void createSubscription_withCampaignGoal() {	
         Contact testSupporter = frDonorTest.getTestContact();
         Account testAccount = frDonorTest.getTestAccount(true);
-        
+        testAccount.put('fr_ID__c', '123456');
+        update testAccount;
         Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
         insert testCampaign;
@@ -133,7 +135,8 @@ public class frSubscriptionTest {
     static testMethod void createSubscription_missingSupporter() {	
         Contact testSupporter = frDonorTest.getTestContact();
         Account testAccount = frDonorTest.getTestAccount(true);
-        
+        testAccount.put('fr_ID__c', '123456');
+        update testAccount;
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
         request.put('supporterId', testSupporter.fr_ID__c+'1');
@@ -154,7 +157,8 @@ public class frSubscriptionTest {
     static testMethod void createSubscription_missingCampaignGoal() {	
         Contact testSupporter = frDonorTest.getTestContact();
         Account testAccount = frDonorTest.getTestAccount(true);
-        
+        testAccount.put('fr_ID__c', '123456');
+        update testAccount;
         Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
         insert testCampaign;
@@ -184,7 +188,8 @@ public class frSubscriptionTest {
     static testMethod void deleteSubscription() {	      
         Contact testSupporter = frDonorTest.getTestContact();
         Account testAccount = frDonorTest.getTestAccount(true);
-        
+        testAccount.put('fr_ID__c', '123456');
+        update testAccount;
         insert new Subscription__c(Name = 'Test Sub', fr_ID__c = '25', Supporter__c = testSupporter.Id);
 
         if(frUtil.hasNPCobjects()) {
@@ -220,7 +225,8 @@ public class frSubscriptionTest {
     static testMethod void createSubscription_createPledge() {
         Contact testSupporter = frDonorTest.getTestContact();
         Account testAccount = frDonorTest.getTestAccount(true);
-                
+        testAccount.put('fr_ID__c', '123456');
+        update testAccount;        
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
         request.put('supporterId', testSupporter.fr_ID__c);
@@ -241,6 +247,31 @@ public class frSubscriptionTest {
             Pledge__c pledge = [SELECT Id, Pledge_Amount__c, Supporter__c FROM Pledge__c WHERE Pledge_Subscription__c = :subscription.Id];
             System.assertEquals(testSupporter.Id, pledge.Supporter__c, 'The pledge should have been created with the same supporter as the subscription');
             System.assertEquals(500, pledge.Pledge_Amount__c, 'The pledge amount should have been what was received in the request');
+        }
+        else {
+            List<SObject> gcList = Database.query('SELECT Id, Name FROM GiftCommitment WHERE fr_ID__c = :funraiseId');
+        }
+    }
+
+    static testMethod void createSubscription_createPledge2() {
+        Account testAccount = frDonorTest.getTestAccount(true);
+        testAccount.put('fr_ID__c', '123456');
+        update testAccount;        
+        String funraiseId = '25';
+        Map<String, Object> request = getTestRequest();
+        request.put('supporterId', '123456');
+        request.put('id', funraiseId);
+        request.put('pledgeAmount', 500);
+        if(frUtil.hasNPCobjects()) request.put('supporterId', testAccount.fr_ID__c);
+        frTestUtil.createTestPost(request);
+        
+
+        Test.startTest();
+        frWSSubscriptionController.syncEntity();
+        Test.stopTest();
+        
+        if(!frUtil.hasNPCobjects()) {
+            Subscription__c subscription = [SELECT Id, Supporter__c FROM Subscription__c WHERE fr_ID__c = :funraiseId];
         }
         else {
             List<SObject> gcList = Database.query('SELECT Id, Name FROM GiftCommitment WHERE fr_ID__c = :funraiseId');

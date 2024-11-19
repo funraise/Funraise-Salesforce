@@ -339,9 +339,10 @@ public class frDonorTest {
             System.assertEquals(syncedContact.Email, existing.Email, 'The email should not have changed since the NO_OVERWRITE conflict resolution was used');
         }
         else {
-            Account newContact = [SELECT Id, fr_ID__c, PersonEmail FROM Account WHERE fr_Id__c = :existingacc.fr_Id__c];
+            String existingAccFrId = existingacc.fr_Id__c;
+            Account newContact = Database.query('SELECT Id, fr_ID__c, PersonEmail FROM Account WHERE fr_Id__c = :existingAccFrId');
             System.assertEquals(existingacc.Id, newContact.Id, 'The existing contact should have been used');
-            System.assertEquals(newContact.PersonEmail, existingacc.PersonEmail, 'The email should not have changed since the NO_OVERWRITE conflict resolution was used');
+            System.assertEquals(newContact.get('PersonEmail'), existingacc.get('PersonEmail'), 'The email should not have changed since the NO_OVERWRITE conflict resolution was used');
         }
     }
     
@@ -384,10 +385,11 @@ public class frDonorTest {
             System.assertEquals(syncedContact.MailingCountry, existing.MailingCountry, 'The country should NOT have changed since the OVERWRITE_NON_NULL conflict resolution was used and the incoming value was null');
         }
         else {
-            Account newContact = [SELECT Id, fr_ID__c, PersonEmail, PersonMailingCountry FROM Account WHERE fr_Id__c = :existingacc.fr_Id__c];
+            String existingAccFrId = existingacc.fr_Id__c;
+            Account newContact = Database.query('SELECT Id, fr_ID__c, PersonEmail, PersonMailingCountry FROM Account WHERE fr_Id__c = :existingAccFrId');
             System.assertEquals(existingacc.Id, newContact.Id, 'The existing contact should have been used');
-            System.assertEquals(newContact.PersonEmail, existingacc.PersonEmail, 'The email should not have changed since the NO_OVERWRITE conflict resolution was used');
-            System.assertEquals(newContact.PersonMailingCountry, existingacc.PersonMailingCountry, 'The country should NOT have changed since the OVERWRITE_NON_NULL conflict resolution was used and the incoming value was null');
+            System.assertEquals(newContact.get('PersonEmail'), existingacc.get('PersonEmail'), 'The email should not have changed since the NO_OVERWRITE conflict resolution was used');
+            System.assertEquals(newContact.get('PersonMailingCountry'), existingacc.get('PersonMailingCountry'), 'The country should NOT have changed since the OVERWRITE_NON_NULL conflict resolution was used and the incoming value was null');
         }
     }
     
@@ -425,7 +427,8 @@ public class frDonorTest {
             System.assertEquals(syncedContact.Email, newEmail, 'The email should have changed since the OVERWRITE_RECENT conflict resolution was used and the updtime was more recent than Salesforce');
         }
         else {
-            Account newContact = [SELECT Id, fr_ID__c, PersonEmail FROM Account WHERE fr_Id__c = :existingacc.fr_Id__c];
+            String existingAccFrId = existingacc.fr_Id__c;
+            Account newContact = Database.query('SELECT Id, fr_ID__c, PersonEmail FROM Account WHERE fr_Id__c = :existingAccFrId');
             System.assertEquals(existingacc.Id, newContact.Id, 'The existing contact should have been used');
         }
     }
@@ -464,7 +467,8 @@ public class frDonorTest {
             System.assertEquals(syncedContact.Email, newEmail, 'The email should have changed since the OVERWRITE_RECENT conflict resolution was used and the updtime was more recent than Salesforce');
         }
         else {
-            Account newContact = [SELECT Id, fr_ID__c, PersonEmail FROM Account WHERE fr_Id__c = :existingacc.fr_Id__c];
+            String existingAccFrId = existingacc.fr_Id__c;
+            Account newContact = Database.query('SELECT Id, fr_ID__c FROM Account WHERE fr_Id__c = :existingAccFrId');
             System.assertEquals(existingacc.Id, newContact.Id, 'The existing contact should have been used');
         }
     }
@@ -499,8 +503,8 @@ public class frDonorTest {
             System.assertEquals(syncedContact.LastName, String.valueOf(getTestRequest().get('lastName')), 'The lastName from the request should be present on the newly created contact');
         }
         else {
-            Account newContact = [SELECT Id, fr_ID__c, PersonEmail FROM Account WHERE fr_Id__c = :frId];
-            System.assertEquals(newContact.PersonEmail, String.valueOf(getTestRequest().get('email')), 'The email from the request should be present on the newly created contact');
+            Account newContact = Database.query('SELECT Id, fr_ID__c, PersonEmail FROM Account WHERE fr_Id__c = :frId');
+            System.assertEquals(newContact.get('PersonEmail'), String.valueOf(getTestRequest().get('email')), 'The email from the request should be present on the newly created contact');
         }
     }
     
@@ -526,11 +530,21 @@ public class frDonorTest {
     }
 
     public static Account getTestAccount(Boolean save) {
-        Account account = new Account(
-            FirstName = 'Bruce', LastName = 'Wayne', PersonEmail = 'bruce@wayne.example.com',
-            PersonMailingStreet = '1007 Mountain Drive', PersonMailingCity = 'Gotham', PersonMailingState = 'NJ', 
-            PersonMailingPostalCode = '12345', PersonMailingCountry = 'United States', fr_ID__c = '856'
-        );
+        Account account = new Account();
+        if(frUtil.hasNPCobjects()) {
+            account.put('FirstName', 'Bruce');
+            account.put('LastName', 'Wayne');
+            account.put('PersonEmail', 'bruce@wayne.example.com');
+            account.put('PersonMailingStreet', '1007 Mountain Drive');
+            account.put('PersonMailingCity', 'Gotham');
+            account.put('PersonMailingState', 'NJ');
+            account.put('PersonMailingPostalCode', '12345');
+            account.put('PersonMailingCountry', 'United States');
+        }
+        else {
+            account.put('Name', 'Wayne Enterprises');
+        }
+        account.put('fr_ID__c', '856');
         if(save) {
             insert account;
         }

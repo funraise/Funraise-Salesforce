@@ -19,7 +19,7 @@ public with sharing class frSetupController {
 	}
 	public static String GIFT_COMMITMENT_TYPE {
 		get {
-			return 'Gift Commitment';
+			return 'Commitment';
 		}
 		private set;
 	}
@@ -138,7 +138,7 @@ public with sharing class frSetupController {
 		//Check for GiftTransaction to see if its a NPC Org
 		if (frUtil.hasNPCobjects()) {
 			isNonProfitOrg = true;
-			Map<String, Schema.SObjectField> giftTransactionFields = GiftTransaction.sObjectType.getDescribe().fields.getMap();
+			Map<String, Schema.SObjectField> giftTransactionFields = Schema.getGlobalDescribe().get('gifttransaction').getDescribe().fields.getMap();
 			for(String fieldName : giftTransactionFields.keySet()) {
 				Schema.DescribeFieldResult describe = giftTransactionFields.get(fieldName).getDescribe();
 				if(describe.isUpdateable()) {
@@ -148,7 +148,7 @@ public with sharing class frSetupController {
 			giftTransactionSFOptions.sort();
 
 			// gift commitments
-			Map<String, Schema.SObjectField> GiftCommitmentFields = GiftCommitment.sObjectType.getDescribe().fields.getMap();
+			Map<String, Schema.SObjectField> GiftCommitmentFields = Schema.getGlobalDescribe().get('giftcommitment').getDescribe().fields.getMap();
 			for(String fieldName : GiftCommitmentFields.keySet()) {
 				Schema.DescribeFieldResult describe = GiftCommitmentFields.get(fieldName).getDescribe();
 				if(describe.isUpdateable()) {

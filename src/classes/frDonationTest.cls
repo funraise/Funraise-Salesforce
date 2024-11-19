@@ -266,6 +266,7 @@ public class frDonationTest {
         Map<String, Object> request = getTestRequest();
         request.put('subscriptionId', subscription.fr_ID__c);
         request.put('APEX_TESTS', 'true');
+        request.put('opportunityContactMappingDisabled', 'false');
         if(frUtil.hasNPCobjects()) request.put('donorId', '856');
         
         frTestUtil.createTestPost(request);
@@ -296,7 +297,8 @@ public class frDonationTest {
         Account testAccount = frDonortest.getTestAccount(true);
         
         Pledge__c pledge = getTestPledge(testSupporter);
-        if(frUtil.hasNPCobjects()) pledge = getTestPledgeAcc([SELECT Id, PersonContactId FROM Account WHERE Id = :testAccount.Id]);
+        String testAccountId = testAccount.id;
+        if(frUtil.hasNPCobjects()) pledge = getTestPledgeAcc(Database.query('SELECT Id, PersonContactId FROM Account WHERE Id = :testAccountId'));
         insert pledge;
         
         Map<String, Object> request = getTestRequest();
@@ -376,7 +378,8 @@ public class frDonationTest {
         insert existingOpp;
         
         Pledge__c pledge = getTestPledge(testSupporter);
-        if(frUtil.hasNPCobjects()) pledge = getTestPledgeAcc([SELECT Id, PersonContactId FROM Account WHERE Id = :testAccount.Id]);
+        String testAccountId = testAccount.id;
+        if(frUtil.hasNPCobjects()) pledge = getTestPledgeAcc(Database.query('SELECT Id, PersonContactId FROM Account WHERE Id = :testAccountId'));
         pledge.Pledge_Donation__c = existingOpp.Id;
         insert pledge;
 
@@ -447,7 +450,8 @@ public class frDonationTest {
         Contact testSupporter = frDonorTest.getTestContact();
         Account testAccount = frDonortest.getTestAccount(true);
         Pledge__c pledge = getTestPledge(testSupporter);
-        if(frUtil.hasNPCobjects()) pledge = getTestPledgeAcc([SELECT Id, PersonContactId FROM Account WHERE Id = :testAccount.Id]);
+        String testAccountId = testAccount.id;
+        if(frUtil.hasNPCobjects()) pledge = getTestPledgeAcc(Database.query('SELECT Id, PersonContactId FROM Account WHERE Id = :testAccountId'));
         pledge.End_Date__c = Date.today().addDays(-1); //so it's no longer active
         insert pledge;
         Opportunity existingOpp = getTestOpp();
@@ -502,7 +506,8 @@ public class frDonationTest {
         //but is unfulfilled in amount
         Account testAccount = frDonortest.getTestAccount(true);
         Pledge__c pledge = getTestPledge(testSupporter);
-        if(frUtil.hasNPCobjects()) pledge = getTestPledgeAcc([SELECT Id, PersonContactId FROM Account WHERE Id = :testAccount.Id]);
+        String testAccountId = testAccount.id;
+        if(frUtil.hasNPCobjects()) pledge = getTestPledgeAcc(Database.query('SELECT Id, PersonContactId FROM Account WHERE Id = :testAccountId'));
         pledge.Start_Date__c = Date.today().addDays(-5);
         pledge.End_Date__c = Date.today().addDays(-1); 
         insert pledge;
@@ -550,7 +555,8 @@ public class frDonationTest {
         //get a pledge that is inactive according to dates
         //but is unfulfilled in amount
         Pledge__c pledge = getTestPledge(testSupporter);
-        if(frUtil.hasNPCobjects()) pledge = getTestPledgeAcc([SELECT Id, PersonContactId FROM Account WHERE Id = :testAccount.Id]);
+        String testAccountId = testAccount.id;
+        if(frUtil.hasNPCobjects()) pledge = getTestPledgeAcc(Database.query('SELECT Id, PersonContactId FROM Account WHERE Id = :testAccountId'));
         pledge.Start_Date__c = Date.today().addDays(-5);
         pledge.End_Date__c = Date.today().addDays(-1); 
         insert pledge;
@@ -683,7 +689,7 @@ public class frDonationTest {
 
     public static Pledge__c getTestPledgeAcc(Account supporter) {
         Pledge__c pledge = new Pledge__c(
-            Supporter__c = supporter.PersonContactId,
+            Supporter__c = (String) supporter.get('PersonContactId'),
             Supporter_PA__c = supporter.Id,
             Pledge_Amount__c = 500
         );
