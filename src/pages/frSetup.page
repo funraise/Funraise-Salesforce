@@ -281,7 +281,7 @@
                         </apex:facet>
                         <apex:inputField value="{!mapping.Constant_Value__c}" rendered="{!mapping.Is_Constant__c}" />
                         <apex:selectList value="{!mapping.fr_Name__c}" size="1" rendered="{!!mapping.Is_Constant__c}">
-                            <apex:selectOptions value="{!donationFROptions}" />
+                            <apex:selectOptions value="{!giftCommitmentFROptions}" />
                         </apex:selectList> 
                     </apex:column>
                     <apex:column >
