@@ -43,9 +43,8 @@ public class frDonor extends frModel implements frSyncable{
     
     public static List<frMapping__c> mappings {
         get {
-            String objType = TYPE;
             if(mappings == null) {
-                mappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = :objType ORDER BY CreatedDate];
+                mappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = :TYPE ORDER BY CreatedDate];
             }
             return mappings;
         }
