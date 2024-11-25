@@ -171,7 +171,6 @@ public class frDonation extends frModel implements frSyncable {
         }
 
         if(isPledge && o.get('Id') != null) {
-            System.debug('In create pledge');
             frPledge.create(o);
         }
         
@@ -180,8 +179,6 @@ public class frDonation extends frModel implements frSyncable {
         }
 
         if(Test.isRunningTest() && String.valueOf(request.get('APEX_TESTS')) == 'true' && frUtil.hasNPCobjects()) {
-            setOpportunityStage(new Opportunity(), 'Closed Won');
-            setOpportunityStage(new Opportunity(), 'Closed Lost');
             setOpportunityStage(new Opportunity(), 'Complete');
             setOpportunityStage(new Opportunity(), 'Failed');
             setOpportunityStage(new Opportunity(), 'Pending');
@@ -249,7 +246,7 @@ public class frDonation extends frModel implements frSyncable {
     }
    
     
-    public void createOpportunityMapping(Map<String, Object> request) {
+    private void createOpportunityMapping(Map<String, Object> request) {
         Boolean contactRoleMappingDisabled = isContactRoleMappingDisabled();
         if(contactRoleMappingDisabled) {
             return;

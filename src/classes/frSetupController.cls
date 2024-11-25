@@ -277,36 +277,6 @@ public with sharing class frSetupController {
 				if(!upsertList.contains(mapping)) upsertList.add(mapping);
 			}
 		}
-		List<Boolean> found = new List<Boolean>();
-		if(Test.isRunningTest() || frUtil.hasNPCobjects()) {
-			for(frMapping__c mapping : accMappings) {
-				if (mapping.sf_Name__c == 'fr_ID__c') {
-					found.add(true);
-					break;
-				}
-			}
-			for(frMapping__c mapping : giftTransactionMappings) {
-				if (mapping.sf_Name__c == 'fr_ID__c') {
-					found.add(true);
-					break;
-				}
-			}
-			for(frMapping__c mapping : giftCommitmentMappings) {
-				if (mapping.sf_Name__c == 'fr_ID__c') {
-					found.add(true);
-					break;
-				}
-			}
-		}	
-		if(found.size() == 3 || isNonProfitOrg != true || Test.isRunningTest()) {
-			Schema.DescribeSObjectResult describe = frMapping__c.sObjectType.getDescribe();
-			if(upsertList.size() > 0 && describe.isCreateable() && describe.isUpdateable()) {
-				upsert upsertList;
-				addConfirm('Mappings saved successfully');
-			}
-		} else {
-			addError('fr_ID__c Field must be mapped and present on all NPC Objects.');
-		}
 	}
 
 	public PageReference cancel() {

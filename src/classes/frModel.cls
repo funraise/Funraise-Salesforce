@@ -84,8 +84,6 @@ public with sharing abstract class frModel {
         Set<String> fieldsToQueryFor = new Set<String>();
         Boolean needLastModifiedDate = false;
         List<frMapping__c> objMappings = getMappings();
-        if(sObjectName == 'Account') objMappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = 'Person Account' ORDER BY CreatedDate];
-        if(sObjectName == 'GiftTransaction') objMappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = 'Gift Transaction' ORDER BY CreatedDate];
         if(sObjectName == 'GiftCommitment') objMappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = 'Gift Commitment' ORDER BY CreatedDate];
         for(frMapping__c mapping : objMappings) {
             if(mapping.Is_Constant__c) {
@@ -122,8 +120,6 @@ public with sharing abstract class frModel {
                 + ' FROM ' + sObjectName + ' WHERE ';
             if(getSalesforceId() != null) {
                 query += 'Id = :salesforceId';
-            } else if(Test.isRunningTest()){
-                query += 'fr_Id__c = :funraiseId';
             } else {
                 query += 'funraise__fr_Id__c = :funraiseId';
             }
@@ -217,7 +213,14 @@ public with sharing abstract class frModel {
             }
             record.put(field, value);
         } catch (Exception ex) {
-            System.debug(ex);
+            try {
+                insert new Error__c(Error__c = 'Field mapping exception. Object type: '+ record.getSObjectType().getDescribe().getName()
+                                +' Record Id: '+record.Id+' - Funraise Id: '+ funraiseId + ' - Field: '+field.getDescribe().getName()+' - Value: '+value
+                                +' Exception: '+ex
+                               );
+            } catch (Exception ignore) {
+                System.debug('Exception: ' + ex);
+            }
         }
     }
     

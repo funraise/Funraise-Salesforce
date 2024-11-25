@@ -60,8 +60,14 @@ public class frSubscription extends frModel implements frSyncable {
     private Boolean deleteSubscription(String funraiseId) {
         Boolean result = false;
         try {
-            delete [SELECT id FROM Subscription__c WHERE fr_ID__c = :funraiseId];
-            result = true;
+            if(!frUtil.hasNPCobjects()) {
+                delete [SELECT id FROM Subscription__c WHERE fr_ID__c = :funraiseId];
+                result = true;
+            }
+            else {
+                delete Database.query('SELECT Id FROM GiftCommitment WHERE fr_ID__c = :funraiseId');
+                result = true;
+            }
         } catch (DMLException e) {
             if(createLogRecord) frUtil.logException(getFrType(), funraiseId, e);
         }
@@ -112,8 +118,8 @@ public class frSubscription extends frModel implements frSyncable {
                 }
             }
 
-            String strPledgeAmount2 = String.valueOf(request.get('pledgeAmount'));
-            Decimal pledgeAmount2 = String.isNotBlank(strPledgeAmount2) ? Decimal.valueOf(strPledgeAmount2) : null;
+            String strPledgeAmount = String.valueOf(request.get('pledgeAmount'));
+            Decimal pledgeAmount1 = String.isNotBlank(strPledgeAmount) ? Decimal.valueOf(strPledgeAmount) : null;
             applyMappings(gc, request);
             try {
                 Database.upsert(gc, true);
@@ -123,8 +129,8 @@ public class frSubscription extends frModel implements frSyncable {
                 return result;
             }
             
-            if(pledgeAmount2 != null) {
-                frPledge.create(gc, pledgeAmount2);
+            if(pledgeAmount1 != null) {
+                frPledge.create(gc, pledgeAmount1);
             }
             if(!Test.isRunningTest()) {
                 return result;
