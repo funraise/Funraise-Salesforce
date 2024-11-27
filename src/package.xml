@@ -47,6 +47,7 @@
         <members>frWSSubscriptionController</members>
         <members>frWSTaskController</members>
         <members>frWSTaskControllerTest</members>
+        <members>frTestUtil</members>
         <name>ApexClass</name>
     </types>
     <types>
@@ -87,6 +88,7 @@
         <members>Subscription__c</members>
         <members>frField__mdt</members>
         <members>frMapping__c</members>
+        <members>Sync_Attempt__c</members>
         <name>CustomObject</name>
     </types>
     <types>
