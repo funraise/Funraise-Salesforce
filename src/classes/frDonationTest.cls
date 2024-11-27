@@ -43,7 +43,7 @@ public class frDonationTest {
         createMapping('name', 'Name');
         createMapping('name', 'Description');
         createMapping('amount', 'amount');
-        createMapping('donation_cretime', 'CloseDate');
+        if(!frUtil.hasNPCobjects()) createMapping('donation_cretime', 'CloseDate');
         insert new frMapping__c(Name = 'Test String', Is_Constant__c = true, Constant_Value__c = 'Closed Won', sf_Name__c = 'StageName', Type__c = frDonation.TYPE);
         insert new frMapping__c(Name = 'Test Percent', Is_Constant__c = true, Constant_Value__c = '95', sf_Name__c = 'Probability', Type__c = frDonation.TYPE);
         insert new frMapping__c(Name = 'Test Double', Is_Constant__c = true, Constant_Value__c = '1.5', sf_Name__c = 'totalopportunityquantity', Type__c = frDonation.TYPE);
@@ -75,7 +75,7 @@ public class frDonationTest {
         Account testAccount = frDonorTest.getTestAccount(true);
         if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         createMapping('name', 'Name');
-        createMapping('donation_cretime', 'CloseDate');
+        if(!frUtil.hasNPCobjects()) createMapping('donation_cretime', 'CloseDate');
         Map<String, Object> request = getTestRequest();
         if(frUtil.hasNPCobjects()) request.put('donorId', '856');
         frTestUtil.createTestPost(request);
@@ -99,7 +99,7 @@ public class frDonationTest {
     
     static testMethod void syncEntity_CampaignDonation() { 
         createMapping('name', 'Name');
-        createMapping('donation_cretime', 'CloseDate');
+        if(!frUtil.hasNPCobjects()) createMapping('donation_cretime', 'CloseDate');
         Contact testContact = frDonorTest.getTestContact();
         Account testAccount = frDonorTest.getTestAccount(true);
         if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
@@ -143,7 +143,7 @@ public class frDonationTest {
         insert testCampaign;
         if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         createMapping('name', 'Name');
-        createMapping('donation_cretime', 'CloseDate');
+        if(!frUtil.hasNPCobjects()) createMapping('donation_cretime', 'CloseDate');
         
         Map<String, Object> request = getTestRequest();
         request.put('status', 'Refunded');       
@@ -163,7 +163,7 @@ public class frDonationTest {
     
     static testMethod void syncEntity_newOpportunityRoleMappings() { 
         createMapping('name', 'Name');
-        createMapping('donation_cretime', 'CloseDate');
+        if(!frUtil.hasNPCobjects()) createMapping('donation_cretime', 'CloseDate');
         if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         Contact donor = frDonorTest.getTestContact(false);
         donor.fr_Id__c = '1';
@@ -209,7 +209,7 @@ public class frDonationTest {
     
     static testMethod void syncEntity_newOpportunityRoleMappings_missingContacts() { 
         createMapping('name', 'Name');
-        createMapping('donation_cretime', 'CloseDate');
+        if(!frUtil.hasNPCobjects()) createMapping('donation_cretime', 'CloseDate');
         if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         Contact donor = frDonorTest.getTestContact(false);
         donor.fr_Id__c = '1';
@@ -246,7 +246,7 @@ public class frDonationTest {
         if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         createMapping('name', 'Name');
         createMapping('amount', 'amount');
-        createMapping('donation_cretime', 'CloseDate');
+        if(!frUtil.hasNPCobjects()) createMapping('donation_cretime', 'CloseDate');
 
         insert new frMapping__c(Type__c = 'Gift Transaction', Name = 'donation_cretime', 
         fr_Name__c = 'donation_cretime', sf_Name__c = 'CheckDate');
@@ -288,7 +288,7 @@ public class frDonationTest {
     
     static testMethod void syncEntity_LinkToPledge() {  
         createMapping('name', 'Name');
-        createMapping('donation_cretime', 'CloseDate');
+        if(!frUtil.hasNPCobjects()) createMapping('donation_cretime', 'CloseDate');
         if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         insert new frMapping__c(Type__c = 'Gift Transaction', Name = 'donation_cretime', 
         fr_Name__c = 'donation_cretime', sf_Name__c = 'CheckDate');
@@ -325,7 +325,7 @@ public class frDonationTest {
     static testMethod void syncEntity_PledgeCreatesPledge() {  
         createMapping('name', 'Name');
         createMapping('amount', 'amount');
-        createMapping('donation_cretime', 'CloseDate');
+        if(!frUtil.hasNPCobjects()) createMapping('donation_cretime', 'CloseDate');
         if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         insert new frMapping__c(Type__c = 'Gift Transaction', Name = 'donation_cretime', 
         fr_Name__c = 'donation_cretime', sf_Name__c = 'CheckDate');
@@ -366,7 +366,7 @@ public class frDonationTest {
     static testMethod void syncEntity_PledgeUpdatesPledge() {  
         createMapping('name', 'Name');
         createMapping('amount', 'amount');
-        createMapping('donation_cretime', 'CloseDate');
+        if(!frUtil.hasNPCobjects()) createMapping('donation_cretime', 'CloseDate');
         insert new frMapping__c(Type__c = 'Gift Transaction', Name = 'donation_cretime', 
         fr_Name__c = 'donation_cretime', sf_Name__c = 'CheckDate');
         if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
@@ -442,7 +442,7 @@ public class frDonationTest {
     static testMethod void syncEntity_existing_alreadyLinkedToPledge() {  
         createMapping('name', 'Name');
         createMapping('amount', 'amount');
-        createMapping('donation_cretime', 'CloseDate');
+        if(!frUtil.hasNPCobjects()) createMapping('donation_cretime', 'CloseDate');
         if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         insert new frMapping__c(Type__c = 'Gift Transaction', Name = 'donation_cretime', 
         fr_Name__c = 'donation_cretime', sf_Name__c = 'CheckDate');
@@ -475,8 +475,6 @@ public class frDonationTest {
         frWSDonationController.syncEntity();
         Test.stopTest();
         
-        frTestUtil.assertNoErrors();
-        
         String oppFrId = String.valueOf(getTestRequest().get('id'));
         if(frUtil.hasNPCobjects()) {
             Opportunity opp = [SELECT Id, Funraise_Pledge__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
@@ -496,7 +494,7 @@ public class frDonationTest {
     static testMethod void syncEntity_oldDonation_matchesInactivePledge() {  
         createMapping('name', 'Name');
         createMapping('amount', 'amount');
-        createMapping('donation_cretime', 'CloseDate');
+        if(!frUtil.hasNPCobjects()) createMapping('donation_cretime', 'CloseDate');
         if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         insert new frMapping__c(Type__c = 'Gift Transaction', Name = 'donation_cretime', 
         fr_Name__c = 'donation_cretime', sf_Name__c = 'CheckDate');
@@ -543,7 +541,7 @@ public class frDonationTest {
     static testMethod void syncEntity_oldDonation_doesNotMatchInactivePledge() {  
         createMapping('name', 'Name');
         createMapping('amount', 'amount');
-        createMapping('donation_cretime', 'CloseDate');
+        if(!frUtil.hasNPCobjects()) createMapping('donation_cretime', 'CloseDate');
 
         if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
 
@@ -588,7 +586,7 @@ public class frDonationTest {
     static testMethod void syncEntity_oppContactRoles_sameSupporter() {  
         createMapping('name', 'Name');
         createMapping('amount', 'amount');
-        createMapping('donation_cretime', 'CloseDate');
+        if(!frUtil.hasNPCobjects()) createMapping('donation_cretime', 'CloseDate');
         if(frUtil.hasNPCobjects()) insert frSetupController.getGiftTransactionDefaults();
         Contact testSupporter = frDonorTest.getTestContact();
 

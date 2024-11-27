@@ -39,7 +39,7 @@
 */
 
 public class frDonor extends frModel implements frSyncable{
-    public static final String TYPE = frUtil.hasNPCobjects() ? 'Person Account' : 'Donor';
+    public static final String TYPE = 'Donor';
     
     public static List<frMapping__c> mappings {
         get {
@@ -171,6 +171,14 @@ public class frDonor extends frModel implements frSyncable{
     
         // Apply mappings
         applyMappings(supporter, request);
+
+        //assign to private objects
+        if(isNPC) {
+            supporterAccount = (Account)supporter;
+        } 
+        else {
+           supporterContact = (Contact)supporter;
+        }
     
         if (String.isBlank((String)supporter.get('LastName'))) {
             supporter.put('LastName', String.valueOf(request.get('institutionName')));

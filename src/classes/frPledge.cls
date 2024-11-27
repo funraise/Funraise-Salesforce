@@ -126,9 +126,9 @@ public with sharing class frPledge {
             Supporter__c =(id) acc.get('PersonContactId'),
             Supporter_PA__c = (id) gt.get('DonorId'),
             Pledge_Amount__c = (Decimal) gt.get('OriginalAmount'),
-            Pledge_Gift_Transaction__c = relatedId,
             Pledge_Donation_uq__c = relatedId
         );
+        pledge.put('Pledge_Gift_Transaction__c', relatedId);
         try {
             Database.upsert(pledge);
             gt.put('Funraise_GT_Pledge__c', pledge.Id);

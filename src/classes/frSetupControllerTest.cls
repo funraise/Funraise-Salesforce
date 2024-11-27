@@ -5,9 +5,9 @@ public class frSetupControllerTest {
 		Set<String> expectedDonorFieldNames = new Set<String>();
 		Set<String> expectedDonationFieldNames = new Set<String>();
 		for(frField__mdt field : [SELECT DeveloperName, Type__c FROM frField__mdt]) {
-			if('Donor'.equals(field.Type__c)) {
+			if(frDonor.TYPE.equals(field.Type__c)) {
 				expectedDonorFieldNames.add(field.DeveloperName);
-			} else if('Donation'.equals(field.Type__c)) {
+			} else if(frDonation.TYPE.equals(field.Type__c)) {
 				expectedDonationFieldNames.add(field.DeveloperName);
 			}
 		}
@@ -28,54 +28,28 @@ public class frSetupControllerTest {
 	static testMethod void test_addMapping() {
 		Test.startTest();
 		frSetupController controller = new frSetupController();
-		if(frUtil.hasNPCobjects()) {
-			ApexPages.currentPage().getParameters().put('type', frSetupController.GIFT_TRANSACTION_TYPE);
-			controller.addMapping();
-			Integer actualDonationMappingCountAfterAdd = controller.giftTransactionMappings.size();
-			frMapping__c donationMapping = controller.giftTransactionMappings.get(0);
-			donationMapping.fr_Name__c = 'TestFRDonation';
-			donationMapping.sf_Name__c = 'TestSFDonation';
+		ApexPages.currentPage().getParameters().put('type', frSetupController.DONATION_TYPE);
+		controller.addMapping();
+		Integer actualDonationMappingCountAfterAdd = controller.donationMappings.size();
+		frMapping__c donationMapping = controller.donationMappings.get(0);
+		donationMapping.fr_Name__c = 'TestFRDonation';
+		donationMapping.sf_Name__c = 'TestSFDonation';
 
-			ApexPages.currentPage().getParameters().put('type', frSetupController.PERSON_ACCOUNT_TYPE);
-			controller.addMapping();
-			Integer actualDonorMappingCountAfterAdd = controller.accMappings.size();
-			frMapping__c donorMapping = controller.accMappings.get(0);
-			donorMapping.fr_Name__c = 'TestFRDonor';
-			donorMapping.sf_Name__c = 'TestSFDonor';
+		ApexPages.currentPage().getParameters().put('type', frSetupController.DONOR_TYPE);
+		controller.addMapping();
+		Integer actualDonorMappingCountAfterAdd = controller.donorMappings.size();
+		frMapping__c donorMapping = controller.donorMappings.get(0);
+		donorMapping.fr_Name__c = 'TestFRDonor';
+		donorMapping.sf_Name__c = 'TestSFDonor';
 
-			controller.save();
-			Test.stopTest();
+		controller.save();
+		Test.stopTest();
 
-			System.assertEquals(1, actualDonationMappingCountAfterAdd, 'Only one mapping was added, so only one mapping should exist');
-			System.assertEquals(1, actualDonorMappingCountAfterAdd, 'Only one mapping was added, so only one mapping should exist');
-			System.assertEquals(2, [SELECT COUNT() FROM frMapping__c], 'Only one mapping was added, so only one mapping should exist');
-			System.assertEquals(frSetupController.GIFT_TRANSACTION_TYPE, donationMapping.Type__c, 'The mapping added first should have a donation type');
-			System.assertEquals(frSetupController.PERSON_ACCOUNT_TYPE, donorMapping.Type__c, 'The mapping added second should have a donor type');
-		} 
-		else {
-			ApexPages.currentPage().getParameters().put('type', frSetupController.DONATION_TYPE);
-			controller.addMapping();
-			Integer actualDonationMappingCountAfterAdd = controller.donationMappings.size();
-			frMapping__c donationMapping = controller.donationMappings.get(0);
-			donationMapping.fr_Name__c = 'TestFRDonation';
-			donationMapping.sf_Name__c = 'TestSFDonation';
-
-			ApexPages.currentPage().getParameters().put('type', frSetupController.DONOR_TYPE);
-			controller.addMapping();
-			Integer actualDonorMappingCountAfterAdd = controller.donorMappings.size();
-			frMapping__c donorMapping = controller.donorMappings.get(0);
-			donorMapping.fr_Name__c = 'TestFRDonor';
-			donorMapping.sf_Name__c = 'TestSFDonor';
-
-			controller.save();
-			Test.stopTest();
-
-			System.assertEquals(1, actualDonationMappingCountAfterAdd, 'Only one mapping was added, so only one mapping should exist');
-			System.assertEquals(1, actualDonorMappingCountAfterAdd, 'Only one mapping was added, so only one mapping should exist');
-			System.assertEquals(2, [SELECT COUNT() FROM frMapping__c], 'Only one mapping was added, so only one mapping should exist');
-			System.assertEquals(frSetupController.DONATION_TYPE, donationMapping.Type__c, 'The mapping added first should have a donation type');
-			System.assertEquals(frSetupController.DONOR_TYPE, donorMapping.Type__c, 'The mapping added second should have a donor type');
-		}
+		System.assertEquals(1, actualDonationMappingCountAfterAdd, 'Only one mapping was added, so only one mapping should exist');
+		System.assertEquals(1, actualDonorMappingCountAfterAdd, 'Only one mapping was added, so only one mapping should exist');
+		System.assertEquals(2, [SELECT COUNT() FROM frMapping__c], 'Only one mapping was added, so only one mapping should exist');
+		System.assertEquals(frSetupController.DONATION_TYPE, donationMapping.Type__c, 'The mapping added first should have a donation type');
+		System.assertEquals(frSetupController.DONOR_TYPE, donorMapping.Type__c, 'The mapping added second should have a donor type');
 	}
 
 	static testMethod void test_addMapping_constant() {
@@ -85,14 +59,9 @@ public class frSetupControllerTest {
 		controller.addMapping();
 		Integer actualDonationMappingCountAfterAdd;
 		frMapping__c donationMapping;
-		if(!frUtil.hasNPCobjects()) {
-			actualDonationMappingCountAfterAdd = controller.donationMappings.size();
-			donationMapping = controller.donationMappings.get(0);
-		}
-		else {
-			actualDonationMappingCountAfterAdd = controller.giftTransactionMappings.size();
-			donationMapping = controller.giftTransactionMappings.get(0);
-		}
+		actualDonationMappingCountAfterAdd = controller.donationMappings.size();
+		donationMapping = controller.donationMappings.get(0);
+		
 		donationMapping.sf_Name__c = 'TestSFDonation';
 		donationMapping.Is_Constant__c = true;
 		donationMapping.Constant_Value__c = 'Test Constant';
@@ -109,8 +78,7 @@ public class frSetupControllerTest {
 		ApexPages.currentPage().getParameters().put('type', frSetupController.DONATION_TYPE);
 		controller.addMapping();
 		frMapping__c donationMapping;
-		if(!frUtil.hasNPCobjects()) donationMapping = controller.donationMappings.get(0);
-		else donationMapping = controller.giftTransactionMappings.get(0);
+		donationMapping = controller.donationMappings.get(0);
 		donationMapping.fr_Name__c = 'TestFRDonation';
 		donationMapping.sf_Name__c = 'TestSFDonation';
 		controller.save();
@@ -133,8 +101,7 @@ public class frSetupControllerTest {
 		ApexPages.currentPage().getParameters().put('type', frSetupController.DONATION_TYPE);
 		controller.addMapping();
 		frMapping__c donationMapping;
-		if(!frUtil.hasNPCobjects()) donationMapping = controller.donationMappings.get(0);
-		else donationMapping = controller.giftTransactionMappings.get(0);
+		donationMapping = controller.donationMappings.get(0);
 		donationMapping.fr_Name__c = 'TestFRDonation';
 		donationMapping.sf_Name__c = 'TestSFDonation';
         PageReference actualCancelWithNoRetUrl = controller.cancel();

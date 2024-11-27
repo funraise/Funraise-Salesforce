@@ -218,8 +218,8 @@ public with sharing abstract class frModel {
                                 +' Record Id: '+record.Id+' - Funraise Id: '+ funraiseId + ' - Field: '+field.getDescribe().getName()+' - Value: '+value
                                 +' Exception: '+ex
                                );
-            } catch (Exception ignore) {
-                System.debug('Exception: ' + ex);
+            } catch (Exception exc) {
+                System.debug('Exception: ' + ex + 'Null Field: ' + exc);
             }
         }
     }
