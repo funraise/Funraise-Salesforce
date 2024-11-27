@@ -198,18 +198,17 @@
     </fields>
     <fields>
         <fullName>Supporter_PA__c</fullName>
+        <deleteConstraint>SetNull</deleteConstraint>
         <deprecated>false</deprecated>
-        <description>The Person Account(if enabled) that represents the Funraise supporter that owns this pledge</description>
         <externalId>false</externalId>
         <label>Funraise PA Supporter</label>
         <referenceTo>Account</referenceTo>
         <relationshipLabel>Funraise Pledges</relationshipLabel>
         <relationshipName>Funraise_Pledges</relationshipName>
-        <relationshipOrder>0</relationshipOrder>
-        <reparentableMasterDetail>false</reparentableMasterDetail>
+        <required>false</required>
         <trackTrending>false</trackTrending>
-        <type>MasterDetail</type>
-        <writeRequiresMasterRead>false</writeRequiresMasterRead>
+        <description>The Person Account(if enabled) that represents the Funraise supporter that owns this pledge</description>
+        <type>Lookup</type>
     </fields>
     <label>Funraise Pledge</label>
     <listViews>

@@ -28,14 +28,9 @@
                     <label>Deprecated</label>
                 </value>
                 <value>
-                    <fullName>Gift Commitment</fullName>
+                    <fullName>Commitment</fullName>
                     <default>false</default>
-                    <label>Gift Commitment</label>
-                </value>
-                <value>
-                    <fullName>All</fullName>
-                    <default>false</default>
-                    <label>All</label>
+                    <label>Commitment</label>
                 </value>
             </valueSetDefinition>
         </valueSet>
