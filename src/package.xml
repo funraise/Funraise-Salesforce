@@ -85,6 +85,7 @@
         <members>Pledge__c</members>
         <members>Question__c</members>
         <members>Subscription__c</members>
+        <members>Sync_Attempt__c</members>
         <members>frField__mdt</members>
         <members>frMapping__c</members>
         <name>CustomObject</name>
