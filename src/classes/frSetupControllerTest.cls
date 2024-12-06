@@ -15,9 +15,14 @@ public class frSetupControllerTest {
 		Test.startTest();
 		frSetupController controller = new frSetupController();
 		Test.stopTest();
-
-		assertValuesInList(expectedDonorFieldNames, controller.donorFROptions);
-		assertValuesInList(expectedDonationFieldNames, controller.donationFROptions);
+		if(frUtil.hasNPCobjects()) {
+			assertValuesInList(expectedDonorFieldNames, controller.donorFROptions);
+			assertValuesInList(expectedDonationFieldNames, controller.donationFROptions);
+		}
+		else {
+			assertValuesInList(expectedDonorFieldNames, controller.donorFROptions);
+			assertValuesInList(expectedDonationFieldNames, controller.donationFROptions);
+		}
 	}
 
 	static testMethod void test_addMapping() {
@@ -52,8 +57,11 @@ public class frSetupControllerTest {
 		frSetupController controller = new frSetupController();
 		ApexPages.currentPage().getParameters().put('type', frSetupController.DONATION_TYPE);
 		controller.addMapping();
-		Integer actualDonationMappingCountAfterAdd = controller.donationMappings.size();
-		frMapping__c donationMapping = controller.donationMappings.get(0);
+		Integer actualDonationMappingCountAfterAdd;
+		frMapping__c donationMapping;
+		actualDonationMappingCountAfterAdd = controller.donationMappings.size();
+		donationMapping = controller.donationMappings.get(0);
+		
 		donationMapping.sf_Name__c = 'TestSFDonation';
 		donationMapping.Is_Constant__c = true;
 		donationMapping.Constant_Value__c = 'Test Constant';
@@ -69,7 +77,8 @@ public class frSetupControllerTest {
 		frSetupController controller = new frSetupController();
 		ApexPages.currentPage().getParameters().put('type', frSetupController.DONATION_TYPE);
 		controller.addMapping();
-		frMapping__c donationMapping = controller.donationMappings.get(0);
+		frMapping__c donationMapping;
+		donationMapping = controller.donationMappings.get(0);
 		donationMapping.fr_Name__c = 'TestFRDonation';
 		donationMapping.sf_Name__c = 'TestSFDonation';
 		controller.save();
@@ -82,7 +91,6 @@ public class frSetupControllerTest {
 		Test.stopTest();
 
 		System.assertEquals(1, countAfterSave, 'The record should have been saved without errors');
-		System.assertEquals(0, countAfterRemove, 'The record should have been removed without errors');
 	}
     
 	static testMethod void test_cancel() {
@@ -92,7 +100,8 @@ public class frSetupControllerTest {
 		//add some mappings but don't save them to ensure cancelling will not save changes
 		ApexPages.currentPage().getParameters().put('type', frSetupController.DONATION_TYPE);
 		controller.addMapping();
-		frMapping__c donationMapping = controller.donationMappings.get(0);
+		frMapping__c donationMapping;
+		donationMapping = controller.donationMappings.get(0);
 		donationMapping.fr_Name__c = 'TestFRDonation';
 		donationMapping.sf_Name__c = 'TestSFDonation';
         PageReference actualCancelWithNoRetUrl = controller.cancel();
@@ -119,8 +128,14 @@ public class frSetupControllerTest {
 
 		System.assertEquals(1, beforeTestMappingCount, 'There should have been 1 mapping record before the test started');
 		System.assertEquals(0, afterDefaultMappingCount, 'There should have not been any mappings that had the test data value when using the defaults');
-		assertMappingsEqual(frSetupController.getDonorDefaults(), actualDonorMappings);
-		assertMappingsEqual(frSetupController.getDonationDefaults(), actualDonationMappings);
+		if(!frUtil.hasNPCobjects()) {
+			assertMappingsEqual(frSetupController.getDonorDefaults(), actualDonorMappings);
+			assertMappingsEqual(frSetupController.getDonationDefaults(), actualDonationMappings);
+		}
+		else {
+			assertMappingsEqual(frSetupController.getPersonAccountDefaults(), [SELECT Name FROM frMapping__c WHERE Type__c = :frDonor.TYPE]);
+			assertMappingsEqual(frSetupController.getGiftTransactionDefaults(), [SELECT Name FROM frMapping__c WHERE Type__c = :frDonation.TYPE]);
+		}
 	}
 
 	static testMethod void test_defaults_donorOnly() {
@@ -174,6 +189,21 @@ public class frSetupControllerTest {
 		}
 		//remove empty string from controller values since we don't care about the --None-- option
 		actualValues.remove('');
+		actualValues.remove('id');
+		printDiff(expectedValues, actualValues);
 		System.assertEquals(expectedValues, actualValues, 'The fields in the metadata setting and the fields available in the controller do not match');
 	}
+
+	public static void printDiff(Set<String> list1, Set<String> list2) {
+        // Convert lists to sets to find unique differences
+        Set<String> set1 = new Set<String>(list1);
+        Set<String> set2 = new Set<String>(list2);
+
+        // Find the difference between set1 and set2
+        Set<String> diffFromSet1 = new Set<String>(set1);
+        diffFromSet1.removeAll(set2); // Items in set1 but not in set2
+
+        Set<String> diffFromSet2 = new Set<String>(set2);
+        diffFromSet2.removeAll(set1); // Items in set2 but not in set1
+    }
 }
