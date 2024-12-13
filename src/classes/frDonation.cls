@@ -171,7 +171,8 @@ public class frDonation extends frModel implements frSyncable {
         }
 
         if(isPledge && o.get('Id') != null) {
-            frPledge.create(o);
+            if(frUtil.hasNPCobjects()) frPledge.create(o);
+            else frPledge.create((Opportunity) o);
         }
         
         if(o.get('Id') != null && !frUtil.hasNPCobjects()) {

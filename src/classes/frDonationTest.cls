@@ -476,7 +476,7 @@ public class frDonationTest {
         Test.stopTest();
         
         String oppFrId = String.valueOf(getTestRequest().get('id'));
-        if(frUtil.hasNPCobjects()) {
+        if(!frUtil.hasNPCobjects()) {
             Opportunity opp = [SELECT Id, Funraise_Pledge__c FROM Opportunity WHERE fr_Id__c = :oppFrId];
             System.assertEquals(pledge.Id, opp.Funraise_Pledge__c, 'The pledge value should remain unchanged');
         }

@@ -143,19 +143,19 @@ public class frDonorTest {
         
         Contact existing = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'testExisting@example.com', fr_ID__c = '856');
         Contact noMatch = new Contact(LastName = 'nomatch', FirstName = 'nomatch', Email = 'nomatch@example.com', fr_ID__c = '111');
+        if(frUtil.hasNPCobjects()) {
+            SObject existingacc = Schema.getGlobalDescribe().get('account').newSObject();
+            existingacc.put('fr_ID__c', '856');
+            existingacc.put('LastName', 'Test');
+            existingacc.put('FirstName', 'Existing');
 
-        SObject existingacc = Schema.getGlobalDescribe().get('account').newSObject();
-        existingacc.put('fr_ID__c', '856');
-        existingacc.put('LastName', 'Test');
-        existingacc.put('FirstName', 'Existing');
-
-        SObject noMatchacc = Schema.getGlobalDescribe().get('account').newSObject();
-        noMatchacc.put('fr_ID__c', '111');
-        noMatchacc.put('LastName', 'nomatch');
-        noMatchacc.put('FirstName', 'nomatch');
-
+            SObject noMatchacc = Schema.getGlobalDescribe().get('account').newSObject();
+            noMatchacc.put('fr_ID__c', '111');
+            noMatchacc.put('LastName', 'nomatch');
+            noMatchacc.put('FirstName', 'nomatch');
+            insert new List<SObject>{existingacc, noMatchacc};
+        }
         insert new List<Contact>{existing, noMatch};
-        insert new List<SObject>{existingacc, noMatchacc};
 
             
         Integer countBeforeSync = [SELECT COUNT() FROM Contact];
@@ -192,22 +192,21 @@ public class frDonorTest {
         Contact existing = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'alextest02221503@example.com');
         Contact noMatch = new Contact(LastName = 'nomatch', FirstName = 'nomatch', Email = 'nomatch@example.com', fr_ID__c = '111');
         insert new List<Contact>{existing, noMatch};
-
-        SObject existingacc = Schema.getGlobalDescribe().get('account').newSObject();
-        existingacc.put('fr_ID__c', '856');
-        existingacc.put('LastName', 'Test');
-        existingacc.put('FirstName', 'Existing');
-
-        SObject noMatchacc = Schema.getGlobalDescribe().get('account').newSObject();
-        noMatchacc.put('fr_ID__c', '111');
-        noMatchacc.put('LastName', 'nomatch');
-        noMatchacc.put('FirstName', 'nomatch');
-
         if(frUtil.hasNPCobjects()) {
+            SObject existingacc = Schema.getGlobalDescribe().get('account').newSObject();
+            existingacc.put('fr_ID__c', '856');
+            existingacc.put('LastName', 'Test');
+            existingacc.put('FirstName', 'Existing');
+
+            SObject noMatchacc = Schema.getGlobalDescribe().get('account').newSObject();
+            noMatchacc.put('fr_ID__c', '111');
+            noMatchacc.put('LastName', 'nomatch');
+            noMatchacc.put('FirstName', 'nomatch');
+
             existingacc.put('PersonEmail', 'alextest02221503@example.com');
             noMatchacc.put('PersonEmail', 'alextest02221503@example.com');
+            insert new List<SObject>{existingacc, noMatchacc};
         }
-        insert new List<SObject>{existingacc, noMatchacc};
             
         Integer countBeforeSync = [SELECT COUNT() FROM Contact];
         
@@ -250,25 +249,24 @@ public class frDonorTest {
         
         Contact noMatch = new Contact(LastName = 'nomatch', FirstName = 'nomatch', Email = 'nomatch@example.com', fr_ID__c = '111');
         insert new List<Contact>{existing, noMatch};
-
-        SObject existingacc = Schema.getGlobalDescribe().get('account').newSObject();
-        existingacc.put('fr_ID__c', '856');
-        existingacc.put('LastName', 'test02221503');
-        existingacc.put('FirstName', 'alex');
-
-        SObject noMatchacc = Schema.getGlobalDescribe().get('account').newSObject();
-        noMatchacc.put('fr_ID__c', '111');
-        noMatchacc.put('LastName', 'nomatch');
-        noMatchacc.put('FirstName', 'nomatch');
-
         if(frUtil.hasNPCobjects()) {
+            SObject existingacc = Schema.getGlobalDescribe().get('account').newSObject();
+            existingacc.put('fr_ID__c', '856');
+            existingacc.put('LastName', 'test02221503');
+            existingacc.put('FirstName', 'alex');
+
+            SObject noMatchacc = Schema.getGlobalDescribe().get('account').newSObject();
+            noMatchacc.put('fr_ID__c', '111');
+            noMatchacc.put('LastName', 'nomatch');
+            noMatchacc.put('FirstName', 'nomatch');
+
             existingacc.put('PersonMailingStreet', '1234 S Street st');
             existingacc.put('PersonMailingCity', 'Test City');
             existingacc.put('PersonMailingState', 'AZ');
             existingacc.put('PersonMailingPostalCode', '85008');
             existingacc.put('PersonMailingCountry', 'United States');
+            insert new List<SObject>{existingacc, noMatchacc};
         }
-        insert new List<SObject>{existingacc, noMatchacc};
             
         Integer countBeforeSync = [SELECT COUNT() FROM Contact];
         
@@ -382,12 +380,10 @@ public class frDonorTest {
         
         String newEmail = 'example.email.overwrite@example.com';
         
-        insert new frMapping__c(Type__c = frDonor.TYPE, Name = 'email+email', 
-        fr_Name__c = 'email', sf_Name__c = 'PersonEmail', Conflict_Resolution__c = frModel.MAPPING_NO_OVERWRITE);
-
-        insert new frMapping__c(Type__c = frDonor.TYPE, Name = 'country', 
-        fr_Name__c = 'country', sf_Name__c = 'PersonMailingCountry', Conflict_Resolution__c = frModel.MAPPING_OVERWRITE_NON_NULL);
-
+        if(frUtil.hasNPCobjects()) {
+            insert new frMapping__c(Type__c = frDonor.TYPE, Name = 'email+email', fr_Name__c = 'email', sf_Name__c = 'PersonEmail', Conflict_Resolution__c = frModel.MAPPING_NO_OVERWRITE);
+            insert new frMapping__c(Type__c = frDonor.TYPE, Name = 'country', fr_Name__c = 'country', sf_Name__c = 'PersonMailingCountry', Conflict_Resolution__c = frModel.MAPPING_OVERWRITE_NON_NULL);
+        }
 
         Contact existing = getTestContact(true);
         Account existingacc = getTestAccount(true);
@@ -469,8 +465,7 @@ public class frDonorTest {
         
         String newEmail = 'example.email.overwrite@example.com';
 
-        insert new frMapping__c(Type__c = frDonor.TYPE, Name = 'email+email', 
-        fr_Name__c = 'email', sf_Name__c = 'PersonEmail', Conflict_Resolution__c = frModel.MAPPING_OVERWRITE_RECENT);
+        if(frUtil.hasNPCobjects()) insert new frMapping__c(Type__c = frDonor.TYPE, Name = 'email+email', fr_Name__c = 'email', sf_Name__c = 'PersonEmail', Conflict_Resolution__c = frModel.MAPPING_OVERWRITE_RECENT);
         
         Contact existing = getTestContact(true);
         Account existingacc = getTestAccount(true);

@@ -80,7 +80,7 @@ public class frSubscription extends frModel implements frSyncable {
         String name = String.valueOf(request.get('name'));
         String funraiseSupporterId = String.valueOf(request.get('supporterId'));
         List<Contact> contacts = [SELECT Id from Contact WHERE fr_Id__c = :funraiseSupporterId];
-        List<Account> accounts;
+        List<Account> accounts = new List<Account>();
         if (frUtil.hasNPCobjects()) {
             accounts = Database.query('SELECT Id, PersonContactId FROM Account WHERE fr_ID__c = :funraiseSupporterId');
         }
@@ -136,6 +136,11 @@ public class frSubscription extends frModel implements frSyncable {
                 return result;
             }
         } 
+        else if(contacts.isEmpty()) {
+            if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
+                                        frUtil.Entity.SUPPORTER, funraiseSupporterId);
+            return result;
+        }
         else {
             subscription = new Subscription__c(
                 fr_ID__c = funraiseId,
@@ -146,7 +151,7 @@ public class frSubscription extends frModel implements frSyncable {
                 Supporter__c = contacts.get(0).Id
             );
         }
-        if(Test.isRunningTest()) {
+        if(Test.isRunningTest() && frUtil.hasNPCobjects()) {
             subscription = new Subscription__c(
                 fr_ID__c = funraiseId,
                 Name = frUtil.truncateToFieldLength(
