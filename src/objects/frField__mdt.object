@@ -27,6 +27,11 @@
                     <default>false</default>
                     <label>Deprecated</label>
                 </value>
+                <value>
+                    <fullName>Commitment</fullName>
+                    <default>false</default>
+                    <label>Commitment</label>
+                </value>
             </valueSetDefinition>
         </valueSet>
     </fields>

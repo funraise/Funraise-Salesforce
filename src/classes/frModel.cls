@@ -78,14 +78,14 @@ public with sharing abstract class frModel {
     protected void applyMappings(SObject record, Map<String, Object> request) {
         String sObjectName = record.getSObjectType().getDescribe().getName();
         Map<String, Schema.SObjectField> fields = frSchemaUtil.getFields(sObjectName);
-        
         //a single funraise field might flow into multiple salesforce fields
         Map<String, List<frMapping__c>> frFieldToMappings = new Map<String, List<frMapping__c>>();
         List<frMapping__c> constantMappings = new List<frMapping__c>();
         Set<String> fieldsToQueryFor = new Set<String>();
         Boolean needLastModifiedDate = false;
-        
-        for(frMapping__c mapping : getMappings()) {
+        List<frMapping__c> objMappings = getMappings();
+        if(sObjectName == 'GiftCommitment') objMappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = 'Gift Commitment' ORDER BY CreatedDate];
+        for(frMapping__c mapping : objMappings) {
             if(mapping.Is_Constant__c) {
                 constantMappings.add(mapping);
             } else {
@@ -164,7 +164,6 @@ public with sharing abstract class frModel {
             Schema.SObjectField field = fields.get(constantMapping.sf_Name__c);
             write(record, field, constantMapping.sf_Name__c, constantMapping.Constant_Value__c, funraiseId);
         }
-        
         record.put('fr_ID__c', funraiseId);
     }
     
@@ -214,10 +213,14 @@ public with sharing abstract class frModel {
             }
             record.put(field, value);
         } catch (Exception ex) {
-            insert new Error__c(Error__c = 'Field mapping exception. Object type: '+ record.getSObjectType().getDescribe().getName()
+            try {
+                insert new Error__c(Error__c = 'Field mapping exception. Object type: '+ record.getSObjectType().getDescribe().getName()
                                 +' Record Id: '+record.Id+' - Funraise Id: '+ funraiseId + ' - Field: '+field.getDescribe().getName()+' - Value: '+value
                                 +' Exception: '+ex
                                );
+            } catch (Exception exc) {
+                System.debug('Exception: ' + ex + 'Null Field: ' + exc);
+            }
         }
     }
     

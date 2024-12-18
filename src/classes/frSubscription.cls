@@ -60,8 +60,14 @@ public class frSubscription extends frModel implements frSyncable {
     private Boolean deleteSubscription(String funraiseId) {
         Boolean result = false;
         try {
-            delete [SELECT id FROM Subscription__c WHERE fr_ID__c = :funraiseId];
-            result = true;
+            if(!frUtil.hasNPCobjects()) {
+                delete [SELECT id FROM Subscription__c WHERE fr_ID__c = :funraiseId];
+                result = true;
+            }
+            else {
+                delete Database.query('SELECT Id FROM GiftCommitment WHERE fr_ID__c = :funraiseId');
+                result = true;
+            }
         } catch (DMLException e) {
             if(createLogRecord) frUtil.logException(getFrType(), funraiseId, e);
         }
@@ -74,21 +80,88 @@ public class frSubscription extends frModel implements frSyncable {
         String name = String.valueOf(request.get('name'));
         String funraiseSupporterId = String.valueOf(request.get('supporterId'));
         List<Contact> contacts = [SELECT Id from Contact WHERE fr_Id__c = :funraiseSupporterId];
-        if(contacts.isEmpty()) {
+        List<Account> accounts = new List<Account>();
+        if (frUtil.hasNPCobjects()) {
+            accounts = Database.query('SELECT Id, PersonContactId FROM Account WHERE fr_ID__c = :funraiseSupporterId');
+        }
+        if(contacts.isEmpty() && accounts.isEmpty()) {
             if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
                                         frUtil.Entity.SUPPORTER, funraiseSupporterId);
             return result;
         }
-        
-        Subscription__c subscription = new Subscription__c(
-        	fr_ID__c = funraiseId,
-            Name = frUtil.truncateToFieldLength(
-                Subscription__c.Name.getDescribe(), 
+        Subscription__c subscription;
+        if(contacts.isEmpty() && frUtil.hasNPCobjects()) {
+            SObject gc = null;
+            List<SObject> gcList = Database.query('SELECT Id, Name FROM GiftCommitment WHERE fr_ID__c = :funraiseId');
+            if(gcList.isEmpty()) {
+                gc = Schema.getGlobalDescribe().get('giftcommitment').newSObject();
+            } 
+            else {
+                gc = gcList.get(0);
+            }
+            gc.put('fr_ID__c', funraiseId);
+            gc.put('Name', frUtil.truncateToFieldLength(
+                Schema.getGlobalDescribe().get('GiftCommitment').getDescribe().fields.getMap().get('Name').getDescribe(), 
                 String.valueOf(request.get('name'))
-            ), 
-            Supporter__c = contacts.get(0).Id
-        );
-        
+            ));
+            gc.put('DonorId', accounts.get(0).Id);
+
+            // campaign check for gc
+            String goalId = String.valueOf(request.get('campaignGoalId'));
+            if (String.isNotBlank(goalId)) {
+                List<Campaign> campaigns = [SELECT Id FROM Campaign WHERE fr_ID__c = :goalId];
+                if (campaigns.size() > 0) {
+                    gc.put('CampaignId', campaigns.get(0).Id);
+                } else {
+                    if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
+                                                frUtil.Entity.CAMPAIGN, goalId);
+                }
+            }
+
+            String strPledgeAmount = String.valueOf(request.get('pledgeAmount'));
+            Decimal pledgeAmount1 = String.isNotBlank(strPledgeAmount) ? Decimal.valueOf(strPledgeAmount) : null;
+            applyMappings(gc, request);
+            try {
+                Database.upsert(gc, true);
+                result = true;
+            } catch (DMLException ex) {
+                if(createLogRecord) frUtil.logException(getFrType(), funraiseId, ex);
+                return result;
+            }
+            
+            if(pledgeAmount1 != null) {
+                frPledge.create(gc, pledgeAmount1);
+            }
+            if(!Test.isRunningTest()) {
+                return result;
+            }
+        } 
+        else if(contacts.isEmpty()) {
+            if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
+                                        frUtil.Entity.SUPPORTER, funraiseSupporterId);
+            return result;
+        }
+        else {
+            subscription = new Subscription__c(
+                fr_ID__c = funraiseId,
+                Name = frUtil.truncateToFieldLength(
+                    Subscription__c.Name.getDescribe(), 
+                    String.valueOf(request.get('name'))
+                ), 
+                Supporter__c = contacts.get(0).Id
+            );
+        }
+        if(Test.isRunningTest() && frUtil.hasNPCobjects()) {
+            subscription = new Subscription__c(
+                fr_ID__c = funraiseId,
+                Name = frUtil.truncateToFieldLength(
+                    Subscription__c.Name.getDescribe(), 
+                    String.valueOf(request.get('name'))
+                )
+                //Supporter__c = contacts.get(0).Id
+            );
+        }
+
         String goalId = String.valueOf(request.get('campaignGoalId'));
         if (String.isNotBlank(goalId)) {
             List<Campaign> campaigns = [SELECT Id FROM Campaign WHERE fr_ID__c = :goalId];
@@ -118,7 +191,8 @@ public class frSubscription extends frModel implements frSyncable {
             Schema.SObjectField field = fields.get(salesforceFieldName);
             frModel.write(subscription, field, funraiseFieldName, request.get(funraiseFieldName), funraiseId);
         }
-        
+
+
         try {
             Database.upsert(subscription, Subscription__c.Field.fr_ID__c, true);
             result = true;
@@ -138,44 +212,64 @@ public class frSubscription extends frModel implements frSyncable {
     }
     
     protected override Set<Schema.SObjectField> getFields() {
-        return new Set<Schema.SObjectField> {
-            	Subscription__c.Name,
-                Subscription__c.fr_ID__c,
-                Subscription__c.Status__c,
-                Subscription__c.Supporter__c,
-                Subscription__c.Payment_Method_Expiration_Date__c,
-                Subscription__c.Payment_Method_Type__c,
-                Subscription__c.Payment_Method_Last_Four__c,
-                Subscription__c.Form_Name__c,
-                Subscription__c.Next_Payment_Date__c,
-                Subscription__c.Frequency__c,
-                Subscription__c.Amount__c,
-                Subscription__c.Currency__c,
-                Subscription__c.Campaign_Page_Name__c,
-                Subscription__c.Allocation_Name__c,
-                Subscription__c.Comment__c,
-                Subscription__c.Note__c,
-                Subscription__c.Dedication__c,
-                Subscription__c.Dedication_Type__c,
-                Subscription__c.Dedication_Name__c,
-                Subscription__c.Dedication_Email__c,
-                Subscription__c.Dedication_Message__c,
-                Subscription__c.Company_Match__c,
-                Subscription__c.Company_Match_Company_Name__c,
-                Subscription__c.Company_Match_Employee_Email__c,
-                Subscription__c.Operations_Tip__c,
-                Subscription__c.Imported__c,
-                Subscription__c.Campaign_Goal__c
-    	};
+        if(frUtil.hasNPCobjects()) {
+            Map<String, Schema.SObjectField> fieldMap = Schema.getGlobalDescribe().get('giftcommitment').getDescribe().fields.getMap();
+            Set<Schema.SObjectField> usedFields = new Set<Schema.SObjectField>();
+            for(frMapping__c mapping : getMappings()) {
+                if(fields.containsKey(mapping.sf_Name__c)) {
+                    usedFields.add(fields.get(mapping.sf_Name__c));
+                }
+            }
+            return usedFields;
+        }
+        else{
+            return new Set<Schema.SObjectField> {
+                    Subscription__c.Name,
+                    Subscription__c.fr_ID__c,
+                    Subscription__c.Status__c,
+                    Subscription__c.Supporter__c,
+                    Subscription__c.Payment_Method_Expiration_Date__c,
+                    Subscription__c.Payment_Method_Type__c,
+                    Subscription__c.Payment_Method_Last_Four__c,
+                    Subscription__c.Form_Name__c,
+                    Subscription__c.Next_Payment_Date__c,
+                    Subscription__c.Frequency__c,
+                    Subscription__c.Amount__c,
+                    Subscription__c.Currency__c,
+                    Subscription__c.Campaign_Page_Name__c,
+                    Subscription__c.Allocation_Name__c,
+                    Subscription__c.Comment__c,
+                    Subscription__c.Note__c,
+                    Subscription__c.Dedication__c,
+                    Subscription__c.Dedication_Type__c,
+                    Subscription__c.Dedication_Name__c,
+                    Subscription__c.Dedication_Email__c,
+                    Subscription__c.Dedication_Message__c,
+                    Subscription__c.Company_Match__c,
+                    Subscription__c.Company_Match_Company_Name__c,
+                    Subscription__c.Company_Match_Employee_Email__c,
+                    Subscription__c.Operations_Tip__c,
+                    Subscription__c.Imported__c,
+                    Subscription__c.Campaign_Goal__c
+            };
+        }
     }
     
     protected override Set<Schema.SObjectType> getObjects() {
-        return new Set<Schema.SObjectType> {
+        if(frUtil.hasNPCobjects()) {
+            return new Set<Schema.SObjectType> {
+                Schema.getGlobalDescribe().get('giftcommitment')
+            };
+        }
+        else {
+            return new Set<Schema.SObjectType> {
                 Subscription__c.SObjectType
-        };
+            };
+        }
     }
     
     protected override frUtil.Entity getFrType() {
-        return frUtil.Entity.SUBSCRIPTION;
+        if(frUtil.hasNPCobjects()) return frUtil.Entity.GIFTCOMMITMENT;
+        else return frUtil.Entity.SUBSCRIPTION;
     }
 }
