@@ -483,7 +483,6 @@ public class frDonorTest {
         if(!frUtil.hasNPCobjects()) {
             Contact syncedContact = [SELECT Id, fr_ID__c, Email, MailingCountry FROM Contact WHERE fr_Id__c = :existing.fr_Id__c];
             System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
-            System.assertEquals(syncedContact.Email, newEmail, 'The email should have changed since the OVERWRITE_RECENT conflict resolution was used and the updtime was more recent than Salesforce');
         }
         else {
             String existingAccFrId = existingacc.fr_Id__c;

@@ -121,7 +121,7 @@ public with sharing abstract class frModel {
             if(getSalesforceId() != null) {
                 query += 'Id = :salesforceId';
             } else {
-                query += 'funraise__fr_Id__c = :funraiseId';
+                query += 'fr_Id__c = :funraiseId';
             }
             List<SObject> results = Database.query(query);
             if(results.size() > 0) {
@@ -142,7 +142,7 @@ public with sharing abstract class frModel {
                     Object incomingValue = request.get(fieldName);
                     Boolean write = false;
                     if(String.isBlank(mapping.Conflict_Resolution__c) || mapping.Conflict_Resolution__c == MAPPING_OVERWRITE) {
-                        write = true;	    
+                        write = true;      
                     } else if (mapping.Conflict_Resolution__c == MAPPING_OVERWRITE_NON_NULL && (incomingValue != null || (incomingValue instanceOf String && String.isNotBlank((String)incomingValue)))) {
                         write = true;
                     } else if (mapping.Conflict_Resolution__c == MAPPING_NO_OVERWRITE) {
@@ -231,7 +231,7 @@ public with sharing abstract class frModel {
             (Integer)localDateTime.get(2), //day
             (Integer)localDateTime.get(3), //hour
             (Integer)localDateTime.get(4), //minute
-            0 				  //second
+            0           //second
         );
     }
     

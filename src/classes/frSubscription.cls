@@ -173,7 +173,7 @@ public class frSubscription extends frModel implements frSyncable {
             }
         }
         
-		//transform other request fields into SF custom fields, these are not applicable
+    //transform other request fields into SF custom fields, these are not applicable
         request.remove('id');
         request.remove('name');
         request.remove('supporterId');
@@ -186,6 +186,7 @@ public class frSubscription extends frModel implements frSyncable {
         String regex = '([a-z])([A-Z]+)';
         String replacement = '$1_$2';
         for(String funraiseFieldName : request.keySet()) {
+            System.debug(funraiseFieldName);
             String salesforceFieldName = funraiseFieldName.replaceAll(regex, replacement);
             salesforceFieldName =+ 'funraise__' + salesforceFieldName.capitalize() + '__c';
             Schema.SObjectField field = fields.get(salesforceFieldName);
