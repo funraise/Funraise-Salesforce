@@ -67,7 +67,8 @@ public class frSubscriptionTest {
                                             Campaign_Goal__c, Imported__c, Next_Payment_Date__c, 
                                             Note__c, Operations_Tip__c, Payment_Method_Expiration_Date__c, Payment_Method_Last_Four__c, 
                                             Payment_Method_Type__c, Status__c, Supporter__c
-            FROM Subscription__c WHERE fr_ID__c = :funraiseId];/*
+            FROM Subscription__c WHERE fr_ID__c = :funraiseId];
+            System.debug('subscription: ' + subscription);
             System.assertEquals(String.valueOf(request.get('name')), subscription.Name, 'The subscription name should be the property included in the request');
             System.assertEquals(String.valueOf(request.get('allocationName')), subscription.Allocation_Name__c, 'The property should be what was provided in the request');
             System.assertEquals(Double.valueOf(request.get('amount')), subscription.Amount__c, 'The property should be what was provided in the request');
@@ -93,9 +94,8 @@ public class frSubscriptionTest {
             System.assertEquals(String.valueOf(request.get('status')), subscription.Status__c, 'The property should be what was provided in the request');
             List<Object> requestPaymentDate = (List<Object>)request.get('nextPaymentDate');
             System.assertEquals(frModel.convertFromLocalDate(requestPaymentDate), subscription.Next_Payment_Date__c, 'The property for next payment date should be what was provided in the request');
-            */
             System.assertEquals(testSupporter.Id, subscription.Supporter__c, 'The lookup for supporter should have been populated with the contact that has the funraise id referenced in the request');
-            //System.assertEquals(0, [SELECT COUNT() FROM Error__c], 'No errors were expected');
+            System.assertEquals(0, [SELECT COUNT() FROM Error__c], 'No errors were expected');
         }
         else {
             List<SObject> gcList = Database.query('SELECT Id, Name FROM GiftCommitment WHERE fr_ID__c = :funraiseId');
