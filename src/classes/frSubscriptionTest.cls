@@ -253,8 +253,9 @@ public class frSubscriptionTest {
         }
     }
 
-    static testMethod void createSubscription_createPledgeInNonNPC() {
+    static testMethod void createSubscription_createPledgeInNPC() {
         Account testAccount = frDonorTest.getTestAccount(true);
+        Contact testSupporter = frDonorTest.getTestContact();
         testAccount.put('fr_ID__c', '123456');
         update testAccount;        
         String funraiseId = '25';
@@ -269,6 +270,7 @@ public class frSubscriptionTest {
         Test.startTest();
         frWSSubscriptionController.syncEntity();
         Test.stopTest();
+        frTestUtil.assertNoErrors();
         
         if(!frUtil.hasNPCobjects()) {
             //Only used in Non NPC orgs
