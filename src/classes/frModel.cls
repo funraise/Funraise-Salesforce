@@ -84,7 +84,7 @@ public with sharing abstract class frModel {
         Set<String> fieldsToQueryFor = new Set<String>();
         Boolean needLastModifiedDate = false;
         List<frMapping__c> objMappings = getMappings();
-        if(sObjectName == 'GiftCommitment') objMappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = 'Gift Commitment' ORDER BY CreatedDate];
+        if(sObjectName == 'GiftCommitment') objMappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = 'Commitment' ORDER BY CreatedDate];
         for(frMapping__c mapping : objMappings) {
             if(mapping.Is_Constant__c) {
                 constantMappings.add(mapping);
