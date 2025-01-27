@@ -118,7 +118,7 @@
                             Gift Transaction Field
                         </apex:facet>
                         <apex:selectList value="{!mapping.sf_Name__c}" size="1">
-                            <apex:selectOptions value="{!giftTransactionSFOptions}" />
+                            <apex:selectOptions value="{!donationSFOptions}" />
                         </apex:selectList> 
                     </apex:column>
                     <apex:column >
@@ -232,7 +232,7 @@
                             Person Account Field
                         </apex:facet>
                         <apex:selectList value="{!mapping.sf_Name__c}" size="1">
-                            <apex:selectOptions value="{!accSFOptions}" />
+                            <apex:selectOptions value="{!donorSFOptions}" />
                         </apex:selectList> 
                     </apex:column>
                     <apex:column >
