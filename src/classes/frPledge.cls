@@ -101,9 +101,12 @@ public with sharing class frPledge {
 
     public static Pledge__c create(SObject gc, Decimal pledgeAmount) {
         Id relatedId = (Id) gc.get('Id');
+        Id donorId = (Id) gc.get('DonorId');
+        SObject acc = Database.query('SELECT PersonContactId FROM Account WHERE Id = :donorId');
         Pledge__c pledge = new Pledge__c(
             Name = frUtil.truncateToFieldLength(Pledge__c.Name.getDescribe(), 'Subscription Pledge - ' + (String) gc.get('Name')),
-            Supporter__c = (id) gc.get('DonorId'),
+            Supporter__c =(id) acc.get('PersonContactId'),
+            Supporter_PA__c = (id) gc.get('DonorId'),
             Pledge_Amount__c = pledgeAmount,
             Pledge_Subscription__c = relatedId,
             Pledge_Subscription_uq__c = relatedId
