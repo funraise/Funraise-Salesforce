@@ -219,7 +219,7 @@ public with sharing abstract class frModel {
                                 +' Exception: '+ex
                                );
             } catch (Exception exc) {
-                System.debug('Exception: ' + ex + 'Null Field: ' + exc);
+                insert new Error__c(Error__c =  'Exception: '+ex + ' - Failed To insert with detail: ' + exc);
             }
         }
     }

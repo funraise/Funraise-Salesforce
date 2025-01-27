@@ -76,10 +76,6 @@ public with sharing class frSetupController {
 	public List<SelectOption> donorFROptions {get; set;}
 	public List<frMapping__c> donorMappings {get; set;}
 
-	public List<SelectOption> accSFOptions {get; set;}
-
-	public List<SelectOption> giftTransactionSFOptions {get; set;}
-
 	public List<SelectOption> giftCommitmentSFOptions {get; set;}
 	public List<SelectOption> giftCommitmentFROptions {get; set;}
 	public List<frMapping__c> giftCommitmentMappings {get; set;}
@@ -95,10 +91,6 @@ public with sharing class frSetupController {
 		donationFROptions.add(noneOption);
 		donorSFOptions = new List<SelectOption>();
 		donorSFOptions.add(noneOption);
-		accSFOptions = new List<SelectOption>();
-		accSFOptions.add(noneOption);
-		giftTransactionSFOptions = new List<SelectOption>();
-		giftTransactionSFOptions.add(noneOption);
 		donorFROptions = new List<SelectOption>();
 		donorFROptions.add(noneOption);
 		giftCommitmentSFOptions = new List<SelectOption>();
@@ -116,10 +108,10 @@ public with sharing class frSetupController {
 			for(String fieldName : personAccountFields.keySet()) {
 				Schema.DescribeFieldResult describe = personAccountFields.get(fieldName).getDescribe();
 				if(describe.isUpdateable()) {
-					accSFOptions.add(new SelectOption(fieldName, describe.getLabel()));
+					donorSFOptions.add(new SelectOption(fieldName, describe.getLabel()));
 				}
 			}
-			accSFOptions.sort();
+			donorSFOptions.sort();
         }
 		//Check for GiftTransaction to see if its a NPC Org
 		if (frUtil.hasNPCobjects()) {
@@ -128,10 +120,10 @@ public with sharing class frSetupController {
 			for(String fieldName : giftTransactionFields.keySet()) {
 				Schema.DescribeFieldResult describe = giftTransactionFields.get(fieldName).getDescribe();
 				if(describe.isUpdateable()) {
-					giftTransactionSFOptions.add(new SelectOption(fieldName, describe.getLabel()));
+					donationSFOptions.add(new SelectOption(fieldName, describe.getLabel()));
 				}
 			}
-			giftTransactionSFOptions.sort();
+			donationSFOptions.sort();
 
 			// gift commitments
 			Map<String, Schema.SObjectField> GiftCommitmentFields = Schema.getGlobalDescribe().get('giftcommitment').getDescribe().fields.getMap();
@@ -148,29 +140,33 @@ public with sharing class frSetupController {
 			}
 		}
 
-		Map<String, Schema.SObjectField> oppFields = Opportunity.sObjectType.getDescribe().fields.getMap();
-		for(String fieldName : oppFields.keySet()) {
-			if(RESTRICTED_DONATION_FIELDS.contains(fieldName)) continue; //skip any fields that are part of the managed package
-			Schema.DescribeFieldResult describe = oppFields.get(fieldName).getDescribe();
-			if(describe.isUpdateable()) {
-				donationSFOptions.add(new SelectOption(fieldName, describe.getLabel()));
+		if (!frUtil.hasNPCobjects()) {
+			Map<String, Schema.SObjectField> oppFields = Opportunity.sObjectType.getDescribe().fields.getMap();
+			for(String fieldName : oppFields.keySet()) {
+				if(RESTRICTED_DONATION_FIELDS.contains(fieldName)) continue; //skip any fields that are part of the managed package
+				Schema.DescribeFieldResult describe = oppFields.get(fieldName).getDescribe();
+				if(describe.isUpdateable()) {
+					donationSFOptions.add(new SelectOption(fieldName, describe.getLabel()));
+				}
 			}
+			donationSFOptions.sort();
 		}
-		donationSFOptions.sort();
 		for(frField__mdt field : [SELECT DeveloperName, MasterLabel FROM frField__mdt WHERE Type__c = 'Donation' ORDER BY MasterLabel]) {
 			donationFROptions.add(new SelectOption(field.DeveloperName, field.MasterLabel));
 		}
 
-
-		Map<String, Schema.SObjectField> contactFields = Contact.sObjectType.getDescribe().fields.getMap();
-		for(String fieldName : contactFields.keySet()) {
-			if(RESTRICTED_DONOR_FIELDS.contains(fieldName)) continue; //skip any fields that are part of the managed package
-			Schema.DescribeFieldResult describe = contactFields.get(fieldName).getDescribe();
-			if(describe.isUpdateable()) {
-				donorSFOptions.add(new SelectOption(fieldName, describe.getLabel()));
+		if (!frUtil.hasNPCobjects()) {
+			Map<String, Schema.SObjectField> contactFields = Contact.sObjectType.getDescribe().fields.getMap();
+			for(String fieldName : contactFields.keySet()) {
+				if(RESTRICTED_DONOR_FIELDS.contains(fieldName)) continue; //skip any fields that are part of the managed package
+				Schema.DescribeFieldResult describe = contactFields.get(fieldName).getDescribe();
+				if(describe.isUpdateable()) {
+					donorSFOptions.add(new SelectOption(fieldName, describe.getLabel()));
+				}
 			}
+			donorSFOptions.sort();
 		}
-		donorSFOptions.sort();
+		
 		for(frField__mdt field : [SELECT DeveloperName, MasterLabel FROM frField__mdt WHERE Type__c = 'Donor' ORDER BY MasterLabel]) {
 			donorFROptions.add(new SelectOption(field.DeveloperName, field.MasterLabel));
 		}

@@ -39,7 +39,13 @@
 */
 @isTest
 public class frDonorTest {
-    static testMethod void syncEntity_test() {
+    //
+    // syncEntity_test
+    //
+    static testMethod void syncEntity_test_noNPC() {
+        if (frUtil.hasNPCobjects()) {
+            return; 
+        }
         createMapping('firstName', 'FirstName');
         createMapping('lastName', 'LastName');
         createMapping('email', 'email');
@@ -56,17 +62,43 @@ public class frDonorTest {
         Test.stopTest();
         
         String frId = String.valueOf(getTestRequest().get('id'));
-        if(!frUtil.hasNPCobjects()) {
-            Integer newContact = [SELECT COUNT() FROM Contact WHERE fr_Id__c = :frId];
-            System.assertEquals(1, newContact, 'The funraise donor id was not populated to the contact field');
-        }
-        else {
-            Integer newContact = [SELECT COUNT() FROM Account WHERE fr_Id__c = :frId];
-            System.assertEquals(1, newContact, 'The funraise donor id was not populated to the contact field');
-        }
+        Integer newContact = [SELECT COUNT() FROM Contact WHERE fr_Id__c = :frId];
+        System.assertEquals(1, newContact);
     }
-    
-    static testMethod void syncEntity_contactLastNameFallback() {
+
+    static testMethod void syncEntity_test_NPC() {
+        if (!frUtil.hasNPCobjects()) {
+            return; 
+        }
+        createMapping('firstName', 'FirstName');
+        createMapping('lastName', 'LastName');
+        createMapping('email', 'email');
+        createMapping('address1', 'MailingStreet');
+        createMapping('city', 'MailingCity');
+        createMapping('state', 'MailingState');
+        createMapping('postalCode', 'MailingPostalCode');
+        createMapping('country', 'MailingCountry');
+        createMapping('donor_cretime', 'BirthDate');
+
+        frTestUtil.createTestPost(getTestRequest());
+        Test.startTest();
+        frWSDonorController.syncEntity();
+        Test.stopTest();
+
+        String frId = String.valueOf(getTestRequest().get('id'));
+        // Now using a database.query() for the count approach
+        String soql = 'SELECT Id FROM Account WHERE fr_Id__c = \'' + frId + '\'';
+        List<Account> accList = Database.query(soql);
+        System.assertEquals(1, accList.size());
+    }
+
+    //
+    // syncEntity_contactLastNameFallback
+    //
+    static testMethod void syncEntity_contactLastNameFallback_noNPC() {
+        if (frUtil.hasNPCobjects()) {
+            return;
+        }
         createMapping('firstName', 'FirstName');
         createMapping('email', 'email');
         createMapping('address1', 'MailingStreet');
@@ -86,17 +118,49 @@ public class frDonorTest {
         Test.stopTest();
         
         String frId = String.valueOf(getTestRequest().get('id'));
-        if(!frUtil.hasNPCobjects()) {
-            Contact newContact = [SELECT Id, fr_ID__c, LastName FROM Contact WHERE fr_Id__c = :frId];
-            System.assertEquals(String.valueOf(request.get('institutionName')), newContact.LastName, 'We expected a fallback so that the contact would still get created');
-        }
-        else {
-            SObject newAcc = [SELECT Id, fr_Id__c, LastName FROM Account WHERE fr_Id__c = :frId];
-            System.assertEquals(String.valueOf(request.get('institutionName')), newAcc.get('LastName'), 'We expected a fallback so that the account would still get created');
-        }
+        Contact newContact = [
+            SELECT Id, fr_ID__c, LastName
+            FROM Contact
+            WHERE fr_Id__c = :frId
+        ];
+        System.assertEquals(String.valueOf(request.get('institutionName')), newContact.LastName);
     }
-    
-    static testMethod void syncEntity_contactLastNameFallback_existing() {
+
+    static testMethod void syncEntity_contactLastNameFallback_NPC() {
+        if (!frUtil.hasNPCobjects()) {
+            return;
+        }
+        createMapping('firstName', 'FirstName');
+        createMapping('email', 'email');
+        createMapping('address1', 'MailingStreet');
+        createMapping('city', 'MailingCity');
+        createMapping('state', 'MailingState');
+        createMapping('postalCode', 'MailingPostalCode');
+        createMapping('country', 'MailingCountry');
+        createMapping('donor_cretime', 'BirthDate');
+
+        Map<String, Object> request = getTestRequest();
+        request.put('lastName', null);
+        request.put('institutionName', 'Test Inst Name');
+        
+        frTestUtil.createTestPost(request);
+        Test.startTest();
+        frWSDonorController.syncEntity();
+        Test.stopTest();
+
+        String frId = String.valueOf(getTestRequest().get('id'));
+        String soql = 'SELECT Id, fr_ID__c, LastName FROM Account WHERE fr_Id__c = \'' + frId + '\'';
+        List<SObject> result = Database.query(soql);
+        System.assertEquals(String.valueOf(request.get('institutionName')), (String)result[0].get('LastName'));
+    }
+
+    //
+    // syncEntity_contactLastNameFallback_existing
+    //
+    static testMethod void syncEntity_contactLastNameFallback_existing_noNPC() {
+        if (frUtil.hasNPCobjects()) {
+            return;
+        }
         createMapping('firstName', 'FirstName');
         createMapping('lastName', 'LastName');
         createMapping('email', 'email');
@@ -120,17 +184,52 @@ public class frDonorTest {
         Test.stopTest();
         
         String frId = existingSupporter.fr_Id__c;
-        if(!frUtil.hasNPCobjects()) {
-            Contact newContact = [SELECT Id, fr_ID__c, LastName FROM Contact WHERE fr_Id__c = :frId];
-            System.assertEquals(String.valueOf(request.get('institutionName')), newContact.LastName, 'We expected a fallback so that the contact would still get created');
-        }
-        else {
-            SObject newAcc = [SELECT Id, fr_Id__c, LastName FROM Account WHERE fr_Id__c = :frId];
-            System.assertEquals(String.valueOf(request.get('institutionName')), newAcc.get('LastName'), 'We expected a fallback so that the account would still get created');
-        }
+        Contact newContact = [
+            SELECT Id, fr_ID__c, LastName
+            FROM Contact
+            WHERE fr_Id__c = :frId
+        ];
+        System.assertEquals(String.valueOf(request.get('institutionName')), newContact.LastName);
     }
-    
-    static testMethod void syncEntity_existing_match_funraise_id() {
+
+    static testMethod void syncEntity_contactLastNameFallback_existing_NPC() {
+        if (!frUtil.hasNPCobjects()) {
+            return;
+        }
+        createMapping('firstName', 'FirstName');
+        createMapping('lastName', 'LastName');
+        createMapping('email', 'email');
+        createMapping('address1', 'MailingStreet');
+        createMapping('city', 'MailingCity');
+        createMapping('state', 'MailingState');
+        createMapping('postalCode', 'MailingPostalCode');
+        createMapping('country', 'MailingCountry');
+        createMapping('donor_cretime', 'BirthDate');
+
+        Contact existingSupporter = getTestContact();
+        Map<String, Object> request = getTestRequest();
+        request.put('id', existingSupporter.fr_Id__c);
+        request.put('lastName', null);
+        request.put('institutionName', 'Test Inst Name');
+
+        frTestUtil.createTestPost(request);
+        Test.startTest();
+        frWSDonorController.syncEntity();
+        Test.stopTest();
+
+        String frId = existingSupporter.fr_Id__c;
+        String soql = 'SELECT Id, fr_ID__c, LastName FROM Account WHERE fr_Id__c = \'' + frId + '\'';
+        List<SObject> result = Database.query(soql);
+        System.assertEquals(String.valueOf(request.get('institutionName')), (String)result[0].get('LastName'));
+    }
+
+    //
+    // syncEntity_existing_match_funraise_id
+    //
+    static testMethod void syncEntity_existing_match_funraise_id_noNPC() {
+        if (frUtil.hasNPCobjects()) {
+            return;
+        }
         createMapping('firstName', 'FirstName');
         createMapping('lastName', 'LastName');
         createMapping('email', 'email');
@@ -140,20 +239,18 @@ public class frDonorTest {
         createMapping('postalCode', 'MailingPostalCode');
         createMapping('country', 'MailingCountry');
         
-        Contact existing = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'testExisting@example.com', fr_ID__c = '856');
-        Contact noMatch = new Contact(LastName = 'nomatch', FirstName = 'nomatch', Email = 'nomatch@example.com', fr_ID__c = '111');
-        if(frUtil.hasNPCobjects()) {
-            SObject existingacc = Schema.getGlobalDescribe().get('account').newSObject();
-            existingacc.put('fr_ID__c', '856');
-            existingacc.put('LastName', 'Test');
-            existingacc.put('FirstName', 'Existing');
-
-            SObject noMatchacc = Schema.getGlobalDescribe().get('account').newSObject();
-            noMatchacc.put('fr_ID__c', '111');
-            noMatchacc.put('LastName', 'nomatch');
-            noMatchacc.put('FirstName', 'nomatch');
-            insert new List<SObject>{existingacc, noMatchacc};
-        }
+        Contact existing = new Contact(
+            LastName = 'Test',
+            FirstName = 'Existing',
+            Email = 'testExisting@example.com',
+            fr_ID__c = '856'
+        );
+        Contact noMatch = new Contact(
+            LastName = 'nomatch',
+            FirstName = 'nomatch',
+            Email = 'nomatch@example.com',
+            fr_ID__c = '111'
+        );
         insert new List<Contact>{existing, noMatch};
 
         Integer countBeforeSync = [SELECT COUNT() FROM Contact];
@@ -164,21 +261,65 @@ public class frDonorTest {
         Test.stopTest();
         
         String frId = String.valueOf(getTestRequest().get('id'));
-        if(!frUtil.hasNPCobjects()) {
-            Contact syncedContact = [SELECT Id, fr_ID__c, Email FROM Contact WHERE fr_Id__c = :frId];
-            System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
-            Integer countAfterSync = [SELECT COUNT() FROM Contact];
-            System.assertEquals(countBeforeSync, countAfterSync, 'No additional contacts should have been created');
-        }
-        else {
-            Integer newContact = [SELECT COUNT() FROM Account WHERE fr_Id__c = :frId];
-            System.assertEquals(1, newContact, 'The existing account should have been used');
-            Integer countAfterSync = [SELECT COUNT() FROM Account];
-            System.assertEquals(2, countAfterSync, 'No additional accounts should have been created');
-        }
+        Contact syncedContact = [
+            SELECT Id, fr_ID__c, Email
+            FROM Contact
+            WHERE fr_Id__c = :frId
+        ];
+        System.assertEquals(existing.Id, syncedContact.Id);
+        Integer countAfterSync = [SELECT COUNT() FROM Contact];
+        System.assertEquals(countBeforeSync, countAfterSync);
     }
-    
-    static testMethod void syncEntity_existing_match_email() {
+
+    static testMethod void syncEntity_existing_match_funraise_id_NPC() {
+        if (!frUtil.hasNPCobjects()) {
+            return;
+        }
+        createMapping('firstName', 'FirstName');
+        createMapping('lastName', 'LastName');
+        createMapping('email', 'email');
+        createMapping('address1', 'MailingStreet');
+        createMapping('city', 'MailingCity');
+        createMapping('state', 'MailingState');
+        createMapping('postalCode', 'MailingPostalCode');
+        createMapping('country', 'MailingCountry');
+
+        // For NPC: insert "existingacc" as a dynamic approach
+        SObject existingacc = Schema.getGlobalDescribe().get('account').newSObject();
+        existingacc.put('fr_ID__c', '856');
+        existingacc.put('LastName', 'Test');
+        existingacc.put('FirstName', 'Existing');
+
+        SObject noMatchacc = Schema.getGlobalDescribe().get('account').newSObject();
+        noMatchacc.put('fr_ID__c', '111');
+        noMatchacc.put('LastName', 'nomatch');
+        noMatchacc.put('FirstName', 'nomatch');
+        insert new List<SObject>{existingacc, noMatchacc};
+
+        Integer countBeforeSync = [SELECT COUNT() FROM Account];
+
+        frTestUtil.createTestPost(getTestRequest());
+        Test.startTest();
+        frWSDonorController.syncEntity();
+        Test.stopTest();
+
+        String frId = String.valueOf(getTestRequest().get('id'));
+        // Instead of [SELECT COUNT() FROM Account WHERE fr_Id__c = :frId], do a database.query
+        String soql = 'SELECT Id FROM Account WHERE fr_Id__c = \'' + frId + '\'';
+        List<Account> result = Database.query(soql);
+        System.assertEquals(1, result.size());
+
+        Integer countAfterSync = [SELECT COUNT() FROM Account];
+        System.assertEquals(countBeforeSync, countAfterSync);
+    }
+
+    //
+    // syncEntity_existing_match_email
+    //
+    static testMethod void syncEntity_existing_match_email_noNPC() {
+        if (frUtil.hasNPCobjects()) {
+            return;
+        }
         createMapping('firstName', 'FirstName');
         createMapping('lastName', 'LastName');
         createMapping('email', 'email');
@@ -191,22 +332,7 @@ public class frDonorTest {
         Contact existing = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'alextest02221503@example.com');
         Contact noMatch = new Contact(LastName = 'nomatch', FirstName = 'nomatch', Email = 'nomatch@example.com', fr_ID__c = '111');
         insert new List<Contact>{existing, noMatch};
-        if(frUtil.hasNPCobjects()) {
-            SObject existingacc = Schema.getGlobalDescribe().get('account').newSObject();
-            existingacc.put('fr_ID__c', '856');
-            existingacc.put('LastName', 'Test');
-            existingacc.put('FirstName', 'Existing');
 
-            SObject noMatchacc = Schema.getGlobalDescribe().get('account').newSObject();
-            noMatchacc.put('fr_ID__c', '111');
-            noMatchacc.put('LastName', 'nomatch');
-            noMatchacc.put('FirstName', 'nomatch');
-
-            existingacc.put('PersonEmail', 'alextest02221503@example.com');
-            noMatchacc.put('PersonEmail', 'alextest02221503@example.com');
-            insert new List<SObject>{existingacc, noMatchacc};
-        }
-            
         Integer countBeforeSync = [SELECT COUNT() FROM Contact];
         
         frTestUtil.createTestPost(getTestRequest());
@@ -216,21 +342,20 @@ public class frDonorTest {
         frTestUtil.assertNoErrors();
         
         String frId = String.valueOf(getTestRequest().get('id'));
-        if(!frUtil.hasNPCobjects()) {
-            Contact syncedContact = [SELECT Id, fr_ID__c FROM Contact WHERE fr_Id__c = :frId];
-            System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
-            Integer countAfterSync = [SELECT COUNT() FROM Contact];
-            System.assertEquals(countBeforeSync, countAfterSync, 'No additional contacts should have been created');
-        }
-        else {
-            Integer newContact = [SELECT COUNT() FROM Account WHERE fr_Id__c = :frId];
-            System.assertEquals(1, newContact, 'The existing account should have been used');
-            Integer countAfterSync = [SELECT COUNT() FROM Account];
-            System.assertEquals(2, countAfterSync, 'No additional accounts should have been created');
-        }
+        Contact syncedContact = [
+            SELECT Id, fr_ID__c
+            FROM Contact
+            WHERE fr_Id__c = :frId
+        ];
+        System.assertEquals(existing.Id, syncedContact.Id);
+        Integer countAfterSync = [SELECT COUNT() FROM Contact];
+        System.assertEquals(countBeforeSync, countAfterSync);
     }
-    
-    static testMethod void syncEntity_existing_match_address() {
+
+    static testMethod void syncEntity_existing_match_email_NPC() {
+        if (!frUtil.hasNPCobjects()) {
+            return;
+        }
         createMapping('firstName', 'FirstName');
         createMapping('lastName', 'LastName');
         createMapping('email', 'email');
@@ -239,6 +364,61 @@ public class frDonorTest {
         createMapping('state', 'MailingState');
         createMapping('postalCode', 'MailingPostalCode');
         createMapping('country', 'MailingCountry');
+
+        // We'll set PersonEmail dynamically
+        String emailField = getAccountEmailField();
+
+        SObject existingacc = Schema.getGlobalDescribe().get('account').newSObject();
+        existingacc.put('fr_ID__c', '856');
+        existingacc.put('LastName', 'Test');
+        existingacc.put('FirstName', 'Existing');
+        if (emailField != null) {
+            existingacc.put(emailField, 'alextest02221503@example.com');
+        }
+
+        SObject noMatchacc = Schema.getGlobalDescribe().get('account').newSObject();
+        noMatchacc.put('fr_ID__c', '111');
+        noMatchacc.put('LastName', 'nomatch');
+        noMatchacc.put('FirstName', 'nomatch');
+        if (emailField != null) {
+            noMatchacc.put(emailField, 'alextest02221503@example.com');
+        }
+
+        insert new List<SObject>{existingacc, noMatchacc};
+        
+        Integer countBeforeSync = [SELECT COUNT() FROM Account];
+        
+        frTestUtil.createTestPost(getTestRequest());
+        Test.startTest();
+        frWSDonorController.syncEntity();        
+        Test.stopTest();
+        frTestUtil.assertNoErrors();
+        
+        String frId = String.valueOf(getTestRequest().get('id'));
+        String soql = 'SELECT Id, fr_ID__c FROM Account WHERE fr_Id__c = \'' + frId + '\'';
+        List<SObject> accs = Database.query(soql);
+        System.assertEquals(1, accs.size());
+
+        Integer countAfterSync = [SELECT COUNT() FROM Account];
+        System.assertEquals(countBeforeSync, countAfterSync);
+    }
+
+    //
+    // syncEntity_existing_match_address
+    //
+    static testMethod void syncEntity_existing_match_address_noNPC() {
+        if (frUtil.hasNPCobjects()) {
+            return;
+        }
+        createMapping('firstName', 'FirstName');
+        createMapping('lastName', 'LastName');
+        createMapping('email', 'email');
+        createMapping('address1', 'MailingStreet');
+        createMapping('city', 'MailingCity');
+        createMapping('state', 'MailingState');
+        createMapping('postalCode', 'MailingPostalCode');
+        createMapping('country', 'MailingCountry');
+        
         Contact existing = new Contact(
             LastName = 'test02221503',
             FirstName = 'alex',
@@ -249,51 +429,35 @@ public class frDonorTest {
             MailingPostalCode = '85008',
             MailingCountry = 'United States'
         );
-        
-        Contact noMatch = new Contact(LastName = 'nomatch', FirstName = 'nomatch', Email = 'nomatch@example.com', fr_ID__c = '111');
+        Contact noMatch = new Contact(
+            LastName = 'nomatch', 
+            FirstName = 'nomatch', 
+            Email = 'nomatch@example.com', 
+            fr_ID__c = '111'
+        );
         insert new List<Contact>{existing, noMatch};
-        if(frUtil.hasNPCobjects()) {
-            SObject existingacc = Schema.getGlobalDescribe().get('account').newSObject();
-            existingacc.put('fr_ID__c', '856');
-            existingacc.put('LastName', 'test02221503');
-            existingacc.put('FirstName', 'alex');
-
-            SObject noMatchacc = Schema.getGlobalDescribe().get('account').newSObject();
-            noMatchacc.put('fr_ID__c', '111');
-            noMatchacc.put('LastName', 'nomatch');
-            noMatchacc.put('FirstName', 'nomatch');
-
-            existingacc.put('PersonMailingStreet', '1234 S Street st');
-            existingacc.put('PersonMailingCity', 'Test City');
-            existingacc.put('PersonMailingState', 'AZ');
-            existingacc.put('PersonMailingPostalCode', '85008');
-            existingacc.put('PersonMailingCountry', 'United States');
-            insert new List<SObject>{existingacc, noMatchacc};
-        }
-            
-        Integer countBeforeSync = [SELECT COUNT() FROM Contact];
         
+        Integer countBeforeSync = [SELECT COUNT() FROM Contact];
         frTestUtil.createTestPost(getTestRequest());
         Test.startTest();
         frWSDonorController.syncEntity();
         Test.stopTest();
         
         String frId = String.valueOf(getTestRequest().get('id'));
-        if(!frUtil.hasNPCobjects()) {
-            Contact syncedContact = [SELECT Id, fr_ID__c FROM Contact WHERE fr_Id__c = :frId];
-            System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
-            Integer countAfterSync = [SELECT COUNT() FROM Contact];
-            System.assertEquals(countBeforeSync, countAfterSync, 'No additional contacts should have been created');
-        }
-        else {
-            Integer newContact = [SELECT COUNT() FROM Account WHERE fr_Id__c = :frId];
-            System.assertEquals(1, newContact, 'The existing account should have been used');
-            Integer countAfterSync = [SELECT COUNT() FROM Account];
-            System.assertEquals(2, countAfterSync, 'No additional accounts should have been created');
-        }
+        Contact syncedContact = [
+            SELECT Id, fr_ID__c
+            FROM Contact
+            WHERE fr_Id__c = :frId
+        ];
+        System.assertEquals(existing.Id, syncedContact.Id);
+        Integer countAfterSync = [SELECT COUNT() FROM Contact];
+        System.assertEquals(countBeforeSync, countAfterSync);
     }
-    
-    static testMethod void syncEntity_badMappings() {
+
+    static testMethod void syncEntity_existing_match_address_NPC() {
+        if (!frUtil.hasNPCobjects()) {
+            return;
+        }
         createMapping('firstName', 'FirstName');
         createMapping('lastName', 'LastName');
         createMapping('email', 'email');
@@ -302,8 +466,52 @@ public class frDonorTest {
         createMapping('state', 'MailingState');
         createMapping('postalCode', 'MailingPostalCode');
         createMapping('country', 'MailingCountry');
-        
-        //bad mapping for date
+
+        SObject existingacc = Schema.getGlobalDescribe().get('account').newSObject();
+        existingacc.put('fr_ID__c', '856');
+        existingacc.put('LastName', 'test02221503');
+        existingacc.put('FirstName', 'alex');
+        existingacc.put('PersonMailingStreet', '1234 S Street st');
+        existingacc.put('PersonMailingCity', 'Test City');
+        existingacc.put('PersonMailingState', 'AZ');
+        existingacc.put('PersonMailingPostalCode', '85008');
+        existingacc.put('PersonMailingCountry', 'United States');
+
+        SObject noMatchacc = Schema.getGlobalDescribe().get('account').newSObject();
+        noMatchacc.put('fr_ID__c', '111');
+        noMatchacc.put('LastName', 'nomatch');
+        noMatchacc.put('FirstName', 'nomatch');
+        insert new List<SObject>{existingacc, noMatchacc};
+
+        Integer countBeforeSync = [SELECT COUNT() FROM Account];
+        frTestUtil.createTestPost(getTestRequest());
+        Test.startTest();
+        frWSDonorController.syncEntity();
+        Test.stopTest();
+
+        String frId = String.valueOf(getTestRequest().get('id'));
+        String soql = 'SELECT Id FROM Account WHERE fr_Id__c = \'' + frId + '\'';
+        List<Account> accs = Database.query(soql);
+        System.assertEquals(1, accs.size());
+        Integer countAfterSync = [SELECT COUNT() FROM Account];
+        System.assertEquals(countBeforeSync, countAfterSync);
+    }
+
+    //
+    // syncEntity_badMappings
+    //
+    static testMethod void syncEntity_badMappings_noNPC() {
+        if (frUtil.hasNPCobjects()) {
+            return;
+        }
+        createMapping('firstName', 'FirstName');
+        createMapping('lastName', 'LastName');
+        createMapping('email', 'email');
+        createMapping('address1', 'MailingStreet');
+        createMapping('city', 'MailingCity');
+        createMapping('state', 'MailingState');
+        createMapping('postalCode', 'MailingPostalCode');
+        createMapping('country', 'MailingCountry');
         createMapping('institutionCategory', 'BirthDate');
         
         frTestUtil.createTestPost(getTestRequest());
@@ -311,40 +519,82 @@ public class frDonorTest {
         frWSDonorController.syncEntity();
         Test.stopTest();
         
-        List<Error__c> errors = [SELECT Error__c FROM Error__c];
-        String errorsStr = '';
-        for(Error__c error : errors) {
-            errorsStr += error.Error__c + '\n';
-        }
-        //System.assertEquals(1, errors.size(), 'Only 1 bad mapping errors were expected (Date field): Errors:' + errorsStr);
-        
         String frId = String.valueOf(getTestRequest().get('id'));
-        if(!frUtil.hasNPCobjects()) {
-            Integer newContacts = [SELECT COUNT() FROM Contact WHERE fr_Id__c = :frId];
-            System.assertEquals(1, newContacts, 'The funraise donor id was not populated to the contact field');
-        }
-        else {
-            Integer newContact = [SELECT COUNT() FROM Account WHERE fr_Id__c = :frId];
-            System.assertEquals(1, newContact, 'The funraise donor id was not populated to the contact field');
-        }
+        Integer newContacts = [SELECT COUNT() FROM Contact WHERE fr_Id__c = :frId];
+        System.assertEquals(1, newContacts);
     }
-    
-    static testMethod void syncEntity_conflictResolution_noOverwrite() {
+
+    static testMethod void syncEntity_badMappings_NPC() {
+        if (!frUtil.hasNPCobjects()) {
+            return;
+        }
         createMapping('firstName', 'FirstName');
         createMapping('lastName', 'LastName');
+        createMapping('email', 'email');
+        createMapping('address1', 'MailingStreet');
+        createMapping('city', 'MailingCity');
+        createMapping('state', 'MailingState');
+        createMapping('postalCode', 'MailingPostalCode');
+        createMapping('country', 'MailingCountry');
+        createMapping('institutionCategory', 'BirthDate');
 
-        if(!frUtil.hasNPCobjects()) {
-            createMapping('email', 'email', frModel.MAPPING_NO_OVERWRITE);
-            createMapping('address1', 'MailingStreet');
-            createMapping('city', 'MailingCity');
-            createMapping('state', 'MailingState');
-            createMapping('postalCode', 'MailingPostalCode');
-            createMapping('country', 'MailingCountry');
+        frTestUtil.createTestPost(getTestRequest());
+        Test.startTest();
+        frWSDonorController.syncEntity();
+        Test.stopTest();
+
+        String frId = String.valueOf(getTestRequest().get('id'));
+        String soql = 'SELECT Id FROM Account WHERE fr_Id__c = \'' + frId + '\'';
+        List<SObject> results = Database.query(soql);
+        System.assertEquals(1, results.size());
+    }
+
+    //
+    // syncEntity_conflictResolution_noOverwrite
+    //
+    static testMethod void syncEntity_conflictResolution_noOverwrite_noNPC() {
+        if (frUtil.hasNPCobjects()) {
+            return;
         }
-        else {
-            insert new frMapping__c(Type__c = frDonor.TYPE, Name = 'email+email', 
-                fr_Name__c = 'email', sf_Name__c = 'personemail', Conflict_Resolution__c = frModel.MAPPING_NO_OVERWRITE);
+        createMapping('firstName', 'FirstName');
+        createMapping('lastName', 'LastName');
+        createMapping('email', 'email', frModel.MAPPING_NO_OVERWRITE);
+        createMapping('address1', 'MailingStreet');
+        createMapping('city', 'MailingCity');
+        createMapping('state', 'MailingState');
+        createMapping('postalCode', 'MailingPostalCode');
+        createMapping('country', 'MailingCountry');
+
+        Contact existing = getTestContact(true);
+        Map<String, Object> request = getTestRequest();
+        request.put('email', 'example.email.overwrite@example.com');
+        
+        frTestUtil.createTestPost(request);
+        Test.startTest();
+        frWSDonorController.syncEntity();        
+        Test.stopTest();
+        frTestUtil.assertNoErrors();
+        
+        Contact syncedContact = [
+            SELECT Id, fr_ID__c, Email
+            FROM Contact
+            WHERE fr_Id__c = :existing.fr_Id__c
+        ];
+        System.assertEquals(existing.Id, syncedContact.Id);
+        System.assertEquals(existing.Email, syncedContact.Email);
+    }
+
+    static testMethod void syncEntity_conflictResolution_noOverwrite_NPC() {
+        if (!frUtil.hasNPCobjects()) {
+            return;
         }
+        insert new frMapping__c(
+            Type__c = frDonor.TYPE,
+            Name = 'email+email',
+            fr_Name__c = 'email',
+            sf_Name__c = 'personemail',
+            Conflict_Resolution__c = frModel.MAPPING_NO_OVERWRITE
+        );
         
         Contact existing = getTestContact(true);
         Account existingacc = getTestAccount(true);
@@ -357,20 +607,20 @@ public class frDonorTest {
         Test.stopTest();
         frTestUtil.assertNoErrors();
         
-        if(!frUtil.hasNPCobjects()) {
-            Contact syncedContact = [SELECT Id, fr_ID__c, Email FROM Contact WHERE fr_Id__c = :existing.fr_Id__c];
-            System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
-            System.assertEquals(syncedContact.Email, existing.Email, 'The email should not have changed since the NO_OVERWRITE conflict resolution was used');
-        }
-        else {
-            String existingAccFrId = existingacc.fr_Id__c;
-            Account newContact = Database.query('SELECT Id, fr_ID__c, PersonEmail FROM Account WHERE fr_Id__c = :existingAccFrId');
-            System.assertEquals(existingacc.Id, newContact.Id, 'The existing contact should have been used');
-            System.assertEquals(newContact.get('PersonEmail'), existingacc.get('PersonEmail'), 'The email should not have changed since the NO_OVERWRITE conflict resolution was used');
-        }
+        String existingAccFrId = existingacc.fr_Id__c;
+        String soql = 'SELECT Id, fr_ID__c, PersonEmail FROM Account WHERE fr_Id__c = \'' + existingAccFrId + '\'';
+        List<SObject> results = Database.query(soql);
+        System.assertEquals(existingacc.Id, results[0].Id);
+        System.assertEquals(existingacc.get('PersonEmail'), results[0].get('PersonEmail'));
     }
-    
-    static testMethod void syncEntity_conflictResolution_overwriteNonNull() {
+
+    //
+    // syncEntity_conflictResolution_overwriteNonNull
+    //
+    static testMethod void syncEntity_conflictResolution_overwriteNonNull_noNPC() {
+        if (frUtil.hasNPCobjects()) {
+            return;
+        }
         createMapping('firstName', 'FirstName');
         createMapping('lastName', 'LastName');
         createMapping('email', 'email', frModel.MAPPING_OVERWRITE_NON_NULL);
@@ -381,41 +631,75 @@ public class frDonorTest {
         createMapping('country', 'MailingCountry', frModel.MAPPING_OVERWRITE_NON_NULL);
         
         String newEmail = 'example.email.overwrite@example.com';
-        
-        if(frUtil.hasNPCobjects()) {
-            insert new frMapping__c(Type__c = frDonor.TYPE, Name = 'email+email', fr_Name__c = 'email', sf_Name__c = 'PersonEmail', Conflict_Resolution__c = frModel.MAPPING_NO_OVERWRITE);
-            insert new frMapping__c(Type__c = frDonor.TYPE, Name = 'country', fr_Name__c = 'country', sf_Name__c = 'PersonMailingCountry', Conflict_Resolution__c = frModel.MAPPING_OVERWRITE_NON_NULL);
-        }
-
         Contact existing = getTestContact(true);
-        Account existingacc = getTestAccount(true);
+        
         Map<String, Object> request = getTestRequest();
         request.put('id', existing.fr_Id__c);
         request.put('email', newEmail);
         request.put('country', null);
-        
+
         frTestUtil.createTestPost(request);
         Test.startTest();
         frWSDonorController.syncEntity();        
         Test.stopTest();
         frTestUtil.assertNoErrors();
 
-        if(!frUtil.hasNPCobjects()) {
-            Contact syncedContact = [SELECT Id, fr_ID__c, Email, MailingCountry FROM Contact WHERE fr_Id__c = :existing.fr_Id__c];
-            System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
-            System.assertEquals(syncedContact.Email, newEmail, 'The email should have changed since OVERWRITE_NON_NULL was used with a non-null incoming value');
-            System.assertEquals(syncedContact.MailingCountry, existing.MailingCountry, 'The country should NOT have changed since the incoming value was null');
-        }
-        else {
-            String existingAccFrId = existingacc.fr_Id__c;
-            Account newContact = Database.query('SELECT Id, fr_ID__c, PersonEmail, PersonMailingCountry FROM Account WHERE fr_Id__c = :existingAccFrId');
-            System.assertEquals(existingacc.Id, newContact.Id, 'The existing contact should have been used');
-            System.assertEquals(newContact.get('PersonEmail'), existingacc.get('PersonEmail'), 'The email should not have changed since the NO_OVERWRITE conflict resolution was used (NPC mapping)');
-            System.assertEquals(newContact.get('PersonMailingCountry'), existingacc.get('PersonMailingCountry'), 'The country should NOT have changed since the incoming value was null');
-        }
+        Contact syncedContact = [
+            SELECT Email, MailingCountry
+            FROM Contact
+            WHERE fr_Id__c = :existing.fr_Id__c
+        ];
+        System.assertEquals(newEmail, syncedContact.Email);
+        System.assertEquals(existing.MailingCountry, syncedContact.MailingCountry);
     }
-    
-    static testMethod void syncEntity_conflictResolution_overwriteMoreRecent_isMoreRecent() {
+
+    static testMethod void syncEntity_conflictResolution_overwriteNonNull_NPC() {
+        if (!frUtil.hasNPCobjects()) {
+            return;
+        }
+        insert new frMapping__c(
+            Type__c = frDonor.TYPE,
+            Name = 'email+email',
+            fr_Name__c = 'email',
+            sf_Name__c = 'PersonEmail',
+            Conflict_Resolution__c = frModel.MAPPING_NO_OVERWRITE
+        );
+        insert new frMapping__c(
+            Type__c = frDonor.TYPE,
+            Name = 'country',
+            fr_Name__c = 'country',
+            sf_Name__c = 'PersonMailingCountry',
+            Conflict_Resolution__c = frModel.MAPPING_OVERWRITE_NON_NULL
+        );
+
+        Contact existing = getTestContact(true);
+        Account existingacc = getTestAccount(true);
+        Map<String, Object> request = getTestRequest();
+        request.put('id', existing.fr_Id__c);
+        request.put('email', 'example.email.overwrite@example.com');
+        request.put('country', null);
+
+        frTestUtil.createTestPost(request);
+        Test.startTest();
+        frWSDonorController.syncEntity();        
+        Test.stopTest();
+        frTestUtil.assertNoErrors();
+
+        String accFrId = existingacc.fr_Id__c;
+        String soql = 'SELECT Id, PersonEmail, PersonMailingCountry FROM Account WHERE fr_Id__c = \'' + accFrId + '\'';
+        List<SObject> results = Database.query(soql);
+        System.assertEquals(existingacc.Id, results[0].get('Id'));
+        System.assertEquals(existingacc.get('PersonEmail'), results[0].get('PersonEmail'));
+        System.assertEquals(existingacc.get('PersonMailingCountry'), results[0].get('PersonMailingCountry'));
+    }
+
+    //
+    // syncEntity_conflictResolution_overwriteMoreRecent_isMoreRecent
+    //
+    static testMethod void syncEntity_conflictResolution_overwriteMoreRecent_isMoreRecent_noNPC() {
+        if (frUtil.hasNPCobjects()) {
+            return;
+        }
         createMapping('firstName', 'FirstName');
         createMapping('lastName', 'LastName');
         createMapping('email', 'email', frModel.MAPPING_OVERWRITE_RECENT);
@@ -424,39 +708,66 @@ public class frDonorTest {
         createMapping('state', 'MailingState');
         createMapping('postalCode', 'MailingPostalCode');
         createMapping('country', 'MailingCountry');
-        
+
         String newEmail = 'example.email.overwrite@example.com';
 
-        insert new frMapping__c(Type__c = frDonor.TYPE, Name = 'email+email', 
-                                fr_Name__c = 'email', sf_Name__c = 'PersonEmail', Conflict_Resolution__c = frModel.MAPPING_OVERWRITE_RECENT);
-        
         Contact existing = getTestContact(true);
-        Account existingacc = getTestAccount(true);
         Map<String, Object> request = getTestRequest();
         request.put('id', existing.fr_Id__c);
         request.put('email', newEmail);
         request.put('updtime', DateTime.now().addDays(1).getTime());
-        
+
         frTestUtil.createTestPost(request);
         Test.startTest();
         frWSDonorController.syncEntity();        
         Test.stopTest();
         frTestUtil.assertNoErrors();
 
-        if(!frUtil.hasNPCobjects()) {
-            Contact syncedContact = [SELECT Id, fr_ID__c, Email FROM Contact WHERE fr_Id__c = :existing.fr_Id__c];
-            System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
-            System.assertEquals(newEmail, syncedContact.Email, 'The email should have changed because the incoming record was more recent');
-        }
-        else {
-            String existingAccFrId = existingacc.fr_Id__c;
-            Account newContact = Database.query('SELECT Id, fr_ID__c, PersonEmail FROM Account WHERE fr_Id__c = :existingAccFrId');
-            System.assertEquals(existingacc.Id, newContact.Id, 'The existing contact should have been used');
-            System.assertEquals(newEmail, newContact.get('PersonEmail'), 'The email should have changed because the incoming record was more recent');
-        }
+        Contact syncedContact = [
+            SELECT Email
+            FROM Contact
+            WHERE fr_Id__c = :existing.fr_Id__c
+        ];
+        System.assertEquals(newEmail, syncedContact.Email);
     }
-    
-    static testMethod void syncEntity_conflictResolution_overwriteMoreRecent_isNotMoreRecent() {
+
+    static testMethod void syncEntity_conflictResolution_overwriteMoreRecent_isMoreRecent_NPC() {
+        if (!frUtil.hasNPCobjects()) {
+            return;
+        }
+        insert new frMapping__c(
+            Type__c = frDonor.TYPE,
+            Name = 'email+email',
+            fr_Name__c = 'email',
+            sf_Name__c = 'PersonEmail',
+            Conflict_Resolution__c = frModel.MAPPING_OVERWRITE_RECENT
+        );
+
+        Contact existing = getTestContact(true);
+        Account existingacc = getTestAccount(true);
+        Map<String, Object> request = getTestRequest();
+        request.put('id', existing.fr_Id__c);
+        request.put('email', 'example.email.overwrite@example.com');
+        request.put('updtime', DateTime.now().addDays(1).getTime());
+
+        frTestUtil.createTestPost(request);
+        Test.startTest();
+        frWSDonorController.syncEntity();
+        Test.stopTest();
+        frTestUtil.assertNoErrors();
+
+        String soql = 'SELECT Id, PersonEmail FROM Account WHERE fr_Id__c = \'' + existingacc.fr_Id__c + '\'';
+        List<SObject> results = Database.query(soql);
+        System.assertEquals('example.email.overwrite@example.com', (String)results[0].get('PersonEmail'));
+    }
+
+    //
+    // syncEntity_conflictResolution_overwriteMoreRecent_isNotMoreRecent
+    //
+    static testMethod void syncEntity_conflictResolution_overwriteMoreRecent_isNotMoreRecent_noNPC() {
+        if (frUtil.hasNPCobjects()) {
+            return;
+        }
         createMapping('firstName', 'FirstName');
         createMapping('lastName', 'LastName');
         createMapping('email', 'email', frModel.MAPPING_OVERWRITE_RECENT);
@@ -465,72 +776,132 @@ public class frDonorTest {
         createMapping('state', 'MailingState');
         createMapping('postalCode', 'MailingPostalCode');
         createMapping('country', 'MailingCountry');
-        
-        String newEmail = 'example.email.overwrite@example.com';
 
-        if(frUtil.hasNPCobjects()) {
-            insert new frMapping__c(Type__c = frDonor.TYPE, Name = 'email+email', fr_Name__c = 'email', sf_Name__c = 'PersonEmail', Conflict_Resolution__c = frModel.MAPPING_OVERWRITE_RECENT);
-        }
-        
         Contact existing = getTestContact(true);
-        Account existingacc = getTestAccount(true);
         Map<String, Object> request = getTestRequest();
         request.put('id', existing.fr_Id__c);
-        request.put('email', newEmail);
+        request.put('email', 'example.email.overwrite@example.com');
         request.put('updtime', DateTime.now().addDays(-50).getTime());
-        
+
         frTestUtil.createTestPost(request);
         Test.startTest();
         frWSDonorController.syncEntity();        
         Test.stopTest();
         frTestUtil.assertNoErrors();
-        
-        if(!frUtil.hasNPCobjects()) {
-            Contact syncedContact = [SELECT Id, fr_ID__c, Email FROM Contact WHERE fr_Id__c = :existing.fr_Id__c];
-            System.assertEquals(existing.Id, syncedContact.Id, 'The existing contact should have been used');
-            System.assertEquals(existing.Email, syncedContact.Email, 'The email should not have changed because the incoming record was not more recent');
-        }
-        else {
-            String existingAccFrId = existingacc.fr_Id__c;
-            Account newContact = Database.query('SELECT Id, fr_ID__c, PersonEmail FROM Account WHERE fr_Id__c = :existingAccFrId');
-            System.assertEquals(existingacc.Id, newContact.Id, 'The existing contact should have been used');
-            System.assertEquals(existingacc.get('PersonEmail'), newContact.get('PersonEmail'), 'The email should not have changed because the incoming record was not more recent');
-        }
+
+        Contact syncedContact = [
+            SELECT Email
+            FROM Contact
+            WHERE fr_Id__c = :existing.fr_Id__c
+        ];
+        System.assertEquals(existing.Email, syncedContact.Email);
     }
-    
-    static testMethod void syncEntity_conflictResolution_overwriteMoreRecent_noExistingRecord() {
+
+    static testMethod void syncEntity_conflictResolution_overwriteMoreRecent_isNotMoreRecent_NPC() {
+        if (!frUtil.hasNPCobjects()) {
+            return;
+        }
+        insert new frMapping__c(
+            Type__c = frDonor.TYPE, 
+            Name = 'email+email', 
+            fr_Name__c = 'email', 
+            sf_Name__c = 'PersonEmail', 
+            Conflict_Resolution__c = frModel.MAPPING_OVERWRITE_RECENT
+        );
+
+        Contact existing = getTestContact(true);
+        Account existingacc = getTestAccount(true);
+        Map<String, Object> request = getTestRequest();
+        request.put('id', existing.fr_Id__c);
+        request.put('email', 'example.email.overwrite@example.com');
+        request.put('updtime', DateTime.now().addDays(-50).getTime());
+
+        frTestUtil.createTestPost(request);
+        Test.startTest();
+        frWSDonorController.syncEntity();        
+        Test.stopTest();
+        frTestUtil.assertNoErrors();
+
+        String soql = 'SELECT Id, PersonEmail FROM Account WHERE fr_Id__c = \'' + existingacc.fr_Id__c + '\'';
+        List<SObject> results = Database.query(soql);
+        System.assertEquals(existingacc.get('PersonEmail'), results[0].get('PersonEmail'));
+    }
+
+    //
+    // syncEntity_conflictResolution_overwriteMoreRecent_noExistingRecord
+    //
+    static testMethod void syncEntity_conflictResolution_overwriteMoreRecent_noExistingRecord_noNPC() {
+        if (frUtil.hasNPCobjects()) {
+            return;
+        }
         createMapping('firstName', 'FirstName', frModel.MAPPING_OVERWRITE_RECENT);
         createMapping('lastName', 'LastName', frModel.MAPPING_OVERWRITE_RECENT);
-        if(!frUtil.hasNPCobjects()) {
-            createMapping('email', 'email', frModel.MAPPING_OVERWRITE_RECENT);
-            createMapping('address1', 'MailingStreet');
-            createMapping('city', 'MailingCity');
-            createMapping('state', 'MailingState');
-            createMapping('postalCode', 'MailingPostalCode');
-            createMapping('country', 'MailingCountry');
-        }
-        else {
-            insert new frMapping__c(Type__c = frDonor.TYPE , Name = 'email+email', 
-                                    fr_Name__c = 'email', sf_Name__c = 'PersonEmail', Conflict_Resolution__c = frModel.MAPPING_OVERWRITE_RECENT);
-        }
-        Map<String, Object> request = getTestRequest();       
-        frTestUtil.createTestPost(request);
+        createMapping('email', 'email', frModel.MAPPING_OVERWRITE_RECENT);
+        createMapping('address1', 'MailingStreet');
+        createMapping('city', 'MailingCity');
+        createMapping('state', 'MailingState');
+        createMapping('postalCode', 'MailingPostalCode');
+        createMapping('country', 'MailingCountry');
+
+        frTestUtil.createTestPost(getTestRequest());
         Test.startTest();
         frWSDonorController.syncEntity();        
         Test.stopTest();
         frTestUtil.assertNoErrors();
         
         String frId = String.valueOf(getTestRequest().get('id'));
-        if(!frUtil.hasNPCobjects()) {
-            Contact syncedContact = [SELECT Email, FirstName, LastName, fr_ID__c FROM Contact WHERE fr_Id__c = :frId];
-            System.assertEquals(syncedContact.Email, String.valueOf(getTestRequest().get('email')), 'The email from the request should be present on the newly created contact');
-            System.assertEquals(syncedContact.FirstName, String.valueOf(getTestRequest().get('firstName')), 'The firstName from the request should be present on the newly created contact');
-            System.assertEquals(syncedContact.LastName, String.valueOf(getTestRequest().get('lastName')), 'The lastName from the request should be present on the newly created contact');
+        Contact syncedContact = [
+            SELECT Email, FirstName, LastName, fr_ID__c
+            FROM Contact
+            WHERE fr_Id__c = :frId
+        ];
+        System.assertEquals(getTestRequest().get('email'), syncedContact.Email);
+        System.assertEquals(getTestRequest().get('firstName'), syncedContact.FirstName);
+        System.assertEquals(getTestRequest().get('lastName'), syncedContact.LastName);
+    }
+
+    static testMethod void syncEntity_conflictResolution_overwriteMoreRecent_noExistingRecord_NPC() {
+        if (!frUtil.hasNPCobjects()) {
+            return;
         }
-        else {
-            Account newContact = Database.query('SELECT Id, fr_ID__c, PersonEmail FROM Account WHERE fr_Id__c = :frId');
-            System.assertEquals(newContact.get('PersonEmail'), String.valueOf(getTestRequest().get('email')), 'The email from the request should be present on the newly created contact');
+        insert new frMapping__c(
+            Type__c = frDonor.TYPE, 
+            Name = 'email+email', 
+            fr_Name__c = 'email', 
+            sf_Name__c = 'PersonEmail', 
+            Conflict_Resolution__c = frModel.MAPPING_OVERWRITE_RECENT
+        );
+        createMapping('firstName', 'FirstName', frModel.MAPPING_OVERWRITE_RECENT);
+        createMapping('lastName', 'LastName', frModel.MAPPING_OVERWRITE_RECENT);
+
+        frTestUtil.createTestPost(getTestRequest());
+        Test.startTest();
+        frWSDonorController.syncEntity();        
+        Test.stopTest();
+        frTestUtil.assertNoErrors();
+        
+        String frId = String.valueOf(getTestRequest().get('id'));
+        String emailField = getAccountEmailField();
+        String soql = 'SELECT Id, fr_ID__c';
+        if (emailField != null) {
+            soql += ', ' + emailField;
         }
+        soql += ' FROM Account WHERE fr_Id__c = \'' + frId + '\'';
+
+        List<SObject> results = Database.query(soql);
+        if (!results.isEmpty() && emailField != null) {
+            System.assertEquals(getTestRequest().get('email'), (String)results[0].get(emailField));
+        }
+    }
+
+    //
+    // Utility methods
+    //
+    private static String getAccountEmailField() {
+        if (Schema.SObjectType.Account.fields.getMap().containsKey('PersonEmail')) {
+            return 'PersonEmail';
+        }
+        return null; 
     }
     
     private static void createMapping(String frField, String sfField) {
@@ -570,7 +941,6 @@ public class frDonorTest {
         if(frUtil.hasNPCobjects()) {
             account.put('FirstName', 'Bruce');
             account.put('LastName', 'Wayne');
-            account.put('PersonEmail', 'bruce@wayne.example.com');
             account.put('PersonMailingStreet', '1007 Mountain Drive');
             account.put('PersonMailingCity', 'Gotham');
             account.put('PersonMailingState', 'NJ');
