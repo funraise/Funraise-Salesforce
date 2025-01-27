@@ -70,7 +70,7 @@ public class frDonation extends frModel implements frSyncable {
             setOpportunityStage((Opportunity) o, String.valueOf(request.get('status')));
         } 
         else {
-            List<SObject> gtList = Database.query('SELECT Id FROM GiftTransaction WHERE fr_ID__c = :frId');
+            List<SObject> gtList = Database.query('SELECT Id, Funraise_GT_Pledge__c FROM GiftTransaction WHERE fr_ID__c = :frId');
             if(gtList.isEmpty()) {
                 o = Schema.getGlobalDescribe().get('gifttransaction').newSObject();
             } 
@@ -134,9 +134,7 @@ public class frDonation extends frModel implements frSyncable {
         //connect pledge
         Boolean isPledge = Boolean.valueOf(request.get('pledge'));
         if(frUtil.hasNPCobjects()) {
-            List<SObject> alreadyMappedToPledgeList= Database.query('SELECT id, CheckDate FROM GiftTransaction WHERE fr_Id__c = :funraiseId AND Funraise_Pledge__c != null');
-            Boolean alreadyMappedToPledge = alreadyMappedToPledgeList.size() > 0;
-            if(!isPledge && !alreadyMappedToPledge) {
+            if(!isPledge && o.get('Funraise_GT_Pledge__c') != null) {
                 Pledge__c pledge = frPledge.findActiveAcc((Id) o.get('DonorId'), (Date) o.get('CheckDate'));
                 if (pledge != null) {
                     o.put('Funraise_GT_Pledge__c', pledge.id);
