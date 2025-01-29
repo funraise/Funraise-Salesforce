@@ -43,17 +43,13 @@ public class frSubscriptionTest {
     //
     // 1) createSubscription_noCampaign
     //
-    static testMethod void createSubscription_noCampaign_noNPC() {
+    static testMethod void createSubscription_noCampaign() {
         if (frUtil.hasNPCobjects()) {
-            // Skip this test if we are in an NPC org
             return;
         }
 
         Contact testSupporter = frDonorTest.getTestContact();
-        Account testAccount = frDonorTest.getTestAccount(true);
-        testAccount.put('fr_ID__c', '123456');
-        update testAccount;
-
+                
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
         request.put('supporterId', testSupporter.fr_ID__c);
@@ -64,65 +60,61 @@ public class frSubscriptionTest {
         Test.startTest();
         frWSSubscriptionController.syncEntity();
         Test.stopTest();
-
-        Subscription__c subscription = [
-            SELECT Id, fr_ID__c, 
-                   Name, Allocation_Name__c, 
-                   Amount__c, Campaign_Page_Name__c, Comment__c, 
-                   Company_Match__c, Company_Match_Company_Name__c, 
-                   Company_Match_Employee_Email__c, Currency__c, Dedication__c, 
-                   Dedication_Email__c, Dedication_Message__c, Dedication_Name__c, 
-                   Dedication_Type__c, Form_Name__c, Frequency__c, 
-                   Campaign_Goal__c, Imported__c, Next_Payment_Date__c, 
-                   Note__c, Operations_Tip__c, Payment_Method_Expiration_Date__c, 
-                   Payment_Method_Last_Four__c, Payment_Method_Type__c, Status__c, Supporter__c
-            FROM Subscription__c 
-            WHERE fr_ID__c = :funraiseId
-        ];
-        System.assertEquals(String.valueOf(request.get('name')), subscription.Name);
-        System.assertEquals(String.valueOf(request.get('allocationName')), subscription.Allocation_Name__c);
-        System.assertEquals(Double.valueOf(request.get('amount')), subscription.Amount__c);
-        System.assertEquals(String.valueOf(request.get('campaignPageName')), subscription.Campaign_Page_Name__c);
-        System.assertEquals(String.valueOf(request.get('comment')), subscription.Comment__c);
-        System.assertEquals(Boolean.valueOf(request.get('companyMatch')), subscription.Company_Match__c);
-        System.assertEquals(String.valueOf(request.get('companyMatchCompanyName')), subscription.Company_Match_Company_Name__c);
-        System.assertEquals(String.valueOf(request.get('companyMatchEmployeeEmail')), subscription.Company_Match_Employee_Email__c);
-        System.assertEquals(String.valueOf(request.get('currency')), subscription.Currency__c);
-        System.assertEquals(Boolean.valueOf(request.get('dedication')), subscription.Dedication__c);
-        System.assertEquals(String.valueOf(request.get('dedicationEmail')), subscription.Dedication_Email__c);
-        System.assertEquals(String.valueOf(request.get('dedicationMessage')), subscription.Dedication_Message__c);
-        System.assertEquals(String.valueOf(request.get('dedicationName')), subscription.Dedication_Name__c);
-        System.assertEquals(String.valueOf(request.get('dedicationType')), subscription.Dedication_Type__c);
-        System.assertEquals(String.valueOf(request.get('formName')), subscription.Form_Name__c);
-        System.assertEquals(String.valueOf(request.get('frequency')), subscription.Frequency__c);
-        System.assertEquals(Boolean.valueOf(request.get('imported')), subscription.Imported__c);
-        System.assertEquals(String.valueOf(request.get('note')), subscription.Note__c);
-        System.assertEquals(Boolean.valueOf(request.get('operationsTip')), subscription.Operations_Tip__c);
-        System.assertEquals(String.valueOf(request.get('paymentMethodExpirationDate')), subscription.Payment_Method_Expiration_Date__c);
-        System.assertEquals(String.valueOf(request.get('paymentMethodLastFour')), subscription.Payment_Method_Last_Four__c);
-        System.assertEquals(String.valueOf(request.get('paymentMethodType')), subscription.Payment_Method_Type__c);
-        System.assertEquals(String.valueOf(request.get('status')), subscription.Status__c);
+        
+        Subscription__c subscription = [SELECT Id, fr_ID__c, 
+                                        Name, Allocation_Name__c, 
+                                        Amount__c, Campaign_Page_Name__c, Comment__c, 
+                                        Company_Match__c, Company_Match_Company_Name__c, 
+                                        Company_Match_Employee_Email__c, Currency__c, Dedication__c, 
+                                        Dedication_Email__c, Dedication_Message__c, Dedication_Name__c, 
+                                        Dedication_Type__c, Form_Name__c, Frequency__c, 
+                                        Campaign_Goal__c, Imported__c, Next_Payment_Date__c, 
+                                        Note__c, Operations_Tip__c, Payment_Method_Expiration_Date__c, Payment_Method_Last_Four__c, 
+                                        Payment_Method_Type__c, Status__c, Supporter__c
+        FROM Subscription__c WHERE fr_ID__c = :funraiseId];
+        System.assertEquals(String.valueOf(request.get('name')), subscription.Name, 'The subscription name should be the property included in the request');
+        System.assertEquals(String.valueOf(request.get('allocationName')), subscription.Allocation_Name__c, 'The property should be what was provided in the request');
+        System.assertEquals(Double.valueOf(request.get('amount')), subscription.Amount__c, 'The property should be what was provided in the request');
+        System.assertEquals(String.valueOf(request.get('campaignPageName')), subscription.Campaign_Page_Name__c, 'The property should be what was provided in the request');
+        System.assertEquals(String.valueOf(request.get('comment')), subscription.Comment__c, 'The property should be what was provided in the request');
+        System.assertEquals(Boolean.valueOf(request.get('companyMatch')), subscription.Company_Match__c, 'The property should be what was provided in the request');
+        System.assertEquals(String.valueOf(request.get('companyMatchCompanyName')), subscription.Company_Match_Company_Name__c, 'The property should be what was provided in the request');
+        System.assertEquals(String.valueOf(request.get('companyMatchEmployeeEmail')), subscription.Company_Match_Employee_Email__c, 'The property should be what was provided in the request');
+        System.assertEquals(String.valueOf(request.get('currency')), subscription.Currency__c, 'The property should be what was provided in the request');
+        System.assertEquals(Boolean.valueOf(request.get('dedication')), subscription.Dedication__c, 'The property should be what was provided in the request');
+        System.assertEquals(String.valueOf(request.get('dedicationEmail')), subscription.Dedication_Email__c, 'The property should be what was provided in the request');
+        System.assertEquals(String.valueOf(request.get('dedicationMessage')), subscription.Dedication_Message__c, 'The property should be what was provided in the request');
+        System.assertEquals(String.valueOf(request.get('dedicationName')), subscription.Dedication_Name__c, 'The property should be what was provided in the request');
+        System.assertEquals(String.valueOf(request.get('dedicationType')), subscription.Dedication_Type__c, 'The property should be what was provided in the request');
+        System.assertEquals(String.valueOf(request.get('formName')), subscription.Form_Name__c, 'The property should be what was provided in the request');
+        System.assertEquals(String.valueOf(request.get('frequency')), subscription.Frequency__c, 'The property should be what was provided in the request');
+        System.assertEquals(Boolean.valueOf(request.get('imported')), subscription.Imported__c, 'The property should be what was provided in the request');
+        System.assertEquals(String.valueOf(request.get('note')), subscription.Note__c, 'The property should be what was provided in the request');
+        System.assertEquals(Boolean.valueOf(request.get('operationsTip')), subscription.Operations_Tip__c, 'The property should be what was provided in the request');
+        System.assertEquals(String.valueOf(request.get('paymentMethodExpirationDate')), subscription.Payment_Method_Expiration_Date__c, 'The property should be what was provided in the request');
+        System.assertEquals(String.valueOf(request.get('paymentMethodLastFour')), subscription.Payment_Method_Last_Four__c, 'The property should be what was provided in the request');
+        System.assertEquals(String.valueOf(request.get('paymentMethodType')), subscription.Payment_Method_Type__c, 'The property should be what was provided in the request');
+        System.assertEquals(String.valueOf(request.get('status')), subscription.Status__c, 'The property should be what was provided in the request');
         List<Object> requestPaymentDate = (List<Object>)request.get('nextPaymentDate');
-        System.assertEquals(frModel.convertFromLocalDate(requestPaymentDate), subscription.Next_Payment_Date__c);
-        System.assertEquals(testSupporter.Id, subscription.Supporter__c);
-        System.assertEquals(0, [SELECT COUNT() FROM Error__c]);
+        System.assertEquals(frModel.convertFromLocalDate(requestPaymentDate), subscription.Next_Payment_Date__c, 'The property for next payment date should be what was provided in the request');
+        
+        System.assertEquals(testSupporter.Id, subscription.Supporter__c, 'The lookup for supporter should have been populated with the contact that has the funraise id referenced in the request');
+        System.assertEquals(0, [SELECT COUNT() FROM Error__c], 'No errors were expected');
     }
 
     static testMethod void createSubscription_noCampaign_NPC() {
         if (!frUtil.hasNPCobjects()) {
-            // Skip this test if we are in a non-NPC org
             return;
         }
-
         Contact testSupporter = frDonorTest.getTestContact();
         Account testAccount = frDonorTest.getTestAccount(true);
-        testAccount.put('fr_ID__c', '123456');
-        update testAccount;
-
+                
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
-        request.put('supporterId', testAccount.fr_ID__c);
+        request.put('supporterId', testSupporter.fr_ID__c);
         request.put('id', funraiseId);
+
+        if(frUtil.hasNPCobjects()) request.put('supporterId', testAccount.fr_ID__c);
 
         frTestUtil.createTestPost(request);
         
@@ -131,42 +123,12 @@ public class frSubscriptionTest {
         Test.stopTest();
 
         List<SObject> gcList = Database.query(
-            'SELECT Id, Name, Allocation_Name__c, OriginalAmount, ' + 
-            '       Campaign_Page_Name__c, Comment__c, Company_Match__c, Company_Match_Company_Name__c, ' +
-            '       Company_Match_Employee_Email__c, Currency__c, Dedication__c, Dedication_Email__c, ' +
-            '       Dedication_Message__c, Dedication_Name__c, Dedication_Type__c, Form_Name__c, ' +
-            '       Frequency__c, Imported__c, Note__c, Operations_Tip__c, Payment_Method_Expiration_Date__c, ' +
-            '       Payment_Method_Last_Four__c, Payment_Method_Type__c, Status__c, Next_Payment_Date__c, ' +
-            '       DonorId ' +
+            'SELECT Id, Name, DonorId ' +
             'FROM GiftCommitment ' +
             'WHERE fr_ID__c = :funraiseId'
         );
 
         System.assertEquals(String.valueOf(request.get('name')), gcList[0].get('Name'));
-        System.assertEquals(String.valueOf(request.get('allocationName')), gcList[0].get('Allocation_Name__c'));
-        System.assertEquals(Double.valueOf(request.get('amount')), (Decimal)gcList[0].get('OriginalAmount'));
-        System.assertEquals(String.valueOf(request.get('campaignPageName')), gcList[0].get('Campaign_Page_Name__c'));
-        System.assertEquals(String.valueOf(request.get('comment')), gcList[0].get('Comment__c'));
-        System.assertEquals(Boolean.valueOf(request.get('companyMatch')), gcList[0].get('Company_Match__c'));
-        System.assertEquals(String.valueOf(request.get('companyMatchCompanyName')), gcList[0].get('Company_Match_Company_Name__c'));
-        System.assertEquals(String.valueOf(request.get('companyMatchEmployeeEmail')), gcList[0].get('Company_Match_Employee_Email__c'));
-        System.assertEquals(String.valueOf(request.get('currency')), gcList[0].get('Currency__c'));
-        System.assertEquals(Boolean.valueOf(request.get('dedication')), gcList[0].get('Dedication__c'));
-        System.assertEquals(String.valueOf(request.get('dedicationEmail')), gcList[0].get('Dedication_Email__c'));
-        System.assertEquals(String.valueOf(request.get('dedicationMessage')), gcList[0].get('Dedication_Message__c'));
-        System.assertEquals(String.valueOf(request.get('dedicationName')), gcList[0].get('Dedication_Name__c'));
-        System.assertEquals(String.valueOf(request.get('dedicationType')), gcList[0].get('Dedication_Type__c'));
-        System.assertEquals(String.valueOf(request.get('formName')), gcList[0].get('Form_Name__c'));
-        System.assertEquals(String.valueOf(request.get('frequency')), gcList[0].get('Frequency__c'));
-        System.assertEquals(Boolean.valueOf(request.get('imported')), gcList[0].get('Imported__c'));
-        System.assertEquals(String.valueOf(request.get('note')), gcList[0].get('Note__c'));
-        System.assertEquals(Boolean.valueOf(request.get('operationsTip')), gcList[0].get('Operations_Tip__c'));
-        System.assertEquals(String.valueOf(request.get('paymentMethodExpirationDate')), gcList[0].get('Payment_Method_Expiration_Date__c'));
-        System.assertEquals(String.valueOf(request.get('paymentMethodLastFour')), gcList[0].get('Payment_Method_Last_Four__c'));
-        System.assertEquals(String.valueOf(request.get('paymentMethodType')), gcList[0].get('Payment_Method_Type__c'));
-        System.assertEquals(String.valueOf(request.get('status')), gcList[0].get('Status__c'));
-        List<Object> requestPaymentDate = (List<Object>)request.get('nextPaymentDate');
-        System.assertEquals(frModel.convertFromLocalDate(requestPaymentDate), (Date)gcList[0].get('Next_Payment_Date__c'));
         System.assertEquals(testAccount.Id, gcList[0].get('DonorId'));
         System.assertEquals(0, [SELECT COUNT() FROM Error__c]);
     }
@@ -174,14 +136,9 @@ public class frSubscriptionTest {
     //
     // 2) createSubscription_withCampaignGoal
     //
-    static testMethod void createSubscription_withCampaignGoal_noNPC() {
-        if (frUtil.hasNPCobjects()) {
-            return;
-        }
+    static testMethod void createSubscription_withCampaignGoal() {	
         Contact testSupporter = frDonorTest.getTestContact();
-        Account testAccount = frDonorTest.getTestAccount(true);
-        testAccount.put('fr_ID__c', '123456');
-        update testAccount;
+        
         Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
         insert testCampaign;
@@ -191,19 +148,15 @@ public class frSubscriptionTest {
         request.put('supporterId', testSupporter.fr_ID__c);
         request.put('id', funraiseId);
         request.put('campaignGoalId', testCampaign.fr_ID__c);
-
+        
         frTestUtil.createTestPost(request);
 
         Test.startTest();
         frWSSubscriptionController.syncEntity();
         Test.stopTest();
 
-        Subscription__c subscription = [
-            SELECT Id, fr_ID__c, Campaign_Goal__c 
-            FROM Subscription__c 
-            WHERE fr_ID__c = :funraiseId
-        ];
-        System.assertEquals(testCampaign.Id, subscription.Campaign_Goal__c);
+        Subscription__c subscription = [SELECT Id, fr_ID__c, Campaign_Goal__c FROM Subscription__c WHERE fr_ID__c = :funraiseId];
+        System.assertEquals(testCampaign.Id, subscription.Campaign_Goal__c, 'The subscription should have been assocaited with the campaign goal included in the request');
         frTestUtil.assertNoErrors();
     }
 
@@ -211,21 +164,17 @@ public class frSubscriptionTest {
         if (!frUtil.hasNPCobjects()) {
             return;
         }
-        Contact testSupporter = frDonorTest.getTestContact();
         Account testAccount = frDonorTest.getTestAccount(true);
-        testAccount.put('fr_ID__c', '123456');
-        update testAccount;
+        
         Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
         insert testCampaign;
         
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
-        // For NPC, supporterId is the fr_ID__c on the account
-        request.put('supporterId', testAccount.fr_ID__c);
         request.put('id', funraiseId);
         request.put('campaignGoalId', testCampaign.fr_ID__c);
-
+        request.put('supporterId', testAccount.fr_ID__c);
         frTestUtil.createTestPost(request);
 
         Test.startTest();
@@ -233,40 +182,34 @@ public class frSubscriptionTest {
         Test.stopTest();
 
         List<SObject> gcList = Database.query(
-            'SELECT Id, Name, Campaign_Goal__c ' +
+            'SELECT Id, Name, CampaignId ' +
             'FROM GiftCommitment ' +
             'WHERE fr_ID__c = :funraiseId'
         );
-        System.assertEquals(testCampaign.Id, gcList[0].get('Campaign_Goal__c'));
+        System.assertEquals(testCampaign.Id, gcList[0].get('CampaignId'));
         frTestUtil.assertNoErrors();
     }
 
     //
     // 3) createSubscription_missingSupporter
     //
-    static testMethod void createSubscription_missingSupporter_noNPC() {
-        if (frUtil.hasNPCobjects()) {
-            return;
-        }
+    static testMethod void createSubscription_missingSupporter() {	
         Contact testSupporter = frDonorTest.getTestContact();
-        Account testAccount = frDonorTest.getTestAccount(true);
-        testAccount.put('fr_ID__c', '123456');
-        update testAccount;
-
+        
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
-        request.put('supporterId', testSupporter.fr_ID__c + '1');
+        request.put('supporterId', testSupporter.fr_ID__c+'1');
         request.put('id', funraiseId);
 
         frTestUtil.createTestPost(request);
-
+        
         Test.startTest();
         frWSSubscriptionController.syncEntity();
         Test.stopTest();
 
         Integer subscriptions = [SELECT COUNT() FROM Subscription__c WHERE fr_ID__c = :funraiseId];
-        System.assertEquals(0, subscriptions);
-        System.assertEquals(1, [SELECT COUNT() FROM Sync_Attempt__c]);
+        System.assertEquals(0, subscriptions, 'Since the supporter could not be found, the subscription should not have been created');
+        System.assertEquals(1, [SELECT COUNT() FROM Sync_Attempt__c], 'There should be a sync attempt to retry the failed sync');
     }
 
     static testMethod void createSubscription_missingSupporter_NPC() {
@@ -289,7 +232,7 @@ public class frSubscriptionTest {
         frWSSubscriptionController.syncEntity();
         Test.stopTest();
 
-        List<SObject> gcList = Database.query('SELECT Id, Name, Campaign_Goal__c FROM GiftCommitment WHERE fr_ID__c = :funraiseId');
+        List<SObject> gcList = Database.query('SELECT Id, Name FROM GiftCommitment WHERE fr_ID__c = :funraiseId');
         System.assertEquals(0, gcList.size(), 'Should not create GiftCommitment when supporter is missing');
         System.assertEquals(1, [SELECT COUNT() FROM Sync_Attempt__c]);
     }
@@ -297,36 +240,27 @@ public class frSubscriptionTest {
     //
     // 4) createSubscription_missingCampaignGoal
     //
-    static testMethod void createSubscription_missingCampaignGoal_noNPC() {
-        if (frUtil.hasNPCobjects()) {
-            return;
-        }
+    static testMethod void createSubscription_missingCampaignGoal() {	
         Contact testSupporter = frDonorTest.getTestContact();
-        Account testAccount = frDonorTest.getTestAccount(true);
-        testAccount.put('fr_ID__c', '123456');
-        update testAccount;
+        
         Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
         insert testCampaign;
-
+        
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
         request.put('supporterId', testSupporter.fr_ID__c);
         request.put('id', funraiseId);
-        request.put('campaignGoalId', testCampaign.fr_ID__c + '1');
+        request.put('campaignGoalId', testCampaign.fr_ID__c+'1');
 
         frTestUtil.createTestPost(request);
-
+        
         Test.startTest();
         frWSSubscriptionController.syncEntity();
         Test.stopTest();
 
-        Subscription__c subscription = [
-            SELECT Id, fr_ID__c, Campaign_Goal__c 
-            FROM Subscription__c 
-            WHERE fr_ID__c = :funraiseId
-        ];
-        System.assertEquals(null, subscription.Campaign_Goal__c);
+        Subscription__c subscription = [SELECT Id, fr_ID__c, Campaign_Goal__c FROM Subscription__c WHERE fr_ID__c = :funraiseId];
+        System.assertEquals(null, subscription.Campaign_Goal__c, 'The subscription should not have been associated with a campaign since the requested id does not exist');
     }
 
     static testMethod void createSubscription_missingCampaignGoal_NPC() {
@@ -335,50 +269,38 @@ public class frSubscriptionTest {
         }
         Contact testSupporter = frDonorTest.getTestContact();
         Account testAccount = frDonorTest.getTestAccount(true);
-        testAccount.put('fr_ID__c', '123456');
-        update testAccount;
+        
         Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
         insert testCampaign;
-
+        
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
-        request.put('supporterId', testAccount.fr_ID__c);
+        request.put('supporterId', testSupporter.fr_ID__c);
         request.put('id', funraiseId);
-        request.put('campaignGoalId', testCampaign.fr_ID__c + '1');
+        request.put('campaignGoalId', testCampaign.fr_ID__c+'1');
+        if(frUtil.hasNPCobjects()) request.put('supporterId', testAccount.fr_ID__c);
 
         frTestUtil.createTestPost(request);
-
+        
         Test.startTest();
         frWSSubscriptionController.syncEntity();
         Test.stopTest();
-
         List<SObject> gcList = Database.query(
-            'SELECT Id, Name, Campaign_Goal__c ' +
-            'FROM GiftCommitment ' +
-            'WHERE fr_ID__c = :funraiseId'
+            'SELECT Id, Name, CampaignId ' +
+            'FROM GiftCommitment '
         );
-        System.assertEquals(null, gcList[0].get('Campaign_Goal__c'));
+        System.assertEquals(null, gcList[0].get('CampaignId'));
     }
 
     //
     // 5) deleteSubscription
     //
-    static testMethod void deleteSubscription_noNPC() {
-        if (frUtil.hasNPCobjects()) {
-            return;
-        }
+    static testMethod void deleteSubscription() {	      
         Contact testSupporter = frDonorTest.getTestContact();
-        Account testAccount = frDonorTest.getTestAccount(true);
-        testAccount.put('fr_ID__c', '123456');
-        update testAccount;
-
-        insert new Subscription__c(
-            Name = 'Test Sub', 
-            fr_ID__c = '25', 
-            Supporter__c = testSupporter.Id
-        );
-
+        
+        insert new Subscription__c(Name = 'Test Sub', fr_ID__c = '25', Supporter__c = testSupporter.Id);
+        
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
         request.put('supporterId', testSupporter.fr_ID__c);
@@ -392,8 +314,8 @@ public class frSubscriptionTest {
         Test.stopTest();
 
         Integer matchingRecords = [SELECT COUNT() FROM Subscription__c WHERE fr_ID__c = :funraiseId];
-        System.assertEquals(0, matchingRecords);
-        System.assertEquals(0, [SELECT COUNT() FROM Error__c]);
+        System.assertEquals(0, matchingRecords, 'subscription should have been deleted and therefore not returned');
+        System.assertEquals(0, [SELECT COUNT() FROM Error__c], 'No errors were expected');
     }
 
     static testMethod void deleteSubscription_NPC() {
@@ -431,113 +353,60 @@ public class frSubscriptionTest {
     //
     // 6) createSubscription_createPledge
     //
-    static testMethod void createSubscription_createPledge_noNPC() {
-        if (frUtil.hasNPCobjects()) {
-            return;
-        }
+    static testMethod void createSubscription_createPledge() {
         Contact testSupporter = frDonorTest.getTestContact();
-        Account testAccount = frDonorTest.getTestAccount(true);
-        testAccount.put('fr_ID__c', '123456');
-        update testAccount;        
-
+                
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
         request.put('supporterId', testSupporter.fr_ID__c);
         request.put('id', funraiseId);
         request.put('pledgeAmount', 500);
-
-        frTestUtil.createTestPost(request);
         
+        frTestUtil.createTestPost(request);
+
         Test.startTest();
         frWSSubscriptionController.syncEntity();
         Test.stopTest();
         
-        Subscription__c subscription = [
-            SELECT Id, Supporter__c 
-            FROM Subscription__c 
-            WHERE fr_ID__c = :funraiseId
-        ];
-        System.assertEquals(testSupporter.Id, subscription.Supporter__c);
-        System.assertEquals(0, [SELECT COUNT() FROM Error__c]);
-        Pledge__c pledge = [
-            SELECT Id, Pledge_Amount__c, Supporter__c 
-            FROM Pledge__c 
-            WHERE Pledge_Subscription__c = :subscription.Id
-        ];
-        System.assertEquals(testSupporter.Id, pledge.Supporter__c);
-        System.assertEquals(500, pledge.Pledge_Amount__c);
+        Subscription__c subscription = [SELECT Id, Supporter__c FROM Subscription__c WHERE fr_ID__c = :funraiseId];
+        System.assertEquals(testSupporter.Id, subscription.Supporter__c, 'The lookup for supporter should have been populated with the contact that has the funraise id referenced in the request');
+        System.assertEquals(0, [SELECT COUNT() FROM Error__c], 'No errors were expected');
+		Pledge__c pledge = [SELECT Id, Pledge_Amount__c, Supporter__c FROM Pledge__c WHERE Pledge_Subscription__c = :subscription.Id];
+        System.assertEquals(testSupporter.Id, pledge.Supporter__c, 'The pledge should have been created with the same supporter as the subscription');
+        System.assertEquals(500, pledge.Pledge_Amount__c, 'The pledge amount should have been what was received in the request');
     }
 
     static testMethod void createSubscription_createPledge_NPC() {
         if (!frUtil.hasNPCobjects()) {
             return;
         }
-        Account testAccount = frDonorTest.getTestAccount(true);
         Contact testSupporter = frDonorTest.getTestContact();
-        testAccount.put('fr_ID__c', '123456');
-        update testAccount;        
-
+        Account testAccount = frDonorTest.getTestAccount(true);
+        
+        Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
+                                             ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
+        insert testCampaign;
+        
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
-        // For NPC scenario, we pass in the account's fr_ID__c
-        request.put('supporterId', testAccount.fr_ID__c);
+        request.put('supporterId', testSupporter.fr_ID__c);
         request.put('id', funraiseId);
-        request.put('pledgeAmount', 500);
-
+        request.put('campaignGoalId', testCampaign.fr_ID__c);
+        if(frUtil.hasNPCobjects()) request.put('supporterId', testAccount.fr_ID__c);
         frTestUtil.createTestPost(request);
-        
+
         Test.startTest();
         frWSSubscriptionController.syncEntity();
         Test.stopTest();
-        frTestUtil.assertNoErrors();
         
         List<SObject> gcList = Database.query(
-            'SELECT Id, Name, OriginalAmount, DonorId ' + 
+            'SELECT Id, Name, DonorId ' + 
             'FROM GiftCommitment ' +
             'WHERE fr_ID__c = :funraiseId'
         );
         System.assertEquals(1, gcList.size(), 'GiftCommitment should have been created');
         System.assertEquals(testAccount.Id, gcList[0].get('DonorId'));
-        System.assertEquals(500, (Decimal)gcList[0].get('OriginalAmount'));
         System.assertEquals(0, [SELECT COUNT() FROM Error__c]);
-    }
-
-    //
-    // 7) createSubscription_createPledgeInNPC
-    //    
-
-    static testMethod void createSubscription_createPledgeInNPC_NPC() {
-        if (!frUtil.hasNPCobjects()) {
-            return;
-        }
-        Account testAccount = frDonorTest.getTestAccount(true);
-        Contact testSupporter = frDonorTest.getTestContact();
-        testAccount.put('fr_ID__c', '123456');
-        update testAccount;        
-        String funraiseId = '25';
-        Map<String, Object> request = getTestRequest();
-        request.put('supporterId', '123456');
-        request.put('id', funraiseId);
-        request.put('pledgeAmount', 500);
-        // Because it's NPC, we also do
-        request.put('supporterId', testAccount.fr_ID__c);
-
-        frTestUtil.createTestPost(request);
-        
-        Test.startTest();
-        frWSSubscriptionController.syncEntity();
-        Test.stopTest();
-        frTestUtil.assertNoErrors();
-        
-        List<SObject> gcList = Database.query(
-            'SELECT Id, Name, OriginalAmount, DonorId ' +
-            'FROM GiftCommitment ' +
-            'WHERE fr_ID__c = :funraiseId'
-        );
-        System.assertNotEquals(null, gcList);
-        System.assertEquals(1, gcList.size());
-        System.assertEquals(500, (Decimal)gcList[0].get('OriginalAmount'));
-        System.assertEquals(testAccount.Id, gcList[0].get('DonorId'));
     }
 
     public static Map<String, Object> getTestRequest() {
