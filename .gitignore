@@ -11,3 +11,5 @@ config
 /salesforce.schema
 .idea/
 *.iml
+/.sfdx/
+/tags
