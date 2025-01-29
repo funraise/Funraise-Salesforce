@@ -39,6 +39,7 @@
 */
 
 public class frSubscription extends frModel implements frSyncable {
+    // getMappings() is used instead of fields in NPC orgs, so no need to have an NPC alternative here
     public static final Map<String, Schema.SObjectField> fields = 
         frSchemaUtil.getFields(Subscription__c.getSObjectType().getDescribe().getName());
         
