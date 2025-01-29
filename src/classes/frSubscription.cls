@@ -211,6 +211,14 @@ public class frSubscription extends frModel implements frSyncable {
     protected override Boolean requireObjectDeletePermission() {
         return true;
     }
+
+    protected override List<frMapping__c> getMappings() {
+        if (frUtil.hasNPCobjects()) {
+            return [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = 'Commitment' ORDER BY CreatedDate];
+        } else {
+            return new List<frMapping__c>(); // Subscription does not use mappings in non-NPC environments
+        }
+    }
     
     protected override Set<Schema.SObjectField> getFields() {
         if(frUtil.hasNPCobjects()) {
