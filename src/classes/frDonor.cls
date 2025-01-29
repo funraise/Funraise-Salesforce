@@ -100,15 +100,16 @@ public class frDonor extends frModel implements frSyncable{
             
             if (String.isNotBlank(firstName) && String.isNotBlank(lastName)) {
                 query += ' AND FirstName = :firstName AND LastName = :lastName';
-            }
-            query += ' LIMIT 1';
-    
-            records = Database.query(query);
-            if(isNPC) {
-                supporter = applyAccountMatch(records, frId);
-            }
-            else {
-                supporter = applyMatch(records, frId);
+            
+                query += ' LIMIT 1';
+        
+                records = Database.query(query);
+                if(isNPC) {
+                    supporter = applyAccountMatch(records, frId);
+                }
+                else {
+                    supporter = applyMatch(records, frId);
+                }
             }
         }
         //match on just email
