@@ -169,16 +169,10 @@ public class frDonation extends frModel implements frSyncable {
             createOpportunityMapping(request);
         }
 
-        if(Test.isRunningTest() && String.valueOf(request.get('APEX_TESTS')) == 'true' && frUtil.hasNPCobjects()) {
-            setOpportunityStage(new Opportunity(), 'Complete');
-            setOpportunityStage(new Opportunity(), 'Failed');
-            setOpportunityStage(new Opportunity(), 'Pending');
-            setOpportunityStage(new Opportunity(), 'Refunded');
-            createOpportunityMapping(request);
-        }
         return result;
     }
     
+    @testVisible
     private void setOpportunityStage(Opportunity o, String status) {
         if(String.isBlank(o.StageName)) {
             List<OpportunityStage> stages = [SELECT Id, MasterLabel, IsWon, IsClosed 

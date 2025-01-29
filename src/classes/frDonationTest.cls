@@ -941,6 +941,36 @@ public class frDonationTest {
         // If needed, replicate a GiftTransaction approach here
     }
 
+    static testMethod void syncEntity_setOpportunityStage_NPC() {
+        if (!frUtil.hasNPCobjects()) {
+            return;
+        }
+
+        createMapping('name', 'Name');
+        insert frSetupController.getGiftTransactionDefaults();
+        Contact testContact = frDonorTest.getTestContact();
+        Account testAccount = frDonorTest.getTestAccount(true);
+        Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign',
+                                             ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
+        insert testCampaign;
+
+        Map<String, Object> request = getTestRequest();
+        request.put('subscriptionId', subscription.fr_ID__c);
+        request.put('APEX_TESTS', 'true');
+        request.put('opportunityContactMappingDisabled', 'false');
+        request.put('donorId', '856');
+
+        Test.startTest();
+        frDonation.setOpportunityStage(new Opportunity(), 'Complete');
+        frDonation.setOpportunityStage(new Opportunity(), 'Failed');
+        frDonation.setOpportunityStage(new Opportunity(), 'Pending');
+        frDonation.setOpportunityStage(new Opportunity(), 'Refunded');
+        frDonation.createOpportunityMapping(request);
+        Test.stopTest();
+
+        frTestUtil.assertNoErrors();
+    }
+
     //
     // Utility methods
     //
