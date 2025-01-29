@@ -124,11 +124,19 @@ public with sharing class frPledge {
         Id relatedId = (Id) gt.get('Id');
         Id donorId = (Id) gt.get('DonorId');
         SObject acc = Database.query('SELECT PersonContactId FROM Account WHERE Id = :donorId');
+        String gtName = '';
+        Decimal gtAmount = 0;
+        try {
+            gtName = ((String) gt.get('Name')) + ' ';
+        } catch (Exception ex) { }
+        try {
+            gtAmount = (Decimal) gt.get('OriginalAmount');
+        } catch (Exception ex) { }
         Pledge__c pledge = new Pledge__c(
-            Name = frUtil.truncateToFieldLength(Pledge__c.Name.getDescribe(), (String) gt.get('Name') + ' Pledge'),
+            Name = frUtil.truncateToFieldLength(Pledge__c.Name.getDescribe(), gtName + 'Pledge'),
             Supporter__c =(id) acc.get('PersonContactId'),
             Supporter_PA__c = (id) gt.get('DonorId'),
-            Pledge_Amount__c = (Decimal) gt.get('OriginalAmount'),
+            Pledge_Amount__c = gtAmount,
             Pledge_Donation_uq__c = relatedId
         );
         pledge.put('Pledge_Gift_Transaction__c', relatedId);
