@@ -84,6 +84,7 @@ public class frDonation extends frModel implements frSyncable {
         String supporterFunraiseId = String.valueOf(request.get('donorId')); 
         String supporterObjName = frUtil.hasNPCobjects() ? 'Account' : 'Contact';
         String subsciptionObjName = frUtil.hasNPCobjects() ? 'GiftCommitment' : 'Subscription__c';
+        String subscriptionLookupFieldName = frUtil.hasNPCobjects() ? 'GiftCommitmentId' : 'Subscription__c';
         
         //connect supporter
         if (String.isNotBlank(supporterFunraiseId)) {
@@ -123,10 +124,9 @@ public class frDonation extends frModel implements frSyncable {
         if (String.isNotBlank(subscriptionId)) {
             List<SObject> subscriptions = Database.query('SELECT Id FROM ' + subsciptionObjName + ' WHERE fr_ID__c = :subscriptionId');
             if (subscriptions.size() > 0) {
-                if(!frUtil.hasNPCobjects()) o.put('Subscription__c', subscriptions.get(0).get('Id'));
-                else o.put('GiftCommitmentId', subscriptions.get(0).get('Id'));
+                o.put(subscriptionLookupFieldName, subscriptions.get(0).get('Id'));
             } else {
-                frUtil.logRelationshipError(getFrType(), funraiseId, 
+                frUtil.logRelationshipError(getFrType(), funraiseId,
                                             frUtil.Entity.SUBSCRIPTION, subscriptionId);
             }
         }
