@@ -55,8 +55,7 @@ public class frDonor extends frModel implements frSyncable{
         return mappings;
     }
     
-    private Contact supporterContact;
-    private Account supporterAccount;
+    private SObject supporter;
     
     public frDonor(Sync_Attempt__c syncRecord){
         super(syncRecord);
@@ -67,7 +66,7 @@ public class frDonor extends frModel implements frSyncable{
         Map<String, Object> request = getRequestBody();
         String frId = getFunraiseId();
     
-        SObject supporter = null; // Generic SObject for both Account and Contact
+        supporter = null; // Generic SObject for both Account and Contact
         String sObjectType; // To track whether we're dealing with Account or Contact
         
         Boolean isNPC = frUtil.hasNPCobjects();
@@ -171,14 +170,6 @@ public class frDonor extends frModel implements frSyncable{
     
         // Apply mappings
         applyMappings(supporter, request);
-
-        //assign to private objects
-        if(isNPC) {
-            supporterAccount = (Account)supporter;
-        } 
-        else {
-           supporterContact = (Contact)supporter;
-        }
     
         if (String.isBlank((String)supporter.get('LastName'))) {
             supporter.put('LastName', String.valueOf(request.get('institutionName')));
@@ -220,12 +211,7 @@ public class frDonor extends frModel implements frSyncable{
     }
     
     protected override String getSalesforceId() {
-        if(frUtil.hasNPCobjects()) {
-            return supporterAccount != null ? supporterAccount.Id : null; 
-        }
-        else {
-            return supporterContact != null ? supporterContact.Id : null;
-        }
+        return supporter?.Id;
     }
 
     protected override Set<Schema.SObjectField> getFields() {
