@@ -67,8 +67,7 @@ public class frDonation extends frModel implements frSyncable {
 
         if(!frUtil.hasNPCobjects()) {
             o = new Opportunity();
-            setOpportunityStage((Opportunity) o, String.valueOf(request.get('status')));
-        } 
+        }
         else {
             List<SObject> gtList = Database.query('SELECT Id, Funraise_GT_Pledge__c FROM GiftTransaction WHERE fr_ID__c = :frId');
             if(gtList.isEmpty()) {
@@ -80,8 +79,10 @@ public class frDonation extends frModel implements frSyncable {
         }
 
         applyMappings(o, request);
-        String funraiseId = getFunraiseId();       
-        String supporterFunraiseId = String.valueOf(request.get('donorId')); 
+        if (!frUtil.hasNPCobjects()) setOpportunityStage((Opportunity) o, String.valueOf(request.get('status')));
+
+        String funraiseId = getFunraiseId();
+        String supporterFunraiseId = String.valueOf(request.get('donorId'));
         String supporterObjName = frUtil.hasNPCobjects() ? 'Account' : 'Contact';
         String subsciptionObjName = frUtil.hasNPCobjects() ? 'GiftCommitment' : 'Subscription__c';
         String subscriptionLookupFieldName = frUtil.hasNPCobjects() ? 'GiftCommitmentId' : 'Subscription__c';
