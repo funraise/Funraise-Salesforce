@@ -265,14 +265,6 @@ public class frDonationTest {
         System.assertEquals('Closed Lost', newOpportunity.StageName, 'A status of refunded should have resulted in a Closed Lost stage');
     }
 
-    static testMethod void syncEntity_donationStatusDefaulting_NPC() {
-        if (!frUtil.hasNPCobjects()) {
-            return;
-        }
-        // Original code for the NPC else-block didn't do anything, so we skip or do minimal logic
-        // If you want to add an actual test for status logic in NPC, you can do so here.
-    }
-
     //
     // syncEntity_newOpportunityRoleMappings
     //
