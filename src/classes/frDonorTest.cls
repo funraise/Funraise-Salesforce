@@ -569,6 +569,8 @@ public class frDonorTest {
         
         Contact existing = getTestContact(true);
         Account existingacc = getTestAccount(true);
+        existingacc.personemail = 'example.email.no.overwrite@example.com';
+        update existingacc;
         Map<String, Object> request = getTestRequest();
         request.put('email', 'example.email.overwrite@example.com');
         
@@ -710,8 +712,10 @@ public class frDonorTest {
 
         Contact existing = getTestContact(true);
         Account existingacc = getTestAccount(true);
+        existingacc.personemail = 'example.email.no.overwrite@example.com';
+        update existingacc;        
         Map<String, Object> request = getTestRequest();
-        request.put('id', existing.fr_Id__c);
+        request.put('id', existingacc.fr_Id__c);
         request.put('email', 'example.email.overwrite@example.com');
         request.put('updtime', DateTime.now().addDays(1).getTime());
 
@@ -914,6 +918,14 @@ public class frDonorTest {
         account.put('fr_ID__c', '856');
         if(save) {
             insert account;
+            if (frUtil.hasNPCobjects()) {
+                Id accountId = account.Id;
+                account = (Account) Database.query(
+                    'SELECT Id, FirstName, LastNAme, PersonEmail, PersonMailingStreet, PersonMailingCity, PersonMailingState, PersonMailingPostalCode, PersonMailingCountry, PersonContactId, fr_ID__c '+
+                    'FROM Account '+
+                    'WHERE Id = :accountId'
+                ).get(0);
+            }
         }
         return account;
     }

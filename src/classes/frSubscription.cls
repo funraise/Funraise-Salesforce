@@ -39,7 +39,6 @@
 */
 
 public class frSubscription extends frModel implements frSyncable {
-    // getMappings() is used instead of fields in NPC orgs, so no need to have an NPC alternative here
     public static final Map<String, Schema.SObjectField> fields = 
         frSchemaUtil.getFields(Subscription__c.getSObjectType().getDescribe().getName());
         
@@ -158,8 +157,8 @@ public class frSubscription extends frModel implements frSyncable {
                 Name = frUtil.truncateToFieldLength(
                     Subscription__c.Name.getDescribe(), 
                     String.valueOf(request.get('name'))
-                )
-                //Supporter__c = contacts.get(0).Id
+                ),
+                Supporter__c = accounts.get(0).get('PersonContactId') //Supporter is a required field.
             );
         }
 
@@ -187,10 +186,10 @@ public class frSubscription extends frModel implements frSyncable {
         String regex = '([a-z])([A-Z]+)';
         String replacement = '$1_$2';
         for(String funraiseFieldName : request.keySet()) {
-            System.debug(funraiseFieldName);
             String salesforceFieldName = funraiseFieldName.replaceAll(regex, replacement);
             salesforceFieldName =+ 'funraise__' + salesforceFieldName.capitalize() + '__c';
             Schema.SObjectField field = fields.get(salesforceFieldName);
+            if(field == NULL) continue; //added null handling
             frModel.write(subscription, field, funraiseFieldName, request.get(funraiseFieldName), funraiseId);
         }
 

@@ -136,6 +136,7 @@ public with sharing abstract class frModel {
         for(String fieldName : frFieldToMappings.keySet()) {
             if(request.containsKey(fieldName)) {
                 for(frMapping__c mapping : frFieldToMappings.get(fieldName)) {
+                    if(!fields.containsKey(mapping.sf_Name__c)) continue; //Make sure field is valid
                     Schema.SObjectField field = fields.get(mapping.sf_Name__c);
                     Object incomingValue = request.get(fieldName);
                     Boolean write = false;
@@ -172,7 +173,7 @@ public with sharing abstract class frModel {
                     record.put(field, Id.valueOf((String)value));
                 }
             } else if (field.getDescribe().getType() == Schema.DisplayType.DateTime) {
-                record.put(field, DateTime.newInstance((Long)value));
+                if(value != NULL) record.put(field, DateTime.newInstance((Long)value)); //Added null handling
             } else if (field.getDescribe().getType() == Schema.DisplayType.Date) {
                 if(value instanceof List<Object>) {
                     List<Object> localDate = (List<Object>)value;

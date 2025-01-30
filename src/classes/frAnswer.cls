@@ -92,15 +92,17 @@ public class frAnswer extends frModel implements frSyncable {
             }
         }
         
-        Opportunity opp = null;
+        SObject trsact = null;
         String funraiseTransactionId = String.valueOf(request.get('donationId'));
         if(String.isNotBlank(funraiseTransactionId)) {
-            List<Opportunity> transactions = [SELECT Id from Opportunity WHERE fr_Id__c = :funraiseTransactionId];
+            List<SObject> transactions;
+            if (frUtil.hasNPCobjects()) transactions = Database.query('SELECT Id, Name FROM GiftTransaction WHERE fr_ID__c = :funraiseTransactionId');
+            else transactions = [SELECT Id from Opportunity WHERE fr_Id__c = :funraiseTransactionId];
             if(transactions.isEmpty()) {
                 if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
                                             frUtil.Entity.DONATION, funraiseTransactionId);
             } else {
-                opp = transactions.get(0);
+                trsact = transactions.get(0);
             }
         }
         
@@ -135,24 +137,17 @@ public class frAnswer extends frModel implements frSyncable {
                 String.valueOf(request.get('answer'))
             ),
             Question__c = questions.get(0).Id,
-            Transaction__c = opp != null ? opp.Id : null,
             Campaign_Page__c = page != null ? page.Id : null,
             Registration__c = registration != null ? registration.Id : null
         );
+        
 
         if(frUtil.hasNPCobjects()) {
-            answer.put('Supporter_PA__c', supporter != null ? supporter.get('Id') : null);
-            List<SObject> gt = Database.query('SELECT Id, Name FROM GiftTransaction WHERE fr_ID__c = :funraiseTransactionId');
-            System.debug('gt: ' + gt);
-            if(gt.isEmpty()) {
-                if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
-                                            frUtil.Entity.DONATION, funraiseTransactionId);
-            } else {
-                answer.put('Gift_Transaction_Id__c', (String) gt.get(0).get('Id'));
-            }
-            
+            answer.put('Supporter_PA__c', supporter?.Id);
+            answer.put('Gift_Transaction_Id__c', trsact?.Id);
         } else {
-            answer.Supporter__c = supporter != null ? (Id) supporter.get('Id') : null;
+            answer.Supporter__c = supporter?.Id;
+            answer.Transaction__c = trsact?.Id;
         }
         
         try {

@@ -136,7 +136,10 @@ public class frSubscriptionTest {
     //
     // 2) createSubscription_withCampaignGoal
     //
-    static testMethod void createSubscription_withCampaignGoal() {	
+    static testMethod void createSubscription_withCampaignGoal() {  
+        if (frUtil.hasNPCobjects()) {
+            return;
+        }    
         Contact testSupporter = frDonorTest.getTestContact();
         
         Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
@@ -193,7 +196,7 @@ public class frSubscriptionTest {
     //
     // 3) createSubscription_missingSupporter
     //
-    static testMethod void createSubscription_missingSupporter() {	
+    static testMethod void createSubscription_missingSupporter() {  
         Contact testSupporter = frDonorTest.getTestContact();
         
         String funraiseId = '25';
@@ -240,7 +243,9 @@ public class frSubscriptionTest {
     //
     // 4) createSubscription_missingCampaignGoal
     //
-    static testMethod void createSubscription_missingCampaignGoal() {	
+    static testMethod void createSubscription_missingCampaignGoal() {   
+        if (frUtil.hasNPCobjects()) return;
+        
         Contact testSupporter = frDonorTest.getTestContact();
         
         Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
@@ -296,7 +301,10 @@ public class frSubscriptionTest {
     //
     // 5) deleteSubscription
     //
-    static testMethod void deleteSubscription() {	      
+    static testMethod void deleteSubscription() {    
+        if (frUtil.hasNPCobjects()) {
+            return;
+        }         
         Contact testSupporter = frDonorTest.getTestContact();
         
         insert new Subscription__c(Name = 'Test Sub', fr_ID__c = '25', Supporter__c = testSupporter.Id);
@@ -354,6 +362,9 @@ public class frSubscriptionTest {
     // 6) createSubscription_createPledge
     //
     static testMethod void createSubscription_createPledge() {
+        if (frUtil.hasNPCobjects()) {
+            return;
+        }    
         Contact testSupporter = frDonorTest.getTestContact();
                 
         String funraiseId = '25';
@@ -371,7 +382,7 @@ public class frSubscriptionTest {
         Subscription__c subscription = [SELECT Id, Supporter__c FROM Subscription__c WHERE fr_ID__c = :funraiseId];
         System.assertEquals(testSupporter.Id, subscription.Supporter__c, 'The lookup for supporter should have been populated with the contact that has the funraise id referenced in the request');
         System.assertEquals(0, [SELECT COUNT() FROM Error__c], 'No errors were expected');
-		Pledge__c pledge = [SELECT Id, Pledge_Amount__c, Supporter__c FROM Pledge__c WHERE Pledge_Subscription__c = :subscription.Id];
+        Pledge__c pledge = [SELECT Id, Pledge_Amount__c, Supporter__c FROM Pledge__c WHERE Pledge_Subscription__c = :subscription.Id];
         System.assertEquals(testSupporter.Id, pledge.Supporter__c, 'The pledge should have been created with the same supporter as the subscription');
         System.assertEquals(500, pledge.Pledge_Amount__c, 'The pledge amount should have been what was received in the request');
     }

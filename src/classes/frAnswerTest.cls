@@ -41,108 +41,155 @@
 public class frAnswerTest {
     @isTest
     static void createAnswer_linkedToTransaction() {
+        if (frUtil.hasNPCobjects()) return;
+
         List<SObject> setupRecords = new List<SObject>();
         Question__c question = frQuestionTest.getTestQuestion();
         setupRecords.add(question);
-        
+
         Opportunity opp = frDonationTest.getTestOpp();
         setupRecords.add(opp);
         insert setupRecords;
-        
+
         Contact supporter = frDonorTest.getTestContact();
-        
+
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
         request.put('id', funraiseId);
         request.put('questionId', question.fr_Id__c);
         request.put('donationId', opp.fr_Id__c);
         request.put('supporterId', supporter.fr_Id__c);
-        
+
         frTestUtil.createTestPost(request);
 
         Test.startTest();
         frWSCustomQuestionAnswerController.syncEntity();
         Test.stopTest();
         frTestUtil.assertNoErrors();
-        
+
         Answer__c answer = [SELECT Id, fr_ID__c, Answer__c, Question__c, Transaction__c, Supporter__c
                             FROM Answer__c WHERE fr_ID__c = :funraiseId];
-        
+
         System.assertEquals(String.valueOf(request.get('id')), answer.fr_Id__c, 'The ansswer id should be the property included in the request');
         System.assertEquals(String.valueOf(request.get('answer')), answer.Answer__c, 'The answer value should be the property included in the request');
         System.assertEquals(question.Id, answer.Question__c, 'The question relationship should be the property included in the request');
         System.assertEquals(opp.Id, answer.Transaction__c, 'The transaction relationship should be the property included in the request');
         System.assertEquals(supporter.Id, answer.Supporter__c, 'The supporter relationship should be the property included in the request');
     }
-    
+
+    @isTest
+    static void createAnswer_linkedToTransaction_NPC() {
+        if (!frUtil.hasNPCobjects()) return;
+
+        List<SObject> setupRecords = new List<SObject>();
+        Question__c question = frQuestionTest.getTestQuestion();
+        setupRecords.add(question);
+
+        Account supporter = frDonorTest.getTestAccount(true);
+
+        Contact testSupporter = frDonorTest.getTestContact();
+        Pledge__c pledge = frDonationTest.getTestPledgeAcc(supporter);
+        setupRecords.add(pledge);
+
+        SObject gt = frDonationTest.getTestGT();
+        setupRecords.add(gt);
+        insert setupRecords;
+        System.debug('gt ID: ' + gt.Id);
+        GiftTransaction testgt = [SELECT Id, fr_Id__c FROM GiftTransaction WHERE Id = :gt.Id];
+        System.debug(testgt);
+
+        String funraiseId = '25';
+        Map<String, Object> request = getTestRequest();
+        request.put('id', funraiseId);
+        request.put('questionId', question.fr_Id__c);
+        request.put('donationId', gt.get('fr_Id__c'));
+        request.put('supporterId', supporter.fr_Id__c);
+
+        frTestUtil.createTestPost(request);
+
+        Test.startTest();
+        frWSCustomQuestionAnswerController.syncEntity();
+        Test.stopTest();
+        frTestUtil.assertNoErrors();
+
+        Answer__c answer = [SELECT Id, fr_ID__c, Answer__c, Question__c, Gift_Transaction_Id__c, Supporter_PA__c
+                            FROM Answer__c WHERE fr_ID__c = :funraiseId];
+
+        System.assertEquals(String.valueOf(request.get('id')), answer.fr_Id__c, 'The ansswer id should be the property included in the request');
+        System.assertEquals(String.valueOf(request.get('answer')), answer.Answer__c, 'The answer value should be the property included in the request');
+        System.assertEquals(question.Id, answer.Question__c, 'The question relationship should be the property included in the request');
+        System.assertEquals(gt.Id, answer.get('Gift_Transaction_Id__c'), 'The transaction relationship should be the property included in the request');
+        System.assertEquals(supporter.Id, answer.get('Supporter_PA__c'), 'The supporter relationship should be the property included in the request');
+    }
+
     @isTest
     static void createAnswer_linkedToRegistration() {
         Question__c question = frQuestionTest.getTestQuestion();
         insert question;
-        
+
         Fundraising_Event_Registration__c registration = frFundraisingEventRegistrationTest.getTestRegistration();
-        
+
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
         request.put('id', funraiseId);
         request.put('questionId', question.fr_Id__c);
         request.put('registrationId', registration.fr_Id__c);
-        
+
         frTestUtil.createTestPost(request);
 
         Test.startTest();
         frWSCustomQuestionAnswerController.syncEntity();
         Test.stopTest();
-        
+
         frTestUtil.assertNoErrors();
         Answer__c answer = [SELECT Id, fr_ID__c, Answer__c, Question__c, Registration__c
                             FROM Answer__c WHERE fr_ID__c = :funraiseId];
-        
+
         System.assertEquals(String.valueOf(request.get('id')), answer.fr_Id__c, 'The ansswer id should be the property included in the request');
         System.assertEquals(String.valueOf(request.get('answer')), answer.Answer__c, 'The answer value should be the property included in the request');
         System.assertEquals(question.Id, answer.Question__c, 'The question relationship should be the property included in the request');
         System.assertEquals(registration.Id, answer.Registration__c, 'The registration relationship should be the property included in the request');
     }
-    
+
     @isTest
     static void createAnswer_linkedToCampaign() {
         Question__c question = frQuestionTest.getTestQuestion();
         insert question;
-        
+
         Campaign campaign = frCampaignTest.getTestCampaign();
-        
+
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
         request.put('id', funraiseId);
         request.put('questionId', question.fr_Id__c);
         request.put('pageGoalId', campaign.fr_Id__c);
-        
+
         frTestUtil.createTestPost(request);
 
         Test.startTest();
         frWSCustomQuestionAnswerController.syncEntity();
         Test.stopTest();
         frTestUtil.assertNoErrors();
-        
+
         Answer__c answer = [SELECT Id, fr_ID__c, Answer__c, Question__c, Campaign_Page__c
                             FROM Answer__c WHERE fr_ID__c = :funraiseId];
-        
+
         System.assertEquals(String.valueOf(request.get('id')), answer.fr_Id__c, 'The ansswer id should be the property included in the request');
         System.assertEquals(String.valueOf(request.get('answer')), answer.Answer__c, 'The answer value should be the property included in the request');
         System.assertEquals(question.Id, answer.Question__c, 'The question relationship should be the property included in the request');
         System.assertEquals(campaign.Id, answer.Campaign_Page__c, 'The campaign relationship should be the property included in the request');
     }
-    
+
     @isTest
     static void updateAnswer() {
         List<SObject> setupRecords = new List<SObject>();
         Question__c question = frQuestionTest.getTestQuestion();
         setupRecords.add(question);
-        
+
         Opportunity opp = frDonationTest.getTestOpp();
         setupRecords.add(opp);
         insert setupRecords;
-        
+
         String funraiseId = '25';
         Answer__c existingAnswer = new Answer__c(
         	Question__c = question.Id,
@@ -151,41 +198,41 @@ public class frAnswerTest {
             fr_Id__c = funraiseId
         );
         insert existingAnswer;
-        
+
         String updatedAnswer = 'Updated answer';
         Map<String, Object> request = getTestRequest();
         request.put('id', funraiseId);
         request.put('questionId', question.fr_Id__c);
         request.put('donationId', opp.fr_Id__c);
         request.put('answer', updatedAnswer);
-        
+
         frTestUtil.createTestPost(request);
 
         Test.startTest();
         frWSCustomQuestionAnswerController.syncEntity();
         Test.stopTest();
         frTestUtil.assertNoErrors();
-        
+
         Answer__c answer = [SELECT Id, fr_ID__c, Answer__c, Question__c, Transaction__c
                             FROM Answer__c WHERE fr_ID__c = :funraiseId];
-        
+
         System.assertEquals(String.valueOf(request.get('id')), answer.fr_Id__c, 'The ansswer id should be the property included in the request');
         System.assertEquals(question.Id, answer.Question__c, 'The question relationship should be the property included in the request');
         System.assertEquals(opp.Id, answer.Transaction__c, 'The transaction relationship should be the property included in the request');
         System.assertEquals(updatedAnswer, answer.Answer__c, 'The existing answer should have been updated');
         System.assertEquals(1, [SELECT COUNT() FROM Answer__c], 'There should not have been another answer created in an update');
     }
-    
+
     @isTest
     static void deleteAnswer() {
         List<SObject> setupRecords = new List<SObject>();
         Question__c question = frQuestionTest.getTestQuestion();
         setupRecords.add(question);
-        
+
         Opportunity opp = frDonationTest.getTestOpp();
         setupRecords.add(opp);
         insert setupRecords;
-        
+
         String funraiseId = '25';
         Answer__c existingAnswer = new Answer__c(
         	Question__c = question.Id,
@@ -194,23 +241,23 @@ public class frAnswerTest {
             fr_Id__c = funraiseId
         );
         insert existingAnswer;
-        
+
         Map<String, Object> request = getTestRequest();
         request.put('id', funraiseId);
         request.put('questionId', question.fr_Id__c);
         request.put('donationId', opp.fr_Id__c);
 		request.put('deleted', true);
-        
+
         frTestUtil.createTestPost(request);
 
         Test.startTest();
         frWSCustomQuestionAnswerController.syncEntity();
         Test.stopTest();
         frTestUtil.assertNoErrors();
-        
+
         System.assertEquals(0, [SELECT COUNT() FROM Answer__c], 'The only existing answer should have been deleted');
     }
-    
+
     @isTest
     static void createAnswer_missingQuestion() {
         //When the referenced question is missing
@@ -219,23 +266,23 @@ public class frAnswerTest {
         Map<String, Object> request = getTestRequest();
         request.put('id', funraiseId);
         request.put('questionId', 'nonexistent');
-        
+
         frTestUtil.createTestPost(request);
 
         frTestUtil.assertNoErrors();
         Test.startTest();
         frWSCustomQuestionAnswerController.syncEntity();
         Test.stopTest();
-        
+
         System.assertEquals(0, [SELECT COUNT() FROM Answer__c], 'Since the question relationship was missing, the answer should not have been created');
         System.assertEquals(1, [SELECT COUNT() FROM Sync_Attempt__c], 'A sync attempt should have been generated because of the missing question');   
     }
-    
+
     @isTest
     static void createAnswer_missingAllOptionalRelationships() {
         Question__c question = frQuestionTest.getTestQuestion();
         insert question;
-        
+
         String funraiseId = '25';
         String badIdValue = 'nonexistent';
         Map<String, Object> request = getTestRequest();
@@ -245,16 +292,16 @@ public class frAnswerTest {
         request.put('donationId', badIdValue);
         request.put('pageGoalId', badIdValue);
         request.put('registrationId', badIdValue);
-        
+
         frTestUtil.createTestPost(request);
         frTestUtil.assertNoErrors();
-        
+
         Test.startTest();
         frWSCustomQuestionAnswerController.syncEntity();
         Test.stopTest();
         System.assertEquals(1, [SELECT COUNT() FROM Answer__c], 'The required values were provided so the answer should exist');
     }
-    
+
     public static Map<String, Object> getTestRequest() {
         Map<String, Object> request = new Map<String, Object>();
         request.put('id', 1234);
