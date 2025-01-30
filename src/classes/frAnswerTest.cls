@@ -95,8 +95,6 @@ public class frAnswerTest {
         setupRecords.add(gt);
         insert setupRecords;
         System.debug('gt ID: ' + gt.Id);
-        GiftTransaction testgt = [SELECT Id, fr_Id__c FROM GiftTransaction WHERE Id = :gt.Id];
-        System.debug(testgt);
 
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
@@ -111,13 +109,13 @@ public class frAnswerTest {
         frWSCustomQuestionAnswerController.syncEntity();
         Test.stopTest();
         frTestUtil.assertNoErrors();
+        SObject answer = Database.query(
+            'SELECT Id, fr_ID__c, Answer__c, Question__c, Gift_Transaction_Id__c, Supporter_PA__c FROM Answer__c WHERE fr_ID__c = :funraiseId LIMIT 1'
+        );
 
-        Answer__c answer = [SELECT Id, fr_ID__c, Answer__c, Question__c, Gift_Transaction_Id__c, Supporter_PA__c
-                            FROM Answer__c WHERE fr_ID__c = :funraiseId];
-
-        System.assertEquals(String.valueOf(request.get('id')), answer.fr_Id__c, 'The ansswer id should be the property included in the request');
-        System.assertEquals(String.valueOf(request.get('answer')), answer.Answer__c, 'The answer value should be the property included in the request');
-        System.assertEquals(question.Id, answer.Question__c, 'The question relationship should be the property included in the request');
+        System.assertEquals(String.valueOf(request.get('id')), answer.get('fr_Id__c'), 'The ansswer id should be the property included in the request');
+        System.assertEquals(String.valueOf(request.get('answer')), answer.get('Answer__c'), 'The answer value should be the property included in the request');
+        System.assertEquals(question.Id, answer.get('Question__c'), 'The question relationship should be the property included in the request');
         System.assertEquals(gt.Id, answer.get('Gift_Transaction_Id__c'), 'The transaction relationship should be the property included in the request');
         System.assertEquals(supporter.Id, answer.get('Supporter_PA__c'), 'The supporter relationship should be the property included in the request');
     }

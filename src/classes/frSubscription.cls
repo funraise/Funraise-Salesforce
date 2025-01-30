@@ -158,7 +158,7 @@ public class frSubscription extends frModel implements frSyncable {
                     Subscription__c.Name.getDescribe(), 
                     String.valueOf(request.get('name'))
                 ),
-                Supporter__c = accounts.get(0).get('PersonContactId') //Supporter is a required field.
+                Supporter__c = (Id) accounts.get(0).get('PersonContactId') //Supporter is a required field.
             );
         }
 

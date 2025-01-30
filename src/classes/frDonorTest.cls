@@ -569,7 +569,7 @@ public class frDonorTest {
         
         Contact existing = getTestContact(true);
         Account existingacc = getTestAccount(true);
-        existingacc.personemail = 'example.email.no.overwrite@example.com';
+        existingacc.put('personemail' ,'example.email.no.overwrite@example.com');
         update existingacc;
         Map<String, Object> request = getTestRequest();
         request.put('email', 'example.email.overwrite@example.com');
@@ -712,7 +712,7 @@ public class frDonorTest {
 
         Contact existing = getTestContact(true);
         Account existingacc = getTestAccount(true);
-        existingacc.personemail = 'example.email.no.overwrite@example.com';
+        existingacc.put('personemail' ,'example.email.no.overwrite@example.com');
         update existingacc;        
         Map<String, Object> request = getTestRequest();
         request.put('id', existingacc.fr_Id__c);
