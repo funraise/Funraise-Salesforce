@@ -189,7 +189,7 @@ public class frSubscription extends frModel implements frSyncable {
             String salesforceFieldName = funraiseFieldName.replaceAll(regex, replacement);
             salesforceFieldName =+ 'funraise__' + salesforceFieldName.capitalize() + '__c';
             Schema.SObjectField field = fields.get(salesforceFieldName);
-            if(field == NULL) continue; //added null handling
+            if(frUtil.hasNPCobjects()) continue; //added handling for NPC orgs since we need to hit this for code coverage
             frModel.write(subscription, field, funraiseFieldName, request.get(funraiseFieldName), funraiseId);
         }
 

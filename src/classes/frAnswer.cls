@@ -83,7 +83,6 @@ public class frAnswer extends frModel implements frSyncable {
             List<SObject> supporters;
             if(frUtil.hasNPCobjects()) supporters = Database.query('SELECT Id FROM Account WHERE fr_ID__c = :funraiseSupporterId');
             else supporters = [SELECT Id, AccountId FROM Contact WHERE fr_ID__c = :funraiseSupporterId];
-            System.debug('supporters: ' + supporters);
             if(supporters.isEmpty()) {
                 if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
                                             frUtil.Entity.SUPPORTER, funraiseSupporterId);

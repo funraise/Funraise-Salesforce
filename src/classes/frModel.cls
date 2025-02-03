@@ -174,6 +174,7 @@ public with sharing abstract class frModel {
                 }
             } else if (field.getDescribe().getType() == Schema.DisplayType.DateTime) {
                 if(value != NULL) record.put(field, DateTime.newInstance((Long)value)); //Added null handling
+                else record.put(field, null);
             } else if (field.getDescribe().getType() == Schema.DisplayType.Date) {
                 if(value instanceof List<Object>) {
                     List<Object> localDate = (List<Object>)value;

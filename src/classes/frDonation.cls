@@ -83,14 +83,11 @@ public class frDonation extends frModel implements frSyncable {
 
         String funraiseId = getFunraiseId();
         String supporterFunraiseId = String.valueOf(request.get('donorId'));
-        String supporterObjName = frUtil.hasNPCobjects() ? 'Account' : 'Contact';
-        String subsciptionObjName = frUtil.hasNPCobjects() ? 'GiftCommitment' : 'Subscription__c';
-        String subscriptionLookupFieldName = frUtil.hasNPCobjects() ? 'GiftCommitmentId' : 'Subscription__c';
         
         //connect supporter
         if (String.isNotBlank(supporterFunraiseId)) {
             List<SObject> supporters;
-            if(frUtil.hasNPCobjects()) supporters = Database.query('SELECT Id FROM ' + supporterObjName + ' WHERE fr_ID__c = :supporterFunraiseId');
+            if(frUtil.hasNPCobjects()) supporters = Database.query('SELECT Id FROM ' + SUPPORTER_OBJ_NAME + ' WHERE fr_ID__c = :supporterFunraiseId');
             else supporters = [SELECT Id, AccountId FROM Contact WHERE fr_ID__c = :supporterFunraiseId];
             if (supporters.size() > 0) {
                 SObject supporter = supporters.get(0);
@@ -123,9 +120,9 @@ public class frDonation extends frModel implements frSyncable {
         //connect subscription
         String subscriptionId = String.valueOf(request.get('subscriptionId'));
         if (String.isNotBlank(subscriptionId)) {
-            List<SObject> subscriptions = Database.query('SELECT Id FROM ' + subsciptionObjName + ' WHERE fr_ID__c = :subscriptionId');
+            List<SObject> subscriptions = Database.query('SELECT Id FROM ' + SUBSCRIPTION_OBJ_NAME + ' WHERE fr_ID__c = :subscriptionId');
             if (subscriptions.size() > 0) {
-                o.put(subscriptionLookupFieldName, subscriptions.get(0).get('Id'));
+                o.put(SUBSCRIPTION_LOOKUP_FIELD_NAME, subscriptions.get(0).get('Id'));
             } else {
                 frUtil.logRelationshipError(getFrType(), funraiseId,
                                             frUtil.Entity.SUBSCRIPTION, subscriptionId);
@@ -396,6 +393,9 @@ public class frDonation extends frModel implements frSyncable {
     ///CONSTANTS///
 
     public static final String TYPE = 'Donation';
+    public static final String SUPPORTER_OBJ_NAME = frUtil.hasNPCobjects() ? 'Account' : 'Contact';
+    public static final String SUBSCRIPTION_OBJ_NAME = frUtil.hasNPCobjects() ? 'GiftCommitment' : 'Subscription__c';
+    public static final String SUBSCRIPTION_LOOKUP_FIELD_NAME = frUtil.hasNPCobjects() ? 'GiftCommitmentId' : 'Subscription__c';
     
     //Donation statuses
     private static final String COMPLETE = 'Complete';

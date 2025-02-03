@@ -40,6 +40,7 @@
 
 public class frDonor extends frModel implements frSyncable{
     public static final String TYPE = 'Donor';
+    public static final String SOBJ_NAME = frUtil.hasNPCobjects() ? 'Account' : 'Contact';
     
     public static List<frMapping__c> mappings {
         get {
@@ -67,20 +68,11 @@ public class frDonor extends frModel implements frSyncable{
         String frId = getFunraiseId();
     
         supporter = null; // Generic SObject for both Account and Contact
-        String sObjectType; // To track whether we're dealing with Account or Contact
-        
         Boolean isNPC = frUtil.hasNPCobjects();
-    
-        // Check if Person Accounts are enabled and set the appropriate SObject type
-        if (isNPC) {
-            sObjectType = 'Account';
-        } else {
-            sObjectType = 'Contact';
-        }
     
         // Query based on fr_ID__c
         List<SObject> records = Database.query(
-            'SELECT Id, fr_ID__c, LastName FROM ' + sObjectType + ' WHERE fr_ID__c = :frId'
+            'SELECT Id, fr_ID__c, LastName FROM ' + SOBJ_NAME + ' WHERE fr_ID__c = :frId'
         );
     
         if (records != null && !records.isEmpty()) {
@@ -96,7 +88,7 @@ public class frDonor extends frModel implements frSyncable{
     
         // Match based on email and names
         if (supporter == null && String.isNotBlank(email)) {
-            String query = 'SELECT Id, fr_ID__c, LastName FROM ' + sObjectType + ' WHERE ' + emailField + ' = :email';
+            String query = 'SELECT Id, fr_ID__c, LastName FROM ' + SOBJ_NAME + ' WHERE ' + emailField + ' = :email';
             
             if (String.isNotBlank(firstName) && String.isNotBlank(lastName)) {
                 query += ' AND FirstName = :firstName AND LastName = :lastName';
@@ -114,7 +106,7 @@ public class frDonor extends frModel implements frSyncable{
         }
         //match on just email
         if (supporter == null && String.isNotBlank(email)) {
-            String query = 'SELECT Id, fr_ID__c, LastName FROM ' + sObjectType + ' WHERE ' + emailField + ' = :email';
+            String query = 'SELECT Id, fr_ID__c, LastName FROM ' + SOBJ_NAME + ' WHERE ' + emailField + ' = :email';
     
             query += ' LIMIT 1';
     
@@ -143,7 +135,7 @@ public class frDonor extends frModel implements frSyncable{
             String mailingPostalCodeField = isNPC ? 'PersonMailingPostalCode' : 'MailingPostalCode';
     
             if (namePresent && String.isNotBlank(address1) && (cityAndState || String.isNotBlank(postalCode))) {
-                String byAddress = 'SELECT Id, fr_ID__c, LastName FROM ' + sObjectType + 
+                String byAddress = 'SELECT Id, fr_ID__c, LastName FROM ' + SOBJ_NAME + 
                     ' WHERE ' + mailingStreetField + ' = :address1 AND FirstName = :firstName AND LastName = :lastName';
     
                 if (cityAndState) {
