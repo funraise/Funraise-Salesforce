@@ -90,7 +90,7 @@ public class frSubscription extends frModel implements frSyncable {
             return result;
         }
         Subscription__c subscription;
-        if(contacts.isEmpty() && frUtil.hasNPCobjects()) {
+        if(frUtil.hasNPCobjects()) {
             SObject gc = null;
             List<SObject> gcList = Database.query('SELECT Id, Name FROM GiftCommitment WHERE fr_ID__c = :funraiseId');
             if(gcList.isEmpty()) {
@@ -132,9 +132,7 @@ public class frSubscription extends frModel implements frSyncable {
             if(pledgeAmount1 != null) {
                 frPledge.create(gc, pledgeAmount1);
             }
-            if(!Test.isRunningTest()) {
-                return result;
-            }
+            return result;
         } 
         else if(contacts.isEmpty()) {
             if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
@@ -149,16 +147,6 @@ public class frSubscription extends frModel implements frSyncable {
                     String.valueOf(request.get('name'))
                 ), 
                 Supporter__c = contacts.get(0).Id
-            );
-        }
-        if(Test.isRunningTest() && frUtil.hasNPCobjects()) {
-            subscription = new Subscription__c(
-                fr_ID__c = funraiseId,
-                Name = frUtil.truncateToFieldLength(
-                    Subscription__c.Name.getDescribe(), 
-                    String.valueOf(request.get('name'))
-                ),
-                Supporter__c = (Id) accounts.get(0).get('PersonContactId') //Supporter is a required field.
             );
         }
 
@@ -189,7 +177,6 @@ public class frSubscription extends frModel implements frSyncable {
             String salesforceFieldName = funraiseFieldName.replaceAll(regex, replacement);
             salesforceFieldName =+ 'funraise__' + salesforceFieldName.capitalize() + '__c';
             Schema.SObjectField field = fields.get(salesforceFieldName);
-            if(frUtil.hasNPCobjects()) continue; //added handling for NPC orgs since we need to hit this for code coverage
             frModel.write(subscription, field, funraiseFieldName, request.get(funraiseFieldName), funraiseId);
         }
 
@@ -278,7 +265,6 @@ public class frSubscription extends frModel implements frSyncable {
     }
     
     protected override frUtil.Entity getFrType() {
-        if(frUtil.hasNPCobjects()) return frUtil.Entity.GIFTCOMMITMENT;
-        else return frUtil.Entity.SUBSCRIPTION;
+        return frUtil.Entity.SUBSCRIPTION;
     }
 }
