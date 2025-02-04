@@ -79,7 +79,6 @@ public class frSubscription extends frModel implements frSyncable {
         String funraiseId = getFunraiseId();
         String name = String.valueOf(request.get('name'));
         String funraiseSupporterId = String.valueOf(request.get('supporterId'));
-        String funraiseSupporterId = String.valueOf(request.get('supporterId'));
         String goalId = String.valueOf(request.get('campaignGoalId'));
         String strPledgeAmount = String.valueOf(request.get('pledgeAmount'));
         List<Contact> contacts = [SELECT Id from Contact WHERE fr_Id__c = :funraiseSupporterId];
@@ -150,7 +149,6 @@ public class frSubscription extends frModel implements frSyncable {
             );
         }
 
-        String goalId = String.valueOf(request.get('campaignGoalId'));
         if (String.isNotBlank(goalId)) {
             List<Campaign> campaigns = [SELECT Id FROM Campaign WHERE fr_ID__c = :goalId];
             if (campaigns.size() > 0) {
@@ -167,8 +165,6 @@ public class frSubscription extends frModel implements frSyncable {
         request.remove('supporterId');
         request.remove('campaignGoalId');
         request.remove('deleted');
-        String strPledgeAmount = String.valueOf(request.get('pledgeAmount'));
-        Decimal pledgeAmount = String.isNotBlank(strPledgeAmount) ? Decimal.valueOf(strPledgeAmount) : null;
         request.remove('pledgeAmount');
         
         String regex = '([a-z])([A-Z]+)';
