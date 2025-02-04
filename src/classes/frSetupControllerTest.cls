@@ -220,7 +220,6 @@ public class frSetupControllerTest {
 		}
 		//remove empty string from controller values since we don't care about the --None-- option
 		actualValues.remove('');
-		actualValues.remove('id');
 		System.assertEquals(expectedValues, actualValues, 'The fields in the metadata setting and the fields available in the controller do not match');
 	}
 }
