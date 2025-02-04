@@ -81,6 +81,7 @@ public class frSubscription extends frModel implements frSyncable {
         String funraiseSupporterId = String.valueOf(request.get('supporterId'));
         String goalId = String.valueOf(request.get('campaignGoalId'));
         String strPledgeAmount = String.valueOf(request.get('pledgeAmount'));
+        Decimal pledgeAmount = String.isNotBlank(strPledgeAmount) ? Decimal.valueOf(strPledgeAmount) : null;
         List<Contact> contacts = [SELECT Id from Contact WHERE fr_Id__c = :funraiseSupporterId];
         List<Account> accounts = new List<Account>();
         if (frUtil.hasNPCobjects()) {
