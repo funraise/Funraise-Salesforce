@@ -316,15 +316,6 @@ public class frDonationTest {
         }
     }
 
-    static testMethod void syncEntity_newOpportunityRoleMappings_NPC() {
-        if (!frUtil.hasNPCobjects()) {
-            return;
-        }
-        insert frSetupController.getGiftTransactionDefaults();
-        // Original code had no else logic for the NPC scenario (it was blank).
-        // If you want to test a similar scenario in NPC, add it here.
-    }
-
     //
     // syncEntity_newOpportunityRoleMappings_missingContacts
     //
@@ -362,14 +353,6 @@ public class frDonationTest {
         List<OpportunityContactRole> roles = newOpportunity.OpportunityContactRoles;
         System.assertEquals(1, roles.size(), 'Since the request had ids that did not exist in SF, no roles should have been created except for the donor');
         System.assertEquals(2, [SELECT COUNT() FROM Error__c], 'There should be 3 error logs for missing supporters that prevented opp roles from being created');
-    }
-
-    static testMethod void syncEntity_newOpportunityRoleMappings_missingContacts_NPC() {
-        if (!frUtil.hasNPCobjects()) {
-            return;
-        }
-        // Original code had no else logic for NPC. 
-        // If needed, you can replicate the scenario in NPC or skip.
     }
 
     //
@@ -428,7 +411,6 @@ public class frDonationTest {
 
         Map<String, Object> request = getTestRequest();
         request.put('subscriptionId', subscription.fr_ID__c);
-        request.put('APEX_TESTS', 'true');
         request.put('opportunityContactMappingDisabled', 'false');
         request.put('donorId', '856');
 
@@ -929,7 +911,6 @@ public class frDonationTest {
 
         Map<String, Object> request = getTestRequest();
         request.put('subscriptionId', subscription.fr_ID__c);
-        request.put('APEX_TESTS', 'true');
         request.put('opportunityContactMappingDisabled', 'false');
         request.put('donorId', '856');
         frTestUtil.createTestPost(request);
