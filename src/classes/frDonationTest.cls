@@ -912,17 +912,6 @@ public class frDonationTest {
                            'The single opp contact role should be the donor role');
     }
 
-    static testMethod void syncEntity_oppContactRoles_sameSupporter_NPC() {
-        if (!frUtil.hasNPCobjects()) {
-            return;
-        }
-        insert frSetupController.getGiftTransactionDefaults();
-        createMapping('name', 'Name');
-        createMapping('amount', 'OriginalAmount');
-        // Original code had no else logic for NPC scenario
-        // If needed, replicate a GiftTransaction approach here
-    }
-
     static testMethod void syncEntity_setOpportunityStage_NPC() {
         if (!frUtil.hasNPCobjects()) {
             return;
