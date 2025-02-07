@@ -136,7 +136,6 @@ public with sharing abstract class frModel {
         for(String fieldName : frFieldToMappings.keySet()) {
             if(request.containsKey(fieldName)) {
                 for(frMapping__c mapping : frFieldToMappings.get(fieldName)) {
-                    if(!fields.containsKey(mapping.sf_Name__c)) continue; //Make sure field is valid
                     Schema.SObjectField field = fields.get(mapping.sf_Name__c);
                     Object incomingValue = request.get(fieldName);
                     Boolean write = false;
