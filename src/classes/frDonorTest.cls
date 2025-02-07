@@ -332,12 +332,12 @@ public class frDonorTest {
         }
         createMapping('firstName', 'FirstName');
         createMapping('lastName', 'LastName');
-        createMapping('email', 'email');
-        createMapping('address1', 'MailingStreet');
-        createMapping('city', 'MailingCity');
-        createMapping('state', 'MailingState');
-        createMapping('postalCode', 'MailingPostalCode');
-        createMapping('country', 'MailingCountry');
+        createMapping('email', 'PersonEmail');
+        createMapping('address1', 'PersonMailingStreet');
+        createMapping('city', 'PersonMailingCity');
+        createMapping('state', 'PersonMailingState');
+        createMapping('postalCode', 'PersonMailingPostalCode');
+        createMapping('country', 'PersonMailingCountry');
 
         // We'll set PersonEmail dynamically
         String emailField = getAccountEmailField();
