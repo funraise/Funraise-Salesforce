@@ -136,7 +136,7 @@ public with sharing class frSetupController {
 			giftCommitmentSFOptions.sort();
 
 			for(frField__mdt field : [SELECT DeveloperName, MasterLabel FROM frField__mdt WHERE Type__c = :GIFT_COMMITMENT_TYPE ORDER BY MasterLabel]) {
-				giftCommitmentFROptions.add(new SelectOption(field.DeveloperName, field.MasterLabel));
+				giftCommitmentFROptions.add(new SelectOption(field.DeveloperName.removeEnd('_GC'), field.MasterLabel));
 			}
 		}
 
