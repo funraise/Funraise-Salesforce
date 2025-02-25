@@ -1,6 +1,30 @@
 @isTest
 public class frSetupControllerTest {
 	static testMethod void test_availableMappings() {
+		if (frUtil.hasNPCobjects()) return;
+
+		//get the donor and donation custom metadata fields, assert that those are the same ones that controller provides
+		Set<String> expectedDonorFieldNames = new Set<String>();
+		Set<String> expectedDonationFieldNames = new Set<String>();
+		for(frField__mdt field : [SELECT DeveloperName, Type__c FROM frField__mdt]) {
+			if(frDonor.TYPE.equals(field.Type__c)) {
+				expectedDonorFieldNames.add(field.DeveloperName);
+			} else if(frDonation.TYPE.equals(field.Type__c)) {
+				expectedDonationFieldNames.add(field.DeveloperName);
+			}
+		}
+
+		Test.startTest();
+		frSetupController controller = new frSetupController();
+		Test.stopTest();
+
+		assertValuesInList(expectedDonorFieldNames, controller.donorFROptions);
+		assertValuesInList(expectedDonationFieldNames, controller.donationFROptions);
+	}
+
+	static testMethod void test_availableMappings_NPC() {
+		if (!frUtil.hasNPCobjects()) return;
+
 		//get the donor and donation custom metadata fields, assert that those are the same ones that controller provides
 		Set<String> expectedDonorFieldNames = new Set<String>();
 		Set<String> expectedDonationFieldNames = new Set<String>();
@@ -84,7 +108,7 @@ public class frSetupControllerTest {
 		System.assertEquals(1, countAfterSave, 'The record should have been saved without errors');
 		System.assertEquals(0, countAfterRemove, 'The record should have been removed without errors');
 	}
-    
+
 	static testMethod void test_cancel() {
 		Test.startTest();
 		frSetupController controller = new frSetupController();
@@ -106,6 +130,8 @@ public class frSetupControllerTest {
 	}
 
 	static testMethod void test_defaults() {
+		if (frUtil.hasNPCobjects()) return;
+
 		insert new frMapping__c(Type__c = frDonation.TYPE, fr_Name__c = 'testfr', sf_Name__c = 'testsf', Name = 'Test Mapping');
 		Integer beforeTestMappingCount = [SELECT COUNT() FROM frMapping__c];
 
@@ -121,6 +147,26 @@ public class frSetupControllerTest {
 		System.assertEquals(0, afterDefaultMappingCount, 'There should have not been any mappings that had the test data value when using the defaults');
 		assertMappingsEqual(frSetupController.getDonorDefaults(), actualDonorMappings);
 		assertMappingsEqual(frSetupController.getDonationDefaults(), actualDonationMappings);
+	}
+
+	static testMethod void test_defaults_NPC() {
+		if (!frUtil.hasNPCobjects()) return;
+
+		insert new frMapping__c(Type__c = frDonation.TYPE, fr_Name__c = 'testfr', sf_Name__c = 'testsf', Name = 'Test Mapping');
+		Integer beforeTestMappingCount = [SELECT COUNT() FROM frMapping__c];
+
+		frSetupController controller = new frSetupController();
+		Test.startTest();
+		controller.defaults();
+		Integer afterDefaultMappingCount = [SELECT COUNT() FROM frMapping__c WHERE fr_Name__c = 'testfr'];
+		List<frMapping__c> actualDonorMappings = [SELECT Name FROM frMapping__c WHERE Type__c = :frDonor.TYPE];
+		List<frMapping__c> actualDonationMappings = [SELECT Name FROM frMapping__c WHERE Type__c = :frDonation.TYPE];
+		Test.stopTest();
+
+		System.assertEquals(1, beforeTestMappingCount, 'There should have been 1 mapping record before the test started');
+		System.assertEquals(0, afterDefaultMappingCount, 'There should have not been any mappings that had the test data value when using the defaults');
+		assertMappingsEqual(frSetupController.getPersonAccountDefaults(), [SELECT Name FROM frMapping__c WHERE Type__c = :frDonor.TYPE]);
+		assertMappingsEqual(frSetupController.getGiftTransactionDefaults(), [SELECT Name FROM frMapping__c WHERE Type__c = :frDonation.TYPE]);
 	}
 
 	static testMethod void test_defaults_donorOnly() {

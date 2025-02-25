@@ -11,6 +11,14 @@ public class frUtil {
             return false;
         }
     }
+
+    public static Boolean hasNPCobjects() {
+        try {
+            return Schema.getGlobalDescribe().containsKey('gifttransaction') && Account.SObjectType.getDescribe().fields.getMap().containsKey('IsPersonAccount');
+        } catch (TypeException te) {
+            return false;
+        }
+    }
     
     public static void logRelationshipError(Entity errObject, String recordId, Entity missingRelationship, String relationshipId) {
         logRelationshipError(errObject, recordId, missingRelationship, relationshipId, null);
@@ -84,6 +92,12 @@ public class frUtil {
             funraiseObject = 'Question';
         } else if (frObject == Entity.ANSWER) {
             funraiseObject = 'Question Answer';
+        } else if (frObject == Entity.GIFTTRANSACTION) {
+            funraiseObject = 'Gift Transaction';
+        } else if (frObject == Entity.PERSONACCOUNT) {
+            funraiseObject = 'Person Account';
+        } else if (frObject == Entity.GIFTCOMMITMENT) {
+            funraiseObject = 'Gift Commitment';
         }
         return funraiseObject;
     }
@@ -99,7 +113,10 @@ public class frUtil {
         TASK,
         PLEDGE,
         QUESTION,
-        ANSWER
+        ANSWER,
+        GIFTTRANSACTION,
+        GIFTCOMMITMENT,
+        PERSONACCOUNT
     }
     
 }

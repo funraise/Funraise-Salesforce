@@ -40,8 +40,10 @@
 @isTest
 public class frWSTaskControllerTest {
     static testMethod void syncEntity_task() {
+        if (frUtil.hasNPCobjects()) return; //NOTE: Interactions for NPC are not implemented.
+    
         Contact supporter = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'testExisting@example.com', fr_ID__c = '410');
-		Opportunity donation = new Opportunity(fr_ID__c = '67', StageName = 'Closed Won', Name = 'donation1', CloseDate = Date.today());
+        Opportunity donation = new Opportunity(fr_ID__c = '67', StageName = 'Closed Won', Name = 'donation1', CloseDate = Date.today());
         Opportunity unrelatedDonation = new Opportunity(fr_ID__c = '68', StageName = 'Closed Won', Name = 'donation2', CloseDate = Date.today());
         insert new List<SObject>{supporter, donation, unrelatedDonation};
         
@@ -58,6 +60,8 @@ public class frWSTaskControllerTest {
     }
     
     static testMethod void syncEntity_interaction() {
+        if (frUtil.hasNPCobjects()) return; //NOTE: Interactions for NPC are not implemented.
+           
         Contact supporter = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'testExisting@example.com', fr_ID__c = '410');
         insert supporter;
         
@@ -75,7 +79,7 @@ public class frWSTaskControllerTest {
         Task expectedTask = expectedTasks.get(0);
         System.assertEquals(expectedTask.WhoId, supporter.Id, 'The interaction was not related to the correct supporter');
     }
-
+ 
     static testMethod void syncEntity_missingSupporter() {
         frTestUtil.createTestPost(getTestRequest());
         Test.startTest();
@@ -87,8 +91,10 @@ public class frWSTaskControllerTest {
     }
     
     static testMethod void syncEntity_testDelete() {
+        if (frUtil.hasNPCobjects()) return; //NOTE: Interactions for NPC are not implemented.
+    
         Contact supporter = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'testExisting@example.com', fr_ID__c = '410');
-		Opportunity donation = new Opportunity(fr_ID__c = '67', StageName = 'Closed Won', Name = 'donation1', CloseDate = Date.today());
+        Opportunity donation = new Opportunity(fr_ID__c = '67', StageName = 'Closed Won', Name = 'donation1', CloseDate = Date.today());
         insert new List<SObject>{supporter, donation};
             
         Task existingTask = new Task(fr_Task_Id__c = '856', Description = 'Test Task', Priority = 'Normal', WhoId = supporter.Id,
@@ -111,7 +117,7 @@ public class frWSTaskControllerTest {
     
     static testMethod void syncEntity_testDelete_notFound() {
         Contact supporter = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'testExisting@example.com', fr_ID__c = '410');
-		Opportunity donation = new Opportunity(fr_ID__c = '67', StageName = 'Closed Won', Name = 'donation1', CloseDate = Date.today());
+        Opportunity donation = new Opportunity(fr_ID__c = '67', StageName = 'Closed Won', Name = 'donation1', CloseDate = Date.today());
         insert new List<SObject>{supporter, donation};
             
         Task existingTask = new Task(fr_Task_Id__c = '111', Description = 'Test Task', Priority = 'Normal', WhoId = supporter.Id,

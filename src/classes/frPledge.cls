@@ -49,6 +49,18 @@ public with sharing class frPledge {
                                         ];
         return possiblePledges.size() > 0 ? possiblePledges.get(0) : null;
     }
+
+    public static Pledge__c findActiveAcc(Id accountId, Date closeDate) {
+        List<Pledge__c> possiblePledges = [SELECT Id FROM Pledge__c 
+                                         WHERE Supporter_PA__c = :accountId 
+                                         AND (Start_Date__c = null OR Start_Date__c <= :closeDate)
+                                         AND (End_Date__c = null OR End_Date__c >= :closeDate)
+                                         AND Percent_Complete__c < 100
+                                         AND Pledge_Donation__c = null
+                                         ORDER BY CreatedDate ASC LIMIT 1
+                                        ];
+        return possiblePledges.size() > 0 ? possiblePledges.get(0) : null;
+    }
     
     public static Pledge__c create(Opportunity opp) {
         Pledge__c pledge = new Pledge__c(
@@ -82,6 +94,51 @@ public with sharing class frPledge {
             Database.upsert(pledge, Pledge__c.Pledge_Subscription_uq__c , true);
         } catch (Exception ex) {
             frUtil.logException(frUtil.Entity.PLEDGE, subscription.fr_Id__c, ex);
+        }
+        
+        return pledge;
+    }
+
+    public static Pledge__c create(SObject gc, Decimal pledgeAmount) {
+        Id relatedId = (Id) gc.get('Id');
+        Id donorId = (Id) gc.get('DonorId');
+        SObject acc = Database.query('SELECT PersonContactId FROM Account WHERE Id = :donorId');
+        Pledge__c pledge = new Pledge__c(
+            Name = frUtil.truncateToFieldLength(Pledge__c.Name.getDescribe(), 'Subscription Pledge - ' + (String) gc.get('Name')),
+            Supporter__c =(id) acc.get('PersonContactId'),
+            Supporter_PA__c = (id) gc.get('DonorId'),
+            Pledge_Amount__c = pledgeAmount,
+            Pledge_Subscription__c = relatedId,
+            Pledge_Subscription_uq__c = relatedId
+        );
+        try {
+            Database.upsert(pledge, Pledge__c.Pledge_Subscription_uq__c , true);
+        } catch (Exception ex) {
+            frUtil.logException(frUtil.Entity.PLEDGE, (String) gc.get('fr_Id__c'), ex);
+        }
+        
+        return pledge;
+    }
+
+    public static Pledge__c create(SObject gt) {
+        Id relatedId = (Id) gt.get('Id');
+        Id donorId = (Id) gt.get('DonorId');
+        SObject acc = Database.query('SELECT PersonContactId FROM Account WHERE Id = :donorId');
+        Map<String,Object> gtMap = gt.getPopulatedFieldsAsMap();
+        Pledge__c pledge = new Pledge__c(
+            Name = frUtil.truncateToFieldLength(Pledge__c.Name.getDescribe(), gtMap.get('Name') == null ? '' : gtMap.get('Name')+' Pledge'),
+            Supporter__c =(id) acc.get('PersonContactId'),
+            Supporter_PA__c = (id) gt.get('DonorId'),
+            Pledge_Amount__c = (Decimal) (gtMap.get('OriginalAmount') ?? 0.0),
+            Pledge_Donation_uq__c = relatedId
+        );
+        pledge.put('Pledge_Gift_Transaction__c', relatedId);
+        try {
+            Database.upsert(pledge);
+            gt.put('Funraise_GT_Pledge__c', pledge.Id);
+            update gt;
+        } catch (Exception ex) {
+            frUtil.logException(frUtil.Entity.PLEDGE, (String) gt.get('fr_Id__c'), ex);
         }
         
         return pledge;

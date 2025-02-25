@@ -40,6 +40,7 @@
 
 public class frDonor extends frModel implements frSyncable{
     public static final String TYPE = 'Donor';
+    public static final String SOBJ_NAME = frUtil.hasNPCobjects() ? 'Account' : 'Contact';
     
     public static List<frMapping__c> mappings {
         get {
@@ -55,7 +56,7 @@ public class frDonor extends frModel implements frSyncable{
         return mappings;
     }
     
-    private Contact supporterContact;
+    private SObject supporter;
     
     public frDonor(Sync_Attempt__c syncRecord){
         super(syncRecord);
@@ -64,90 +65,123 @@ public class frDonor extends frModel implements frSyncable{
     public Boolean sync() {
         Boolean result = false;
         Map<String, Object> request = getRequestBody();
-        supporterContact = null;
         String frId = getFunraiseId();
-        //try to find a donor that's already been integrated, use their funraise ID
-        List<Contact> contacts = (List<Contact>)Database.query('select Id, fr_ID__c, LastName from Contact where fr_ID__c = :frId');
-        if(contacts != null && contacts.size() > 0) {
-            supporterContact = contacts.get(0);
+    
+        supporter = null; // Generic SObject for both Account and Contact
+        Boolean isNPC = frUtil.hasNPCobjects();
+    
+        // Query based on fr_ID__c
+        List<SObject> records = Database.query(
+            'SELECT Id, fr_ID__c, LastName FROM ' + SOBJ_NAME + ' WHERE fr_ID__c = :frId'
+        );
+    
+        if (records != null && !records.isEmpty()) {
+            supporter = records.get(0);
         }
-        
+    
         String firstName = String.valueOf(request.get('firstName'));
         String lastName = String.valueOf(request.get('lastName'));
         String email = String.valueOf(request.get('email'));
-        if(supporterContact == null) {
-            if(String.isNotBlank(email)) {
-                //try to match on email + name, since not all orgs treat email as unique
-                if(String.isNotBlank(firstName) && String.isNotBlank(lastName)) {
-                    contacts = (List<Contact>)Database.query(
-                        'select Id, fr_ID__c, LastName from Contact where '+
-                        'Email = :email AND FirstName = :firstName AND LastName = :lastName '+
-                        'limit 1'
-                    );
-                    supporterContact = applyMatch(contacts, frId);
+    
+        // Dynamic email field based on whether Person Accounts are enabled
+        String emailField = isNPC ? 'PersonEmail' : 'Email';
+    
+        // Match based on email and names
+        if (supporter == null && String.isNotBlank(email)) {
+            String query = 'SELECT Id, fr_ID__c, LastName FROM ' + SOBJ_NAME + ' WHERE ' + emailField + ' = :email';
+            
+            if (String.isNotBlank(firstName) && String.isNotBlank(lastName)) {
+                query += ' AND FirstName = :firstName AND LastName = :lastName';
+            
+                query += ' LIMIT 1';
+        
+                records = Database.query(query);
+                if(isNPC) {
+                    supporter = applyAccountMatch(records, frId);
                 }
-                
-                //if name wasn't present or no match was found, try on email only
-                if(supporterContact == null) {
-                    contacts = (List<Contact>)Database.query('select Id, fr_ID__c, LastName from Contact where Email = :email limit 1');
-                    supporterContact = applyMatch(contacts, frId);                 
+                else {
+                    supporter = applyMatch(records, frId);
                 }
-                
             }
         }
-        
-        if(supporterContact == null) {
+        //match on just email
+        if (supporter == null && String.isNotBlank(email)) {
+            String query = 'SELECT Id, fr_ID__c, LastName FROM ' + SOBJ_NAME + ' WHERE ' + emailField + ' = :email';
+    
+            query += ' LIMIT 1';
+    
+            records = Database.query(query);
+            if(isNPC) {
+                supporter = applyAccountMatch(records, frId);
+            }
+            else {
+                supporter = applyMatch(records, frId);
+            }
+        }
+    
+        // If still not found, try matching based on address
+        if (supporter == null) {
             String address1 = String.valueOf(request.get('address1'));
             String city = String.valueOf(request.get('city'));
             String state = String.valueOf(request.get('state'));
             String postalCode = String.valueOf(request.get('postalCode'));
-            String country = String.valueOf(request.get('country'));
-            
-            //name AND street address AND (cityAndState or postalCode) 
-            //need to be populated for us to match
+    
             Boolean namePresent = String.isNotBlank(firstName) && String.isNotBlank(lastName);
             Boolean cityAndState = String.isNotBlank(city) && String.isNotBlank(state);
-            if(namePresent && String.isNotBlank(address1) && (cityAndState || String.isNotBlank(postalCode))) {
-                String byAddress = 'select Id, fr_ID__c, LastName from Contact where MailingStreet = :address1' +
-                    ' and FirstName = :firstName' +
-                    ' and LastName = :lastName';
-                if(cityAndState) {
-                    byAddress += ' and MailingCity = :city' +
-                    ' and MailingState = :state';
+    
+            String mailingStreetField = isNPC ? 'PersonMailingStreet' : 'MailingStreet';
+            String mailingCityField = isNPC ? 'PersonMailingCity' : 'MailingCity';
+            String mailingStateField = isNPC ? 'PersonMailingState' : 'MailingState';
+            String mailingPostalCodeField = isNPC ? 'PersonMailingPostalCode' : 'MailingPostalCode';
+    
+            if (namePresent && String.isNotBlank(address1) && (cityAndState || String.isNotBlank(postalCode))) {
+                String byAddress = 'SELECT Id, fr_ID__c, LastName FROM ' + SOBJ_NAME + 
+                    ' WHERE ' + mailingStreetField + ' = :address1 AND FirstName = :firstName AND LastName = :lastName';
+    
+                if (cityAndState) {
+                    byAddress += ' AND ' + mailingCityField + ' = :city AND ' + mailingStateField + ' = :state';
                 }
-                if(String.isNotBlank(postalCode)) {
-                    byAddress += ' and MailingPostalCode = :postalCode';
+                if (String.isNotBlank(postalCode)) {
+                    byAddress += ' AND ' + mailingPostalCodeField + ' = :postalCode';
                 }
-                byAddress += ' limit 1';
-                
-                contacts = (List<Contact>)Database.query(byAddress);
-                supporterContact = applyMatch(contacts, frId);
+                byAddress += ' LIMIT 1';
+    
+                records = Database.query(byAddress);
+                supporter = applyMatch(records, frId);
             }
         }
-        
-        if(supporterContact == null) {
-            supporterContact = new Contact(fr_Id__c = frId);
+    
+        // If no match, create a new record
+        if (supporter == null) {
+            if(isNPC) {
+                supporter = new Account(fr_Id__c = frId);
+            } 
+            else {
+                supporter = new Contact(fr_Id__c = frId);
+            }
         }
-        applyMappings(supporterContact, request);
-        
-        if(String.isBlank(supporterContact.LastName)) {
-            //LastName is required.  If the mappings didn't populate it, try to populate with the institution name
-            supporterContact.LastName = String.valueOf(request.get('institutionName'));
+    
+        // Apply mappings
+        applyMappings(supporter, request);
+    
+        if (String.isBlank((String)supporter.get('LastName'))) {
+            supporter.put('LastName', String.valueOf(request.get('institutionName')));
         }
-        
+        // Perform upsert operation
         try {
-            //if we try the upsert using an external id when the contact has an id, 
-            //an exception is thrown
-            if(supporterContact.Id != null) {
-                Database.update(supporterContact, true);
-            } else { 
-                Database.upsert(supporterContact, Contact.Fields.fr_ID__c, true);
+            if (supporter.Id != null) {
+                Database.update(supporter, true);
+            } else {
+                if(frUtil.hasNPCobjects()) Database.upsert(supporter, true);
+                else Database.upsert(supporter, Contact.Fields.fr_ID__c, true);
             }
             result = true;
         } catch (Exception ex) {
-            if(createLogRecord) frUtil.logException(getFrType(), frId, ex);
-
+            if (createLogRecord) {
+                frUtil.logException(getFrType(), frId, ex);
+            }
         }
+    
         return result;
     }
     
@@ -159,10 +193,18 @@ public class frDonor extends frModel implements frSyncable{
         }
         return null;
     }
+
+    private Account applyAccountMatch(List<Account> matchResults, String frId) {
+        if(matchResults != null && matchResults.size() > 0) {
+            Account donor = matchResults.get(0);
+            donor.fr_ID__c = frId;
+            return donor;
+        }
+        return null;
+    }
     
     protected override String getSalesforceId() {
-        return supporterContact != null ? supporterContact.Id : null;
-        
+        return supporter?.Id;
     }
 
     protected override Set<Schema.SObjectField> getFields() {
@@ -182,13 +224,29 @@ public class frDonor extends frModel implements frSyncable{
         usedFields.add(Contact.MailingState);
         usedFields.add(Contact.MailingPostalCode);
         usedFields.add(Contact.MailingCountry);
+        if(frUtil.hasNPCobjects()) {
+            usedFields = new Set<Schema.SObjectField>();
+            fields = frSchemaUtil.getFields(Account.sObjectType.getDescribe().getName());
+            for(frMapping__c mapping : getMappings()) {
+                if(fields.containsKey(mapping.sf_Name__c)) {
+                    usedFields.add(fields.get(mapping.sf_Name__c));
+                }
+            }
+        }
         return usedFields;
     }
     
     protected override Set<Schema.SObjectType> getObjects() {
-        return new Set<Schema.SObjectType> {
-            	Contact.SObjectType
-        };
+        if(!frUtil.hasNPCobjects()) {
+            return new Set<Schema.SObjectType> {
+                    Contact.SObjectType
+            };
+        }
+        else {
+            return new Set<Schema.SObjectType> {
+                    Account.SObjectType
+            };
+        }
     }
     
     protected override frUtil.Entity getFrType() {

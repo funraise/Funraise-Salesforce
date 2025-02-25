@@ -77,27 +77,31 @@ public class frAnswer extends frModel implements frSyncable {
             return result;
         }
         
-        Contact supporter = null;
+        SObject supporter = null;
         String funraiseSupporterId = String.valueOf(request.get('supporterId'));
         if(String.isNotBlank(funraiseSupporterId)) {
-            List<Contact> contacts = [SELECT Id from Contact WHERE fr_Id__c = :funraiseSupporterId];
-            if(contacts.isEmpty()) {
+            List<SObject> supporters;
+            if(frUtil.hasNPCobjects()) supporters = Database.query('SELECT Id FROM Account WHERE fr_ID__c = :funraiseSupporterId');
+            else supporters = [SELECT Id, AccountId FROM Contact WHERE fr_ID__c = :funraiseSupporterId];
+            if(supporters.isEmpty()) {
                 if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
                                             frUtil.Entity.SUPPORTER, funraiseSupporterId);
             } else {
-                supporter = contacts.get(0);
+                supporter = supporters.get(0);
             }
         }
         
-        Opportunity opp = null;
+        SObject trsact = null;
         String funraiseTransactionId = String.valueOf(request.get('donationId'));
         if(String.isNotBlank(funraiseTransactionId)) {
-            List<Opportunity> transactions = [SELECT Id from Opportunity WHERE fr_Id__c = :funraiseTransactionId];
+            List<SObject> transactions;
+            if (frUtil.hasNPCobjects()) transactions = Database.query('SELECT Id, Name FROM GiftTransaction WHERE fr_ID__c = :funraiseTransactionId');
+            else transactions = [SELECT Id from Opportunity WHERE fr_Id__c = :funraiseTransactionId];
             if(transactions.isEmpty()) {
                 if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
                                             frUtil.Entity.DONATION, funraiseTransactionId);
             } else {
-                opp = transactions.get(0);
+                trsact = transactions.get(0);
             }
         }
         
@@ -132,11 +136,18 @@ public class frAnswer extends frModel implements frSyncable {
                 String.valueOf(request.get('answer'))
             ),
             Question__c = questions.get(0).Id,
-            Supporter__c = supporter != null ? supporter.Id : null,
-            Transaction__c = opp != null ? opp.Id : null,
             Campaign_Page__c = page != null ? page.Id : null,
             Registration__c = registration != null ? registration.Id : null
         );
+        
+
+        if(frUtil.hasNPCobjects()) {
+            answer.put('Supporter_PA__c', supporter?.Id);
+            answer.put('Gift_Transaction_Id__c', trsact?.Id);
+        } else {
+            answer.Supporter__c = supporter?.Id;
+            answer.Transaction__c = trsact?.Id;
+        }
         
         try {
             Database.upsert(answer, Answer__c.Field.fr_ID__c, true);
