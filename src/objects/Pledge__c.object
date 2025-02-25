@@ -46,7 +46,6 @@
     <deprecated>false</deprecated>
     <enableActivities>false</enableActivities>
     <enableBulkApi>true</enableBulkApi>
-    <enableChangeDataCapture>false</enableChangeDataCapture>
     <enableFeeds>false</enableFeeds>
     <enableHistory>false</enableHistory>
     <enableReports>true</enableReports>
@@ -196,6 +195,20 @@
         <trackTrending>false</trackTrending>
         <type>MasterDetail</type>
         <writeRequiresMasterRead>false</writeRequiresMasterRead>
+    </fields>
+    <fields>
+        <fullName>Supporter_PA__c</fullName>
+        <deleteConstraint>SetNull</deleteConstraint>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <label>Funraise PA Supporter</label>
+        <referenceTo>Account</referenceTo>
+        <relationshipLabel>Funraise Pledges</relationshipLabel>
+        <relationshipName>Funraise_Pledges</relationshipName>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <description>The Person Account(if enabled) that represents the Funraise supporter that owns this pledge</description>
+        <type>Lookup</type>
     </fields>
     <label>Funraise Pledge</label>
     <listViews>

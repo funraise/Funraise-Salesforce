@@ -78,13 +78,11 @@ public with sharing abstract class frModel {
     protected void applyMappings(SObject record, Map<String, Object> request) {
         String sObjectName = record.getSObjectType().getDescribe().getName();
         Map<String, Schema.SObjectField> fields = frSchemaUtil.getFields(sObjectName);
-        
         //a single funraise field might flow into multiple salesforce fields
         Map<String, List<frMapping__c>> frFieldToMappings = new Map<String, List<frMapping__c>>();
         List<frMapping__c> constantMappings = new List<frMapping__c>();
         Set<String> fieldsToQueryFor = new Set<String>();
         Boolean needLastModifiedDate = false;
-        
         for(frMapping__c mapping : getMappings()) {
             if(mapping.Is_Constant__c) {
                 constantMappings.add(mapping);
@@ -121,7 +119,7 @@ public with sharing abstract class frModel {
             if(getSalesforceId() != null) {
                 query += 'Id = :salesforceId';
             } else {
-                query += 'funraise__fr_Id__c = :funraiseId';
+                query += 'fr_Id__c = :funraiseId';
             }
             List<SObject> results = Database.query(query);
             if(results.size() > 0) {
@@ -142,7 +140,7 @@ public with sharing abstract class frModel {
                     Object incomingValue = request.get(fieldName);
                     Boolean write = false;
                     if(String.isBlank(mapping.Conflict_Resolution__c) || mapping.Conflict_Resolution__c == MAPPING_OVERWRITE) {
-                        write = true;	    
+                        write = true;      
                     } else if (mapping.Conflict_Resolution__c == MAPPING_OVERWRITE_NON_NULL && (incomingValue != null || (incomingValue instanceOf String && String.isNotBlank((String)incomingValue)))) {
                         write = true;
                     } else if (mapping.Conflict_Resolution__c == MAPPING_NO_OVERWRITE) {
@@ -164,7 +162,6 @@ public with sharing abstract class frModel {
             Schema.SObjectField field = fields.get(constantMapping.sf_Name__c);
             write(record, field, constantMapping.sf_Name__c, constantMapping.Constant_Value__c, funraiseId);
         }
-        
         record.put('fr_ID__c', funraiseId);
     }
     
@@ -175,7 +172,8 @@ public with sharing abstract class frModel {
                     record.put(field, Id.valueOf((String)value));
                 }
             } else if (field.getDescribe().getType() == Schema.DisplayType.DateTime) {
-                record.put(field, DateTime.newInstance((Long)value));
+                if(value != NULL) record.put(field, DateTime.newInstance((Long)value)); //Added null handling
+                else record.put(field, null);
             } else if (field.getDescribe().getType() == Schema.DisplayType.Date) {
                 if(value instanceof List<Object>) {
                     List<Object> localDate = (List<Object>)value;
@@ -214,10 +212,14 @@ public with sharing abstract class frModel {
             }
             record.put(field, value);
         } catch (Exception ex) {
-            insert new Error__c(Error__c = 'Field mapping exception. Object type: '+ record.getSObjectType().getDescribe().getName()
+            try {
+                insert new Error__c(Error__c = 'Field mapping exception. Object type: '+ record.getSObjectType().getDescribe().getName()
                                 +' Record Id: '+record.Id+' - Funraise Id: '+ funraiseId + ' - Field: '+field.getDescribe().getName()+' - Value: '+value
                                 +' Exception: '+ex
                                );
+            } catch (Exception exc) {
+                insert new Error__c(Error__c =  'Exception: '+ex + ' - Failed To insert with detail: ' + exc);
+            }
         }
     }
     
@@ -228,7 +230,7 @@ public with sharing abstract class frModel {
             (Integer)localDateTime.get(2), //day
             (Integer)localDateTime.get(3), //hour
             (Integer)localDateTime.get(4), //minute
-            0 				  //second
+            0           //second
         );
     }
     
