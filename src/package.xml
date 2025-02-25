@@ -35,6 +35,7 @@
         <members>frSyncable</members>
         <members>frTask</members>
         <members>frTestUtil</members>
+        <members>frTestUtil</members>
         <members>frUtil</members>
         <members>frWSBaseController</members>
         <members>frWSCampaignController</members>
@@ -48,7 +49,6 @@
         <members>frWSSubscriptionController</members>
         <members>frWSTaskController</members>
         <members>frWSTaskControllerTest</members>
-        <members>frTestUtil</members>
         <name>ApexClass</name>
     </types>
     <types>
@@ -64,10 +64,10 @@
         <name>CustomApplication</name>
     </types>
     <types>
+        <members>Account.fr_ID__c</members>
         <members>Activity.fr_Task_ID__c</members>
         <members>Campaign.fr_ID__c</members>
         <members>Contact.fr_ID__c</members>
-        <members>Account.fr_ID__c</members>
         <members>EmailMessage.fr_Email_ID__c</members>
         <members>Opportunity.Funraise_Pledge__c</members>
         <members>Opportunity.Subscription__c</members>
@@ -88,9 +88,9 @@
         <members>Question__c</members>
         <members>Subscription__c</members>
         <members>Sync_Attempt__c</members>
+        <members>Sync_Attempt__c</members>
         <members>frField__mdt</members>
         <members>frMapping__c</members>
-        <members>Sync_Attempt__c</members>
         <name>CustomObject</name>
     </types>
     <types>
