@@ -19,7 +19,7 @@ public class frDonorEmails extends frModel implements frSyncable {
                     email.FromName = String.valueOf(request.get('fromName'));
                     email.toIds = new String[]{contacts.get(0).Id};
                     email.subject = 'Funraise Email - ' + String.valueOf(request.get('subject'));
-                    email.MessageDate = DateTime.newInstance((Long)request.get('sentDate')).dateGMT();
+                    email.MessageDate = DateTime.newInstance((Long)request.get('sentDate'));
                     email.fr_Email_ID__c = funraiseId;
                     Database.upsert(email, EmailMessage.Fields.fr_Email_ID__c, true);
                     
