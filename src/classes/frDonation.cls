@@ -172,7 +172,7 @@ public class frDonation extends frModel implements frSyncable {
     
     @testVisible
     private void setOpportunityStage(Opportunity o, String status) {
-        if(String.isBlank(o.StageName)) {
+        if(String.isBlank(o.StageName) && (String.isBlank([SELECT StageName from Opportunity where fr_Id__c = :o.fr_Id__c]?.StageName))) {
             List<OpportunityStage> stages = [SELECT Id, MasterLabel, IsWon, IsClosed 
                                              FROM OpportunityStage 
                                              WHERE IsActive = true 
