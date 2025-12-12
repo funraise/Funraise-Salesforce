@@ -93,7 +93,7 @@ public class frDonor extends frModel implements frSyncable{
             if (String.isNotBlank(firstName) && String.isNotBlank(lastName)) {
                 query += ' AND FirstName = :firstName AND LastName = :lastName';
             
-                query += ' LIMIT 1';
+                query += ' ORDER BY CreatedDate DESC LIMIT 1';
         
                 records = Database.query(query);
                 if(isNPC) {
@@ -108,7 +108,7 @@ public class frDonor extends frModel implements frSyncable{
         if (supporter == null && String.isNotBlank(email)) {
             String query = 'SELECT Id, fr_ID__c, LastName FROM ' + SOBJ_NAME + ' WHERE ' + emailField + ' = :email';
     
-            query += ' LIMIT 1';
+            query += ' ORDER BY CreatedDate DESC LIMIT 1';
     
             records = Database.query(query);
             if(isNPC) {
@@ -144,7 +144,7 @@ public class frDonor extends frModel implements frSyncable{
                 if (String.isNotBlank(postalCode)) {
                     byAddress += ' AND ' + mailingPostalCodeField + ' = :postalCode';
                 }
-                byAddress += ' LIMIT 1';
+                byAddress += ' ORDER BY CreatedDate DESC LIMIT 1';
     
                 records = Database.query(byAddress);
                 supporter = applyMatch(records, frId);

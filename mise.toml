@@ -1,0 +1,3 @@
+[tools]
+ant = "latest"
+java = "latest"

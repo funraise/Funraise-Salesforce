@@ -138,20 +138,7 @@ public with sharing abstract class frModel {
                 for(frMapping__c mapping : frFieldToMappings.get(fieldName)) {
                     Schema.SObjectField field = fields.get(mapping.sf_Name__c);
                     Object incomingValue = request.get(fieldName);
-                    Boolean write = false;
-                    if(String.isBlank(mapping.Conflict_Resolution__c) || mapping.Conflict_Resolution__c == MAPPING_OVERWRITE) {
-                        write = true;      
-                    } else if (mapping.Conflict_Resolution__c == MAPPING_OVERWRITE_NON_NULL && (incomingValue != null || (incomingValue instanceOf String && String.isNotBlank((String)incomingValue)))) {
-                        write = true;
-                    } else if (mapping.Conflict_Resolution__c == MAPPING_NO_OVERWRITE) {
-                        Object existingValue = queriedFieldsRecord != null ? queriedFieldsRecord.get(field) : null;
-                        write = existingValue == null;
-                    } else if (mapping.Conflict_Resolution__c == MAPPING_OVERWRITE_RECENT && isMoreRecent) {
-                        write = true;
-                    } else if (String.isNotBlank(mapping.Conflict_Resolution__c) && !VALID_CONFLICT_RESOLUTIONS.contains(mapping.Conflict_Resolution__c)) {
-                        insert new Error__c(Error__c = 'Field mapping exception. Unknown conflict resolution provided. Object type: '+ sObjectName +
-                                            ' - Field: '+field.getDescribe().getName() + 'Conflict Resolution: '+ mapping.Conflict_Resolution__c);
-                    }
+                    Boolean write = shouldWriteMapping(mapping, incomingValue, queriedFieldsRecord, isMoreRecent, field, sObjectName);
                     if(write) {
                         write(record, field, mapping.sf_Name__c, incomingValue, funraiseId);    
                     }
@@ -160,9 +147,29 @@ public with sharing abstract class frModel {
         }
         for(frMapping__c constantMapping : constantMappings) {
             Schema.SObjectField field = fields.get(constantMapping.sf_Name__c);
-            write(record, field, constantMapping.sf_Name__c, constantMapping.Constant_Value__c, funraiseId);
-        }
+            Boolean write = shouldWriteMapping(constantMapping, constantMapping.Constant_Value__c, queriedFieldsRecord, isMoreRecent, field, sObjectName);
+            if(write) {
+                write(record, field, constantMapping.sf_Name__c, constantMapping.Constant_Value__c, funraiseId);
+            }        }
         record.put('fr_ID__c', funraiseId);
+    }
+    
+    private static Boolean shouldWriteMapping(frMapping__c mapping, Object incomingValue, SObject queriedFieldsRecord, Boolean isMoreRecent, Schema.SObjectField field, String sObjectName) {
+        Boolean write = false;
+        if(String.isBlank(mapping.Conflict_Resolution__c) || mapping.Conflict_Resolution__c == MAPPING_OVERWRITE) {
+            write = true;
+        } else if (mapping.Conflict_Resolution__c == MAPPING_OVERWRITE_NON_NULL && (incomingValue != null || (incomingValue instanceOf String && String.isNotBlank((String)incomingValue)))) {
+            write = true;
+        } else if (mapping.Conflict_Resolution__c == MAPPING_NO_OVERWRITE) {
+            Object existingValue = queriedFieldsRecord != null ? queriedFieldsRecord.get(field) : null;
+            write = existingValue == null;
+        } else if (mapping.Conflict_Resolution__c == MAPPING_OVERWRITE_RECENT && isMoreRecent) {
+            write = true;
+        } else if (String.isNotBlank(mapping.Conflict_Resolution__c) && !VALID_CONFLICT_RESOLUTIONS.contains(mapping.Conflict_Resolution__c)) {
+            insert new Error__c(Error__c = 'Field mapping exception. Unknown conflict resolution provided. Object type: '+ sObjectName +
+                                ' - Field: '+field.getDescribe().getName() + 'Conflict Resolution: '+ mapping.Conflict_Resolution__c);
+        }
+        return write;
     }
     
     public static void write(SObject record, Schema.SObjectField field, String fieldName, Object value, String funraiseId) {
