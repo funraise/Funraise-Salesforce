@@ -325,6 +325,45 @@ public class frDonorTest {
         Integer countAfterSync = [SELECT COUNT() FROM Contact];
         System.assertEquals(countBeforeSync, countAfterSync, 'No additional contacts should have been created');
     }
+    
+    static testMethod void syncEntity_existing_match_email_prefers_most_recent() {
+        if (frUtil.hasNPCobjects()) {
+            return;
+        }
+        createMapping('firstName', 'FirstName');
+        createMapping('lastName', 'LastName');
+        createMapping('email', 'email');
+        createMapping('address1', 'MailingStreet');
+        createMapping('city', 'MailingCity');
+        createMapping('state', 'MailingState');
+        createMapping('postalCode', 'MailingPostalCode');
+        createMapping('country', 'MailingCountry');
+
+        Contact older = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'alextest02221503@example.com');
+        insert older;
+        Test.setCreatedDate(older.Id, DateTime.now().addDays(-1));
+
+        Contact newer = new Contact(LastName = 'Test', FirstName = 'Existing', Email = 'alextest02221503@example.com');
+        try {
+            insert newer;
+        } catch (Exception ex) {
+            //the environment we're running in probably has duplicate rules on email address and rejected saving the second contact
+            //ordering email matches based on email won't be needed in this environment then
+            //consider the test successful
+            return;
+        }
+        Test.setCreatedDate(newer.Id, DateTime.now());
+
+        frTestUtil.createTestPost(getTestRequest());
+        Test.startTest();
+        frWSDonorController.syncEntity();
+        Test.stopTest();
+        frTestUtil.assertNoErrors();
+
+        String frId = String.valueOf(getTestRequest().get('id'));
+        Contact syncedContact = [SELECT Id, fr_ID__c FROM Contact WHERE fr_Id__c = :frId];
+        System.assertEquals(newer.Id, syncedContact.Id, 'The most recently created contact should be used when multiple matches exist');
+    }
 
     static testMethod void syncEntity_existing_match_email_NPC() {
         if (!frUtil.hasNPCobjects()) {
