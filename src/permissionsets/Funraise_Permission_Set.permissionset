@@ -77,6 +77,10 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
+        <apexClass>frPledgeTest</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
         <apexClass>frQuestion</apexClass>
         <enabled>true</enabled>
     </classAccesses>
@@ -130,6 +134,10 @@
     </classAccesses>
     <classAccesses>
         <apexClass>frWSDonorController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>frWSPledgeController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
@@ -379,6 +387,11 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
+        <field>Pledge__c.fr_Id__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>Pledge__c.End_Date__c</field>
         <readable>true</readable>
     </fieldPermissions>
@@ -410,6 +423,11 @@
     <fieldPermissions>
         <editable>true</editable>
         <field>Pledge__c.Received_Amount__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Pledge__c.Campaign_Page__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>

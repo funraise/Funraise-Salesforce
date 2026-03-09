@@ -69,6 +69,8 @@ public with sharing class frSyncRequestHandler implements Database.Batchable<SOb
             result = new frQuestion(attempt);
         } else if (attempt.Type__c == frUtil.Entity.ANSWER.name()) {
             result = new frAnswer(attempt);
+        } else if (attempt.Type__c == frUtil.Entity.PLEDGE.name()) {
+            result = new frPledge(attempt);
         } else {
             System.debug('Funraise was not able to find the correct object to attempt to resync, type:' + attempt.Type__c);
         }

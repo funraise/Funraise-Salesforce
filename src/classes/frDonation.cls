@@ -130,22 +130,35 @@ public class frDonation extends frModel implements frSyncable {
         }
 
         //connect pledge
+        String pledgeId = String.valueOf(request.get('commitmentId'));
         Boolean isPledge = Boolean.valueOf(request.get('pledge'));
-        if(frUtil.hasNPCobjects()) {
-            if(!isPledge && o.get('Funraise_GT_Pledge__c') == null) {
-                Pledge__c pledge = frPledge.findActiveAcc((Id) o.get('DonorId'), (Date) o.get('CheckDate'));
-                if (pledge != null) {
-                    o.put('Funraise_GT_Pledge__c', pledge.id);
-                } 
+        if (String.isNotBlank(pledgeId)) {
+            List<Pledge__c> pledges = [SELECT Id FROM Pledge__c WHERE fr_ID__c = :pledgeId];
+            if (pledges.size() > 0) {
+                o.put('PledgeId', pledges.get(0).get('Id'));
+            } else {
+                frUtil.logRelationshipError(getFrType(), funraiseId,frUtil.Entity.PLEDGE, pledgeId);
             }
-        }
-        else {
-            Opportunity opp = (Opportunity) this.o;
-            Boolean alreadyMappedToPledge = [SELECT COUNT() FROM Opportunity 
-                                            WHERE fr_Id__c = :funraiseId AND Funraise_Pledge__c != null] > 0;
-            if(!isPledge && !alreadyMappedToPledge) {
-                Pledge__c pledge = frPledge.findActive(opp.fr_Donor__c, opp.CloseDate);
-                opp.Funraise_Pledge__c = pledge != null ? pledge.Id : null;
+        } else {
+            if(frUtil.hasNPCobjects()) {
+                if(!isPledge && o.get('Funraise_GT_Pledge__c') == null) {
+                    Pledge__c pledge = frPledge.findActiveAcc((Id) o.get('DonorId'), (Date) o.get('CheckDate'));
+                    if (pledge != null) {
+                        o.put('Funraise_GT_Pledge__c', pledge.id);
+                    }
+                }
+            }
+            else {
+                Opportunity opp = (Opportunity) this.o;
+                Boolean alreadyMappedToPledge = [
+                        SELECT COUNT()
+                        FROM Opportunity
+                        WHERE fr_Id__c = :funraiseId AND Funraise_Pledge__c != null
+                ] > 0;
+                if (!isPledge && !alreadyMappedToPledge) {
+                    Pledge__c pledge = frPledge.findActive(opp.fr_Donor__c, opp.CloseDate);
+                    opp.Funraise_Pledge__c = pledge != null ? pledge.Id : null;
+                }
             }
         }
 
@@ -346,7 +359,6 @@ public class frDonation extends frModel implements frSyncable {
         usedFields.add(Opportunity.AccountId);
         usedFields.add(Opportunity.fr_Donor__c);
         usedFields.add(Opportunity.Subscription__c);
-        usedFields.add(Opportunity.Funraise_Pledge__c);
         usedFields.add(Opportunity.Funraise_Pledge__c);
         if(!isContactRoleMappingDisabled()) {
             usedFields.add(OpportunityContactRole.ContactId);

@@ -37,7 +37,128 @@
 * CREATED: 2020 Funraise Inc - https://funraise.io
 * AUTHOR: Alex Molina
 */
-public with sharing class frPledge {
+public class frPledge extends frModel implements frSyncable {
+
+    public frPledge(Sync_Attempt__c syncRecord) {
+        super(syncRecord);
+    }
+
+    public Boolean sync() {
+        Boolean result = false;
+        Map<String, Object> request = getRequestBody();
+        if (Boolean.valueOf(request.get('deleted'))) {
+            result = deletePledge(request);
+        } else {
+            result = create(request);
+        }
+        return result;
+    }
+
+    protected override Set<SObjectField> getFields() {
+        return new Set<Schema.SObjectField> {
+                Pledge__c.Name,
+                Pledge__c.End_Date__c,
+                Pledge__c.Start_Date__c,
+                Pledge__c.Pledge_Amount__c,
+                Pledge__c.Received_Amount__c,
+                Pledge__c.fr_Id__c,
+                Pledge__c.Campaign_Page__c,
+                Pledge__c.Pledge_Subscription__c
+        };
+    }
+
+    protected override Set<SObjectType> getObjects() {
+        return new Set<Schema.SObjectType> {
+                Pledge__c.SObjectType
+        };
+    }
+
+    protected override frUtil.Entity getFrType() {
+        return frUtil.Entity.PLEDGE;
+    }
+
+    protected override String getFunraiseId() {
+        return String.valueOf(getRequestBody().get('commitmentId'));
+    }
+
+    private Boolean create(Map<String, Object> request) {
+        Boolean result = false;
+        String commitmentId = getFunraiseId();
+        String pledgeAmount = String.valueOf(request.get('amount'));
+        String pledgeTotalAmount = String.valueOf(request.get('totalDonationAmount'));
+
+        Pledge__c pledge = new Pledge__c(
+                Name = frUtil.truncateToFieldLength(Pledge__c.Name.getDescribe(), 'Commitment - ' + String.valueOf(request.get('name'))),
+                Pledge_Amount__c = String.isNotBlank(pledgeAmount) ? Decimal.valueOf(pledgeAmount) : null,
+                Received_Amount__c = String.isNotBlank(pledgeTotalAmount) ? Decimal.valueOf(pledgeTotalAmount) : 0,
+                fr_Id__c = commitmentId,
+                End_Date__c = convertFromLocalDate((List<Object>) request.get('collectDate'))
+        );
+
+        SObject supporter = null;
+        String funraiseSupporterId = String.valueOf(request.get('supporterId'));
+        if(String.isNotBlank(funraiseSupporterId)) {
+            List<SObject> supporters;
+            if (frUtil.hasNPCobjects()) {
+                supporters = [SELECT Id FROM Account WHERE fr_Id__c = :funraiseSupporterId];
+            } else {
+                supporters = [SELECT Id, AccountId FROM Contact WHERE fr_Id__c = :funraiseSupporterId];
+            }
+            if(supporters.isEmpty() && createLogRecord) {
+                frUtil.logRelationshipError(getFrType(), commitmentId, frUtil.Entity.SUPPORTER, funraiseSupporterId);
+            } else if (!supporters.isEmpty()) {
+                supporter = supporters.get(0);
+            }
+        }
+
+        if(frUtil.hasNPCobjects()) {
+            pledge.put('Supporter_PA__c', supporter?.Id);
+        } else {
+            pledge.Supporter__c = supporter?.Id;
+        }
+
+        //connect campaign
+        String campaignId = String.valueOf(request.get('goalId'));
+        if (String.isNotBlank(campaignId)) {
+            List<Campaign> campaigns = [SELECT Id FROM Campaign WHERE fr_ID__c = :campaignId];
+            if (campaigns.size() > 0) {
+                pledge.put('Campaign_Page__c', campaigns[0].Id);
+            } else {
+                frUtil.logRelationshipError(getFrType(), commitmentId, frUtil.Entity.CAMPAIGN, campaignId);
+            }
+        }
+
+        try {
+            Database.upsert(pledge, Pledge__c.fr_Id__c, true);
+            result = true;
+        } catch (DMLException ex) {
+            if(createLogRecord) {
+                frUtil.logException(getFrType(), commitmentId, ex);
+            }
+        }
+
+        return result;
+    }
+
+    private Boolean deletePledge(Map<String, Object> request) {
+        Boolean result = false;
+        String commitmentId = getFunraiseId();
+        try {
+            List<Pledge__c> pledges = [SELECT Id, fr_ID__c FROM Pledge__c WHERE fr_ID__c = :commitmentId];
+            if(pledges.size() == 0) {
+                return true;
+            }
+            Pledge__c pledgeToDelete = pledges.get(0);
+            delete pledgeToDelete;
+            result = true;
+        } catch (DMLException e) {
+            if(createLogRecord) {
+                frUtil.logException(getFrType(), commitmentId, e);
+            }
+        }
+        return result;
+    }
+
     public static Pledge__c findActive(Id contactId, Date closeDate) {
         List<Pledge__c> possiblePledges = [SELECT Id FROM Pledge__c 
                                          WHERE Supporter__c = :contactId 

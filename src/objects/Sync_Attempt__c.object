@@ -128,6 +128,11 @@
                     <label>TASK</label>
                 </value>
                 <value>
+                    <fullName>PLEDGE</fullName>
+                    <default>false</default>
+                    <label>PLEDGE</label>
+                </value>
+                <value>
                     <fullName>QUESTION</fullName>
                     <default>false</default>
                     <label>QUESTION</label>

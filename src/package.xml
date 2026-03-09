@@ -21,6 +21,7 @@
         <members>frModel</members>
         <members>frOpportunityPledgeCalculatorTriggerTest</members>
         <members>frPledge</members>
+        <members>frPledgeTest</members>
         <members>frPostInstall</members>
         <members>frPostInstallTest</members>
         <members>frQuestion</members>
@@ -46,6 +47,7 @@
         <members>frWSDonorEmailController</members>
         <members>frWSFundraisingEventController</members>
         <members>frWSFundraisingEventRegistrationCntrlr</members>
+        <members>frWSPledgeController</members>
         <members>frWSSubscriptionController</members>
         <members>frWSTaskController</members>
         <members>frWSTaskControllerTest</members>

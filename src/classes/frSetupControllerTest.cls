@@ -1,6 +1,7 @@
-@isTest
+@IsTest
 public class frSetupControllerTest {
-	static testMethod void test_availableMappings() {
+	@IsTest
+	static void test_availableMappings() {
 		if (frUtil.hasNPCobjects()) return;
 
 		//get the donor and donation custom metadata fields, assert that those are the same ones that controller provides
@@ -22,7 +23,8 @@ public class frSetupControllerTest {
 		assertValuesInList(expectedDonationFieldNames, controller.donationFROptions);
 	}
 
-	static testMethod void test_availableMappings_NPC() {
+	@IsTest
+	static void test_availableMappings_NPC() {
 		if (!frUtil.hasNPCobjects()) return;
 
 		//get the donor and donation custom metadata fields, assert that those are the same ones that controller provides
@@ -44,7 +46,8 @@ public class frSetupControllerTest {
 		assertValuesInList(expectedDonationFieldNames, controller.donationFROptions);
 	}
 
-	static testMethod void test_addMapping() {
+	@IsTest
+	static void test_addMapping() {
 		Test.startTest();
 		frSetupController controller = new frSetupController();
 		ApexPages.currentPage().getParameters().put('type', frSetupController.DONATION_TYPE);
@@ -71,7 +74,8 @@ public class frSetupControllerTest {
 		System.assertEquals(frSetupController.DONOR_TYPE, donorMapping.Type__c, 'The mapping added second should have a donor type');
 	}
 
-	static testMethod void test_addMapping_constant() {
+	@IsTest
+	static void test_addMapping_constant() {
 		Test.startTest();
 		frSetupController controller = new frSetupController();
 		ApexPages.currentPage().getParameters().put('type', frSetupController.DONATION_TYPE);
@@ -88,7 +92,8 @@ public class frSetupControllerTest {
 		System.assertEquals(1, [SELECT COUNT() FROM frMapping__c WHERE Is_Constant__c = true AND Constant_Value__c = :donationMapping.Constant_Value__c], 'Only one mapping was added, so only one mapping should exist');
 	}
 
-	static testMethod void test_removeMapping() {
+	@IsTest
+	static void test_removeMapping() {
 		Test.startTest();
 		frSetupController controller = new frSetupController();
 		ApexPages.currentPage().getParameters().put('type', frSetupController.DONATION_TYPE);
@@ -109,7 +114,8 @@ public class frSetupControllerTest {
 		System.assertEquals(0, countAfterRemove, 'The record should have been removed without errors');
 	}
 
-	static testMethod void test_cancel() {
+	@IsTest
+	static void test_cancel() {
 		Test.startTest();
 		frSetupController controller = new frSetupController();
 
@@ -129,7 +135,8 @@ public class frSetupControllerTest {
 
 	}
 
-	static testMethod void test_defaults() {
+	@IsTest
+	static void test_defaults() {
 		if (frUtil.hasNPCobjects()) return;
 
 		insert new frMapping__c(Type__c = frDonation.TYPE, fr_Name__c = 'testfr', sf_Name__c = 'testsf', Name = 'Test Mapping');
@@ -149,7 +156,8 @@ public class frSetupControllerTest {
 		assertMappingsEqual(frSetupController.getDonationDefaults(), actualDonationMappings);
 	}
 
-	static testMethod void test_defaults_NPC() {
+	@IsTest
+	static void test_defaults_NPC() {
 		if (!frUtil.hasNPCobjects()) return;
 
 		insert new frMapping__c(Type__c = frDonation.TYPE, fr_Name__c = 'testfr', sf_Name__c = 'testsf', Name = 'Test Mapping');
@@ -169,7 +177,8 @@ public class frSetupControllerTest {
 		assertMappingsEqual(frSetupController.getGiftTransactionDefaults(), [SELECT Name FROM frMapping__c WHERE Type__c = :frDonation.TYPE]);
 	}
 
-	static testMethod void test_defaults_donorOnly() {
+	@IsTest
+	static void test_defaults_donorOnly() {
 		insert new frMapping__c(Type__c = frDonor.TYPE, fr_Name__c = 'testfr', sf_Name__c = 'testsf', Name = 'Test Mapping');
 		Integer beforeTestMappingCount = [SELECT COUNT() FROM frMapping__c];
 
@@ -185,7 +194,8 @@ public class frSetupControllerTest {
 		assertMappingsEqual(frSetupController.getDonorDefaults(), actualDonorMappings);
 	}
 
-	static testMethod void test_defaults_donationOnly() {
+	@IsTest
+	static void test_defaults_donationOnly() {
 		insert new frMapping__c(Type__c = frDonation.TYPE, fr_Name__c = 'testfr', sf_Name__c = 'testsf', Name = 'Test Mapping');
 		Integer beforeTestMappingCount = [SELECT COUNT() FROM frMapping__c];
 
