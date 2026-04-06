@@ -70,6 +70,19 @@
         <type>Checkbox</type>
     </fields>
     <fields>
+        <fullName>Campaign_Page__c</fullName>
+        <deleteConstraint>SetNull</deleteConstraint>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <label>Campaign Page</label>
+        <referenceTo>Campaign</referenceTo>
+        <relationshipLabel>Funraise Pledges</relationshipLabel>
+        <relationshipName>Funraise_Pledges</relationshipName>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Lookup</type>
+    </fields>
+    <fields>
         <fullName>End_Date__c</fullName>
         <deprecated>false</deprecated>
         <description>The date on which this pledge should be considered inactive and donations will stop automatically counting towards fulfilling it</description>
@@ -160,19 +173,6 @@
         <unique>true</unique>
     </fields>
     <fields>
-        <fullName>Campaign_Page__c</fullName>
-        <deleteConstraint>SetNull</deleteConstraint>
-        <deprecated>false</deprecated>
-        <externalId>false</externalId>
-        <label>Campaign Page</label>
-        <referenceTo>Campaign</referenceTo>
-        <relationshipLabel>Funraise Pledges</relationshipLabel>
-        <relationshipName>Funraise_Pledges</relationshipName>
-        <required>false</required>
-        <trackTrending>false</trackTrending>
-        <type>Lookup</type>
-    </fields>
-    <fields>
         <fullName>Received_Amount__c</fullName>
         <deprecated>false</deprecated>
         <description>Summed opportunity amounts related to this pledge.  Calculation of this value is handled by a trigger whenever opportunities related to this pledge are added or updated</description>
@@ -231,7 +231,6 @@
         <externalId>true</externalId>
         <label>Funraise ID</label>
         <length>255</length>
-        <!--    Adding this with commitments, can't necessarily make it required due to existing pledges. Investigate later    -->
         <required>false</required>
         <trackTrending>false</trackTrending>
         <type>Text</type>

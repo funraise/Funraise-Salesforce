@@ -184,18 +184,8 @@ public class frDonation extends frModel implements frSyncable {
     }
     
     @testVisible
-    private Boolean shouldSetOpportunityStage() {
-        for(frMapping__c mapping : getMappings()) {
-            if(mapping.sf_Name__c == 'StageName') {
-                return false;
-            }
-        }
-        return true;
-    }
-    
-    @testVisible
     private void setOpportunityStage(Opportunity o, String status) {
-        if(shouldSetOpportunityStage()) {
+        if(String.isBlank(o.StageName) && (String.isBlank([SELECT StageName from Opportunity where fr_Id__c = :o.fr_Id__c]?.StageName))) {
             List<OpportunityStage> stages = [SELECT Id, MasterLabel, IsWon, IsClosed 
                                              FROM OpportunityStage 
                                              WHERE IsActive = true 
