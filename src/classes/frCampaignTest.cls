@@ -215,14 +215,24 @@ public class frCampaignTest {
     }
     
     static testMethod void testCampaignMember() {
-        Contact fundraiser = frDonorTest.getTestContact();
+        String supporterId;
+        Id expectedContactId;
+        if (frUtil.hasNPCobjects()) {
+            Account fundraiser = frDonorTest.getTestAccount(true);
+            supporterId = String.valueOf(fundraiser.get('fr_ID__c'));
+            expectedContactId = (Id)fundraiser.get('PersonContactId');
+        } else {
+            Contact fundraiser = frDonorTest.getTestContact();
+            supporterId = fundraiser.fr_ID__c;
+            expectedContactId = fundraiser.Id;
+        }
         
         String goalId = '10';
         String campaignName = 'New Campaign';
         Map<String, Object> request = getTestRequest();
         request.put('name', campaignName);
         request.put('parentGoalId', null);
-        request.put('supporterId', fundraiser.fr_Id__c);
+        request.put('supporterId', supporterId);
         request.put('goalId', goalId);
         
         frTestUtil.createTestPost(request);
@@ -242,7 +252,7 @@ public class frCampaignTest {
         List<CampaignMember> members = [SELECT Id, ContactId, CampaignId FROM CampaignMember WHERE CampaignId = :newCampaign.Id];
         System.assertEquals(1, members.size(), 'There should be a CampaignMember for the Fundraiser');
         CampaignMember fundraiserMember = members.get(0);
-        System.assertEquals(fundraiser.Id, fundraiserMember.ContactId, 'There should be a CampaignMember for the Fundraiser');
+        System.assertEquals(expectedContactId, fundraiserMember.ContactId, 'There should be a CampaignMember for the Fundraiser');
         System.assertEquals(startingErrors, afterErrors, 'No errors were expected, even in the case of duplicate requests');
     }
     

@@ -114,14 +114,18 @@ public class frCampaign extends frModel implements frSyncable {
         
         String supporterFunraiseId = String.valueOf(request.get('supporterId'));        
         if (String.isNotBlank(supporterFunraiseId)) {
-            List<Contact> contacts = [SELECT Id, AccountId, (SELECT Id FROM CampaignMembers WHERE CampaignId = :newCampaign.Id) 
-                                      FROM Contact WHERE fr_ID__c = :supporterFunraiseId];
-            if (contacts.size() > 0) {
-                Contact supporterContact = contacts.get(0);
-                if(supporterContact.CampaignMembers.size() == 0) {
+            Id supporterContactId = getCampaignMemberContactId(supporterFunraiseId);
+            if (supporterContactId != null) {
+                List<CampaignMember> campaignMembers = [
+                    SELECT Id
+                    FROM CampaignMember
+                    WHERE CampaignId = :newCampaign.Id
+                        AND ContactId = :supporterContactId
+                ];
+                if(campaignMembers.size() == 0) {
                     CampaignMember fundraiserMember = new CampaignMember(
                         CampaignId = newCampaign.Id,
-                        ContactId = supporterContact.Id
+                        ContactId = supporterContactId
                     );
                     try {
                         insert fundraiserMember;
@@ -138,6 +142,29 @@ public class frCampaign extends frModel implements frSyncable {
         }
         return result;
     }
+
+    private Id getCampaignMemberContactId(String supporterFunraiseId) {
+        if (frUtil.hasNPCobjects()) {
+            List<SObject> supporters = Database.query(
+                'SELECT Id, PersonContactId FROM Account WHERE fr_ID__c = :supporterFunraiseId'
+            );
+            if (supporters.size() > 0) {
+                Id personContactId = (Id)supporters.get(0).get('PersonContactId');
+                if (personContactId != null) {
+                    return personContactId;
+                }
+                if(createLogRecord) frUtil.logRelationshipError(getFrType(), getFunraiseId(),
+                    frUtil.Entity.PERSONACCOUNT, supporterFunraiseId, 'Person Account is missing PersonContactId');
+            }
+            return null;
+        }
+
+        List<Contact> contacts = [SELECT Id FROM Contact WHERE fr_ID__c = :supporterFunraiseId];
+        if (contacts.size() > 0) {
+            return contacts.get(0).Id;
+        }
+        return null;
+    }
     
     protected override Boolean requireObjectDeletePermission() {
         return true;
@@ -148,7 +175,7 @@ public class frCampaign extends frModel implements frSyncable {
     }
     
     protected override Set<Schema.SObjectField> getFields() {
-        return new Set<Schema.SObjectField> {
+        Set<Schema.SObjectField> fields = new Set<Schema.SObjectField> {
                 Campaign.Name,
                 Campaign.Description,
                 Campaign.Status,
@@ -158,13 +185,25 @@ public class frCampaign extends frModel implements frSyncable {
                 CampaignMember.CampaignId,
                 CampaignMember.ContactId
         };
+        if (frUtil.hasNPCobjects()) {
+            Map<String, Schema.SObjectField> accountFields = Account.SObjectType.getDescribe().fields.getMap();
+            fields.add(Account.fr_ID__c);
+            if (accountFields.containsKey('PersonContactId')) {
+                fields.add(accountFields.get('PersonContactId'));
+            }
+        }
+        return fields;
     }
     
     protected override Set<Schema.SObjectType> getObjects() {
-        return new Set<Schema.SObjectType> {
+        Set<Schema.SObjectType> objects = new Set<Schema.SObjectType> {
             	Campaign.SObjectType,
                 CampaignMember.SObjectType
         };
+        if (frUtil.hasNPCobjects()) {
+            objects.add(Account.SObjectType);
+        }
+        return objects;
     }
     
     protected override frUtil.Entity getFrType() {
