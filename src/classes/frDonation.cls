@@ -69,7 +69,7 @@ public class frDonation extends frModel implements frSyncable {
             o = new Opportunity();
         }
         else {
-            List<SObject> gtList = Database.query('SELECT Id, Funraise_GT_Pledge__c, DonorId FROM GiftTransaction WHERE fr_ID__c = :frId');
+            List<SObject> gtList = Database.query('SELECT Id, Funraise_GT_Pledge__c, DonorId, CheckDate FROM GiftTransaction WHERE fr_ID__c = :frId');
             if(gtList.isEmpty()) {
                 o = Schema.getGlobalDescribe().get('gifttransaction').newSObject();
             } 

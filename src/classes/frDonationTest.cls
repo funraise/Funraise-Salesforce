@@ -697,7 +697,45 @@ public class frDonationTest {
         );
         System.assertEquals(pledge.Id, gc[0].get('Funraise_GT_Pledge__c'), 'The pledge value should remain unchanged');
     }
-    
+
+    static testMethod void syncEntity_existing_matchesActivePledge_NPC() {
+        if (!frUtil.hasNPCobjects()) {
+            return;
+        }
+        createMapping('name', 'Name');
+        createMapping('amount', 'OriginalAmount');
+        insert frSetupController.getGiftTransactionDefaults();
+
+        Account testAccount = frDonortest.getTestAccount(true);
+        Pledge__c pledge = getTestPledgeAcc(testAccount);
+        pledge.Start_Date__c = Date.today().addDays(-5);
+        pledge.End_Date__c = Date.today().addDays(5);
+        insert pledge;
+
+        SObject existingGT = getTestGT();
+        existingGT.put('fr_Id__c', '2048');
+        existingGT.put('DonorId', testAccount.Id);
+        existingGT.put('CheckDate', Date.today());
+        insert existingGT;
+
+        Map<String, Object> request = getTestRequest();
+        request.put('id', existingGT.get('fr_Id__c'));
+        request.put('donorId', testAccount.get('fr_Id__c'));
+        frTestUtil.createTestPost(request);
+
+        Test.startTest();
+        frWSDonationController.syncEntity();
+        Test.stopTest();
+
+        frTestUtil.assertNoErrors();
+
+        String requestId = (String) request.get('id');
+        List<SObject> gt = Database.query(
+            'SELECT Id, Funraise_GT_Pledge__c FROM GiftTransaction WHERE fr_ID__c = :requestId'
+        );
+        System.assertEquals(pledge.Id, gt[0].get('Funraise_GT_Pledge__c'), 'The existing donation should match the active pledge');
+    }
+
     //
     // syncEntity_oldDonation_matchesInactivePledge
     //
