@@ -140,6 +140,17 @@ Registrant__r.FirstName)</formula>
         <type>Lookup</type>
     </fields>
     <fields>
+        <fullName>Gift_Transaction_ID__c</fullName>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <label>Gift Transaction ID</label>
+        <length>18</length>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
         <fullName>Last_Name_Display__c</fullName>
         <deprecated>false</deprecated>
         <externalId>false</externalId>

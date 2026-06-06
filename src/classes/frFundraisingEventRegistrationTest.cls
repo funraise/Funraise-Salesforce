@@ -81,6 +81,68 @@ public class frFundraisingEventRegistrationTest {
         System.assertEquals(String.valueOf(request.get('email')), registration.Email__c, 'The email should have been populated with the contact info email in the request');
         System.assertEquals(String.valueOf(request.get('phone')), registration.Phone__c, 'The phone should have been populated with the contact info phone in the request');
     }
+
+    static testMethod void createRegistration_linksNpcPersonAccountAndStoresGiftTransactionId() {
+        if(!frUtil.hasNPCobjects()) {
+            return;
+        }
+
+        Fundraising_Event__c testEvent = frFundraisingEventTest.getTestEvent();
+        insert testEvent;
+
+        Account testAccount = frDonorTest.getTestAccount(true);
+        String transactionFrId = '34509';
+
+        insert frSetupController.getGiftTransactionDefaults();
+        Map<String, Object> donationRequest = frDonationTest.getTestRequest();
+        donationRequest.put('id', transactionFrId);
+        donationRequest.put('donorId', String.valueOf(testAccount.get('fr_ID__c')));
+        frTestUtil.createTestPost(donationRequest);
+        frWSDonationController.syncEntity();
+
+        List<SObject> giftTransactions = Database.query(
+            'SELECT Id FROM GiftTransaction WHERE fr_ID__c = :transactionFrId'
+        );
+        System.assertEquals(1, giftTransactions.size(), 'Precondition: GiftTransaction should have synced');
+
+        String funraiseId = '25';
+        Map<String, Object> request = getTestRequest();
+        request.put('eventId', testEvent.fr_ID__c);
+        request.put('supporterId', String.valueOf(testAccount.get('fr_ID__c')));
+        request.put('guestOfId', String.valueOf(testAccount.get('fr_ID__c')));
+        request.put('transactionId', transactionFrId);
+        request.put('id', funraiseId);
+
+        frTestUtil.createTestPost(request);
+        Test.startTest();
+        frWSFundraisingEventRegistrationCntrlr.syncEntity();
+        Test.stopTest();
+
+        SObject registration = Database.query(
+            'SELECT Id, Registrant__c, Guest_Of__c, Transaction__c, Gift_Transaction_ID__c ' +
+            'FROM Fundraising_Event_Registration__c WHERE fr_ID__c = :funraiseId'
+        );
+        System.assertEquals(
+            testAccount.get('PersonContactId'),
+            registration.get('Registrant__c'),
+            'The NPC registrant should use the Person Account contact'
+        );
+        System.assertEquals(
+            testAccount.get('PersonContactId'),
+            registration.get('Guest_Of__c'),
+            'The NPC guest of should use the Person Account contact'
+        );
+        System.assertEquals(
+            String.valueOf(giftTransactions.get(0).get('Id')),
+            registration.get('Gift_Transaction_ID__c'),
+            'The NPC registration should store the GiftTransaction id'
+        );
+        System.assertEquals(
+            null,
+            registration.get('Transaction__c'),
+            'NPC registrations should not try to populate the Opportunity transaction lookup'
+        );
+    }
     
     static testMethod void createRegistration_eventMissing() {	
         Contact testSupporter = frDonorTest.getTestContact();

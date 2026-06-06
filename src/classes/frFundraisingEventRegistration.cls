@@ -77,40 +77,25 @@ public class frFundraisingEventRegistration extends frModel implements frSyncabl
             return result;
         }
         
-        String funraiseSupporterId = String.valueOf(request.get('supporterId'));
-        List<Contact> supporter = new List<Contact>();
-        if(String.isNotBlank(funraiseSupporterId)) {
-            supporter = [SELECT Id from Contact WHERE fr_Id__c = :funraiseSupporterId];
-            if(supporter.isEmpty()) {
-                //if it wasn't found, log an error but continue
-                if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
-                                            frUtil.Entity.SUPPORTER, funraiseSupporterId,
-                                            'Registration registrant');
-            }
-        }
+        Id supporterId = findSupporterContactId(
+            String.valueOf(request.get('supporterId')),
+            funraiseId,
+            'Registration registrant'
+        );
         
-        String funraiseGuestOfId = String.valueOf(request.get('guestOfId'));
-        List<Contact> guestOf = new List<Contact>();
-        if(String.isNotBlank(funraiseGuestOfId)) {
-            guestOf = [SELECT Id from Contact WHERE fr_Id__c = :funraiseGuestOfId];
-            if(guestOf.isEmpty()) {
-                //if it wasn't found, log an error but continue
-                if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
-                                            frUtil.Entity.SUPPORTER, funraiseSupporterId,
-                                            'Registration guest of');
-                
-            }
-        }
+        Id guestOfId = findSupporterContactId(
+            String.valueOf(request.get('guestOfId')),
+            funraiseId,
+            'Registration guest of'
+        );
         
         String funraiseTransactionId = String.valueOf(request.get('transactionId'));
-        List<Opportunity> transactions = new List<Opportunity>();
-        if(String.isNotBlank(funraiseTransactionId)) {
-            transactions = [SELECT Id FROM Opportunity WHERE fr_Id__c = :funraiseTransactionId];
-            if(transactions.isEmpty()) {
-                //if it wasn't found, log an error but continue
-                if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
-                                            frUtil.Entity.DONATION, funraiseTransactionId);                
-            }
+        Id opportunityTransactionId = null;
+        Id giftTransactionId = null;
+        if(frUtil.hasNPCobjects()) {
+            giftTransactionId = findGiftTransactionId(funraiseTransactionId, funraiseId);
+        } else {
+            opportunityTransactionId = findOpportunityTransactionId(funraiseTransactionId, funraiseId);
         }
 
     
@@ -126,9 +111,9 @@ public class frFundraisingEventRegistration extends frModel implements frSyncabl
             ),
             Attended__c = Boolean.valueOf(request.get('attended')),
             Fundraising_Event__c = event.get(0).Id,
-            Registrant__c = supporter.isEmpty() ?  null : supporter.get(0).Id,
-            Guest_Of__c = guestOf.isEmpty() ?  null : guestOf.get(0).Id,
-            Transaction__c = transactions.isEmpty() ? null : transactions.get(0).Id,
+            Registrant__c = supporterId,
+            Guest_Of__c = guestOfId,
+            Transaction__c = opportunityTransactionId,
             First_Name__c = frUtil.truncateToFieldLength(
                 Fundraising_Event_Registration__c.First_Name__c.getDescribe(), 
                 String.valueOf(request.get('firstName'))
@@ -146,6 +131,7 @@ public class frFundraisingEventRegistration extends frModel implements frSyncabl
                 String.valueOf(request.get('email'))
             )
         );
+        writeGiftTransactionReferences(registration, giftTransactionId);
         frModel.write(
             registration, 
             Fundraising_Event_Registration__c.Ticket_Amount__c, 
@@ -169,13 +155,117 @@ public class frFundraisingEventRegistration extends frModel implements frSyncabl
         }
         return result;
     }
+
+    private Id findSupporterContactId(String funraiseSupporterId, String funraiseId, String relationshipContext) {
+        if(String.isBlank(funraiseSupporterId)) {
+            return null;
+        }
+
+        if(frUtil.hasNPCobjects()) {
+            List<SObject> accounts = Database.query(
+                'SELECT Id, PersonContactId FROM Account WHERE fr_ID__c = :funraiseSupporterId LIMIT 1'
+            );
+            if(accounts.isEmpty()) {
+                if(createLogRecord) {
+                    frUtil.logRelationshipError(
+                        getFrType(),
+                        funraiseId,
+                        frUtil.Entity.SUPPORTER,
+                        funraiseSupporterId,
+                        relationshipContext
+                    );
+                }
+                return null;
+            }
+
+            Id personContactId = (Id)accounts.get(0).get(PERSON_CONTACT_ID_FIELD);
+            if(personContactId == null) {
+                if(createLogRecord) {
+                    frUtil.logRelationshipError(
+                        getFrType(),
+                        funraiseId,
+                        frUtil.Entity.SUPPORTER,
+                        funraiseSupporterId,
+                        relationshipContext + ': missing PersonContactId'
+                    );
+                }
+                return null;
+            }
+            return personContactId;
+        }
+
+        List<Contact> supporters = [SELECT Id from Contact WHERE fr_Id__c = :funraiseSupporterId LIMIT 1];
+        if(supporters.isEmpty()) {
+            if(createLogRecord) {
+                frUtil.logRelationshipError(
+                    getFrType(),
+                    funraiseId,
+                    frUtil.Entity.SUPPORTER,
+                    funraiseSupporterId,
+                    relationshipContext
+                );
+            }
+            return null;
+        }
+        return supporters.get(0).Id;
+    }
+
+    private Id findOpportunityTransactionId(String funraiseTransactionId, String funraiseId) {
+        if(String.isBlank(funraiseTransactionId)) {
+            return null;
+        }
+
+        List<Opportunity> transactions = [SELECT Id FROM Opportunity WHERE fr_Id__c = :funraiseTransactionId LIMIT 1];
+        if(transactions.isEmpty()) {
+            if(createLogRecord) {
+                frUtil.logRelationshipError(getFrType(), funraiseId, frUtil.Entity.DONATION, funraiseTransactionId);
+            }
+            return null;
+        }
+        return transactions.get(0).Id;
+    }
+
+    private Id findGiftTransactionId(String funraiseTransactionId, String funraiseId) {
+        if(String.isBlank(funraiseTransactionId) || !Schema.getGlobalDescribe().containsKey(GIFT_TRANSACTION_OBJECT)) {
+            return null;
+        }
+
+        List<SObject> transactions = Database.query(
+            'SELECT Id FROM ' + GIFT_TRANSACTION_OBJECT + ' WHERE fr_ID__c = :funraiseTransactionId LIMIT 1'
+        );
+        if(transactions.isEmpty()) {
+            if(createLogRecord) {
+                frUtil.logRelationshipError(getFrType(), funraiseId, frUtil.Entity.GIFTTRANSACTION, funraiseTransactionId);
+            }
+            return null;
+        }
+        return (Id)transactions.get(0).get('Id');
+    }
+
+    private void writeGiftTransactionReferences(Fundraising_Event_Registration__c registration, Id giftTransactionId) {
+        if(giftTransactionId == null) {
+            return;
+        }
+
+        Map<String, Schema.SObjectField> fields = registrationFields();
+        if(fields.containsKey(GIFT_TRANSACTION_LOOKUP_FIELD)) {
+            registration.put(GIFT_TRANSACTION_LOOKUP_FIELD, giftTransactionId);
+        }
+        if(fields.containsKey(GIFT_TRANSACTION_ID_FIELD)) {
+            registration.put(GIFT_TRANSACTION_ID_FIELD, String.valueOf(giftTransactionId));
+        }
+    }
+
+    private Map<String, Schema.SObjectField> registrationFields() {
+        return Fundraising_Event_Registration__c.SObjectType.getDescribe().fields.getMap();
+    }
     
     protected override Boolean requireObjectDeletePermission() {
         return true;
     }
     
     protected override Set<Schema.SObjectField> getFields() {
-        return new Set<Schema.SObjectField> {
+        Set<Schema.SObjectField> fields = new Set<Schema.SObjectField> {
             	Fundraising_Event_Registration__c.fr_ID__c,
                 Fundraising_Event_Registration__c.Name,
                 Fundraising_Event_Registration__c.Ticket_Name__c,
@@ -191,6 +281,13 @@ public class frFundraisingEventRegistration extends frModel implements frSyncabl
                 Fundraising_Event_Registration__c.Ticket_Amount__c,
                 Fundraising_Event_Registration__c.Ticket_Tax_Deductible_Amount__c
         };
+        if(registrationFields().containsKey(GIFT_TRANSACTION_LOOKUP_FIELD)) {
+            fields.add(registrationFields().get(GIFT_TRANSACTION_LOOKUP_FIELD));
+        }
+        if(registrationFields().containsKey(GIFT_TRANSACTION_ID_FIELD)) {
+            fields.add(registrationFields().get(GIFT_TRANSACTION_ID_FIELD));
+        }
+        return fields;
     }
     
     protected override Set<Schema.SObjectType> getObjects() {
@@ -202,4 +299,9 @@ public class frFundraisingEventRegistration extends frModel implements frSyncabl
     protected override frUtil.Entity getFrType() {
         return frUtil.Entity.REGISTRATION;
     }
+
+    private static final String GIFT_TRANSACTION_OBJECT = 'GiftTransaction';
+    private static final String GIFT_TRANSACTION_LOOKUP_FIELD = 'Gift_Transaction__c';
+    private static final String GIFT_TRANSACTION_ID_FIELD = 'Gift_Transaction_ID__c';
+    private static final String PERSON_CONTACT_ID_FIELD = 'PersonContactId';
 }

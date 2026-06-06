@@ -291,6 +291,11 @@
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
+        <editable>true</editable>
+        <field>Fundraising_Event_Registration__c.Gift_Transaction_ID__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
         <editable>false</editable>
         <field>Fundraising_Event_Registration__c.Last_Name_Display__c</field>
         <readable>false</readable>
