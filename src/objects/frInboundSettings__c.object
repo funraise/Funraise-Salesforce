@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customSettingsType>List</customSettingsType>
+    <enableFeeds>false</enableFeeds>
+    <fields>
+        <fullName>Enabled__c</fullName>
+        <defaultValue>false</defaultValue>
+        <deprecated>false</deprecated>
+        <description>Controls whether Salesforce supporter updates are sent back to Funraise.</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Controls whether Salesforce supporter updates are sent back to Funraise.</inlineHelpText>
+        <label>Enabled</label>
+        <trackTrending>false</trackTrending>
+        <type>Checkbox</type>
+    </fields>
+    <fields>
+        <fullName>Named_Credential__c</fullName>
+        <deprecated>false</deprecated>
+        <description>The API name of the Named Credential that points at the Funraise Platform API.</description>
+        <externalId>false</externalId>
+        <inlineHelpText>The API name of the Named Credential that points at the Funraise Platform API.</inlineHelpText>
+        <label>Named Credential</label>
+        <length>255</length>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Organization_UUID__c</fullName>
+        <deprecated>false</deprecated>
+        <description>The Funraise organization UUID used by the inbound Platform endpoint.</description>
+        <externalId>false</externalId>
+        <inlineHelpText>The Funraise organization UUID used by the inbound Platform endpoint.</inlineHelpText>
+        <label>Organization UUID</label>
+        <length>36</length>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Secret__c</fullName>
+        <deprecated>false</deprecated>
+        <description>The shared secret Platform requires on inbound Salesforce sync requests.</description>
+        <externalId>false</externalId>
+        <inlineHelpText>The shared secret Platform requires on inbound Salesforce sync requests.</inlineHelpText>
+        <label>Secret</label>
+        <length>255</length>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <label>Funraise Inbound Sync Settings</label>
+    <visibility>Protected</visibility>
+</CustomObject>
