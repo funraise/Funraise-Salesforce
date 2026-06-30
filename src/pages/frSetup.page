@@ -3,35 +3,45 @@
     <apex:form >
         <apex:pageBlock title="Instructions" rendered="{!isNonProfitOrg == false}">
             <apex:pageBlockButtons location="top">
-                <apex:commandButton action="{!save}" value="Save Mappings" />
+                <apex:commandButton action="{!save}" value="Save Settings and Mappings" />
                 <apex:commandButton action="{!cancel}" value="Discard Changes" />
                 <apex:commandButton action="{!defaults}" value="Use Default Mappings" onclick="return confirm('This will delete ALL of your current mappings and replace them with the defaults.  Are you sure you want to continue?');" />
             </apex:pageBlockButtons>
             <h2>
-                Use this page to define what fields should be populated when a new donation (opportunity) or donor (contact) is sent from the 
+                Use this page to define what fields should be populated when a new donation (opportunity) or donor (contact) is sent from the
                 Funraise platform
             </h2>
             <br/> <br/>
             <h2>
-                If you would prefer to hardcode a value for an opportunity or contact, check the "Constant?" box and enter the hardcoded value.  
+                If you would prefer to hardcode a value for an opportunity or contact, check the "Constant?" box and enter the hardcoded value.
                 If not, you can select a field value that comes from Funraise
             </h2>
         </apex:pageBlock>
         <apex:pageBlock title="Instructions" rendered="{!isNonProfitOrg == true}">
             <apex:pageBlockButtons location="top">
-                <apex:commandButton action="{!save}" value="Save Mappings" />
+                <apex:commandButton action="{!save}" value="Save Settings and Mappings" />
                 <apex:commandButton action="{!cancel}" value="Discard Changes" />
                 <apex:commandButton action="{!defaults}" value="Use Default Mappings" onclick="return confirm('This will delete ALL of your current mappings and replace them with the defaults.  Are you sure you want to continue?');" />
             </apex:pageBlockButtons>
             <h2>
-                Use this page to define what fields should be populated when a new donation (Gift Transaction) or donor (Person Account) is sent from the 
+                Use this page to define what fields should be populated when a new donation (Gift Transaction) or donor (Person Account) is sent from the
                 Funraise platform
             </h2>
             <br/> <br/>
             <h2>
-                If you would prefer to hardcode a value for an Gift Transaction or Person Account, check the "Constant?" box and enter the hardcoded value.  
+                If you would prefer to hardcode a value for an Gift Transaction or Person Account, check the "Constant?" box and enter the hardcoded value.
                 If not, you can select a field value that comes from Funraise
             </h2>
+        </apex:pageBlock>
+        <apex:pageBlock title="Subscription Target" rendered="{!isNonProfitOrg == false}">
+            <apex:pageBlockSection columns="1">
+                <apex:pageBlockSectionItem>
+                    <apex:outputLabel value="Subscription Target" for="subscriptionTarget" />
+                    <apex:selectList id="subscriptionTarget" value="{!subscriptionTarget}" size="1">
+                        <apex:selectOptions value="{!subscriptionTargetOptions}" />
+                    </apex:selectList>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
         </apex:pageBlock>
         <apex:pageBlock title="Donation --> Opportunity" rendered="{!isNonProfitOrg == false}">
             <apex:pageBlockButtons location="top">
@@ -54,7 +64,7 @@
                         <apex:inputField value="{!mapping.Constant_Value__c}" rendered="{!mapping.Is_Constant__c}" />
                         <apex:selectList value="{!mapping.fr_Name__c}" size="1" rendered="{!!mapping.Is_Constant__c}">
                             <apex:selectOptions value="{!donationFROptions}" />
-                        </apex:selectList> 
+                        </apex:selectList>
                     </apex:column>
                     <apex:column >
                         <apex:facet name="header">
@@ -62,18 +72,18 @@
                         </apex:facet>
                         <apex:selectList value="{!mapping.sf_Name__c}" size="1">
                             <apex:selectOptions value="{!donationSFOptions}" />
-                        </apex:selectList> 
+                        </apex:selectList>
                     </apex:column>
                     <apex:column >
                         <apex:facet name="header">
                             Conflict Resolution
                         </apex:facet>
-                        <apex:selectList value="{!mapping.Conflict_Resolution__c}" size="1">                        
+                        <apex:selectList value="{!mapping.Conflict_Resolution__c}" size="1">
                             <apex:selectOption itemValue="{!MAPPING_OVERWRITE}" itemLabel="Overwrite Existing Data with Funraise Data" />
                             <apex:selectOption itemValue="{!MAPPING_NO_OVERWRITE}" itemLabel="Do Not Overwrite Existing Data" />
                             <apex:selectOption itemValue="{!MAPPING_OVERWRITE_NON_NULL}" itemLabel="Only Overwrite Existing Data if Funraise Data is not empty" />
                             <apex:selectOption itemValue="{!MAPPING_OVERWRITE_RECENT}" itemLabel="Only Overwrite Existing Data if Funraise record was updated more recently" />
-                        </apex:selectList> 
+                        </apex:selectList>
                     </apex:column>
                     <apex:column >
                         <apex:facet name="header">
@@ -111,7 +121,7 @@
                         <apex:inputField value="{!mapping.Constant_Value__c}" rendered="{!mapping.Is_Constant__c}" />
                         <apex:selectList value="{!mapping.fr_Name__c}" size="1" rendered="{!!mapping.Is_Constant__c}">
                             <apex:selectOptions value="{!donationFROptions}" />
-                        </apex:selectList> 
+                        </apex:selectList>
                     </apex:column>
                     <apex:column >
                         <apex:facet name="header">
@@ -119,18 +129,18 @@
                         </apex:facet>
                         <apex:selectList value="{!mapping.sf_Name__c}" size="1">
                             <apex:selectOptions value="{!donationSFOptions}" />
-                        </apex:selectList> 
+                        </apex:selectList>
                     </apex:column>
                     <apex:column >
                         <apex:facet name="header">
                             Conflict Resolution
                         </apex:facet>
-                        <apex:selectList value="{!mapping.Conflict_Resolution__c}" size="1">                        
+                        <apex:selectList value="{!mapping.Conflict_Resolution__c}" size="1">
                             <apex:selectOption itemValue="{!MAPPING_OVERWRITE}" itemLabel="Overwrite Existing Data with Funraise Data" />
                             <apex:selectOption itemValue="{!MAPPING_NO_OVERWRITE}" itemLabel="Do Not Overwrite Existing Data" />
                             <apex:selectOption itemValue="{!MAPPING_OVERWRITE_NON_NULL}" itemLabel="Only Overwrite Existing Data if Funraise Data is not empty" />
                             <apex:selectOption itemValue="{!MAPPING_OVERWRITE_RECENT}" itemLabel="Only Overwrite Existing Data if Funraise record was updated more recently" />
-                        </apex:selectList> 
+                        </apex:selectList>
                     </apex:column>
                     <apex:column >
                         <apex:facet name="header">
@@ -168,7 +178,7 @@
                         <apex:inputField value="{!mapping.Constant_Value__c}" rendered="{!mapping.Is_Constant__c}" />
                         <apex:selectList value="{!mapping.fr_Name__c}" size="1" rendered="{!!mapping.Is_Constant__c}">
                             <apex:selectOptions value="{!donorFROptions}" />
-                        </apex:selectList> 
+                        </apex:selectList>
                     </apex:column>
                     <apex:column >
                         <apex:facet name="header">
@@ -176,18 +186,18 @@
                         </apex:facet>
                         <apex:selectList value="{!mapping.sf_Name__c}" size="1">
                             <apex:selectOptions value="{!donorSFOptions}" />
-                        </apex:selectList> 
+                        </apex:selectList>
                     </apex:column>
                     <apex:column >
                         <apex:facet name="header">
                             Conflict Resolution
                         </apex:facet>
-                        <apex:selectList value="{!mapping.Conflict_Resolution__c}" size="1">                        
+                        <apex:selectList value="{!mapping.Conflict_Resolution__c}" size="1">
                             <apex:selectOption itemValue="overwrite" itemLabel="Overwrite Existing Data with Funraise Data" />
                             <apex:selectOption itemValue="do_not_overwrite" itemLabel="Do Not Overwrite Existing Data" />
                             <apex:selectOption itemValue="overwrite_non_null" itemLabel="Only Overwrite Existing Data if Funraise Data is not empty" />
                             <apex:selectOption itemValue="overwrite_more_recent" itemLabel="Only Overwrite Existing Data if Funraise record was updated more recently" />
-                        </apex:selectList> 
+                        </apex:selectList>
                     </apex:column>
                     <apex:column >
                         <apex:facet name="header">
@@ -225,7 +235,7 @@
                         <apex:inputField value="{!mapping.Constant_Value__c}" rendered="{!mapping.Is_Constant__c}" />
                         <apex:selectList value="{!mapping.fr_Name__c}" size="1" rendered="{!!mapping.Is_Constant__c}">
                             <apex:selectOptions value="{!donorFROptions}" />
-                        </apex:selectList> 
+                        </apex:selectList>
                     </apex:column>
                     <apex:column >
                         <apex:facet name="header">
@@ -233,18 +243,18 @@
                         </apex:facet>
                         <apex:selectList value="{!mapping.sf_Name__c}" size="1">
                             <apex:selectOptions value="{!donorSFOptions}" />
-                        </apex:selectList> 
+                        </apex:selectList>
                     </apex:column>
                     <apex:column >
                         <apex:facet name="header">
                             Conflict Resolution
                         </apex:facet>
-                        <apex:selectList value="{!mapping.Conflict_Resolution__c}" size="1">                        
+                        <apex:selectList value="{!mapping.Conflict_Resolution__c}" size="1">
                             <apex:selectOption itemValue="overwrite" itemLabel="Overwrite Existing Data with Funraise Data" />
                             <apex:selectOption itemValue="do_not_overwrite" itemLabel="Do Not Overwrite Existing Data" />
                             <apex:selectOption itemValue="overwrite_non_null" itemLabel="Only Overwrite Existing Data if Funraise Data is not empty" />
                             <apex:selectOption itemValue="overwrite_more_recent" itemLabel="Only Overwrite Existing Data if Funraise record was updated more recently" />
-                        </apex:selectList> 
+                        </apex:selectList>
                     </apex:column>
                     <apex:column >
                         <apex:facet name="header">
@@ -282,7 +292,7 @@
                         <apex:inputField value="{!mapping.Constant_Value__c}" rendered="{!mapping.Is_Constant__c}" />
                         <apex:selectList value="{!mapping.fr_Name__c}" size="1" rendered="{!!mapping.Is_Constant__c}">
                             <apex:selectOptions value="{!giftCommitmentFROptions}" />
-                        </apex:selectList> 
+                        </apex:selectList>
                     </apex:column>
                     <apex:column >
                         <apex:facet name="header">
@@ -290,18 +300,18 @@
                         </apex:facet>
                         <apex:selectList value="{!mapping.sf_Name__c}" size="1">
                             <apex:selectOptions value="{!giftCommitmentSFOptions}" />
-                        </apex:selectList> 
+                        </apex:selectList>
                     </apex:column>
                     <apex:column >
                         <apex:facet name="header">
                             Conflict Resolution
                         </apex:facet>
-                        <apex:selectList value="{!mapping.Conflict_Resolution__c}" size="1">                        
+                        <apex:selectList value="{!mapping.Conflict_Resolution__c}" size="1">
                             <apex:selectOption itemValue="{!MAPPING_OVERWRITE}" itemLabel="Overwrite Existing Data with Funraise Data" />
                             <apex:selectOption itemValue="{!MAPPING_NO_OVERWRITE}" itemLabel="Do Not Overwrite Existing Data" />
                             <apex:selectOption itemValue="{!MAPPING_OVERWRITE_NON_NULL}" itemLabel="Only Overwrite Existing Data if Funraise Data is not empty" />
                             <apex:selectOption itemValue="{!MAPPING_OVERWRITE_RECENT}" itemLabel="Only Overwrite Existing Data if Funraise record was updated more recently" />
-                        </apex:selectList> 
+                        </apex:selectList>
                     </apex:column>
                     <apex:column >
                         <apex:facet name="header">
@@ -315,6 +325,63 @@
                 </apex:pageBlockTable>
                 <apex:commandLink action="{!addMapping}" value="Add Gift Commitment Mapping" reRender="giftcommitmentTable">
                     <apex:param name="type" value="{!GIFT_COMMITMENT_TYPE}" />
+                </apex:commandLink>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+        <apex:pageBlock title="Subscription --> NPSP Recurring Donation" rendered="{!npspRecurringDonationsEnabled == true}">
+            <apex:pageBlockButtons location="top">
+                <apex:commandButton action="{!npspRecurringDonationDefaults}" value="Use Default Mappings" onclick="return confirm('This will delete your current mappings for NPSP Recurring Donation and replace them with the defaults.  Are you sure you want to continue?');" />
+            </apex:pageBlockButtons>
+            <apex:pageBlockSection columns="1">
+                <apex:pageBlockTable value="{!npspRecurringDonationMappings}" var="mapping" id="npspRecurringDonationTable" >
+                    <apex:column >
+                        <apex:facet name="header">
+                            Constant?
+                        </apex:facet>
+                        <apex:inputField value="{!mapping.Is_Constant__c}" >
+                            <apex:actionSupport event="onchange" reRender="npsp-rd-fr-field-column" />
+                        </apex:inputField>
+                    </apex:column>
+                    <apex:column id="npsp-rd-fr-field-column">
+                        <apex:facet name="header">
+                            Value
+                        </apex:facet>
+                        <apex:inputField value="{!mapping.Constant_Value__c}" rendered="{!mapping.Is_Constant__c}" />
+                        <apex:selectList value="{!mapping.fr_Name__c}" size="1" rendered="{!!mapping.Is_Constant__c}">
+                            <apex:selectOptions value="{!npspRecurringDonationFROptions}" />
+                        </apex:selectList>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">
+                            Recurring Donation Field
+                        </apex:facet>
+                        <apex:selectList value="{!mapping.sf_Name__c}" size="1">
+                            <apex:selectOptions value="{!npspRecurringDonationSFOptions}" />
+                        </apex:selectList>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">
+                            Conflict Resolution
+                        </apex:facet>
+                        <apex:selectList value="{!mapping.Conflict_Resolution__c}" size="1">
+                            <apex:selectOption itemValue="{!MAPPING_OVERWRITE}" itemLabel="Overwrite Existing Data with Funraise Data" />
+                            <apex:selectOption itemValue="{!MAPPING_NO_OVERWRITE}" itemLabel="Do Not Overwrite Existing Data" />
+                            <apex:selectOption itemValue="{!MAPPING_OVERWRITE_NON_NULL}" itemLabel="Only Overwrite Existing Data if Funraise Data is not empty" />
+                            <apex:selectOption itemValue="{!MAPPING_OVERWRITE_RECENT}" itemLabel="Only Overwrite Existing Data if Funraise record was updated more recently" />
+                        </apex:selectList>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">
+                            Remove
+                        </apex:facet>
+                        <apex:commandLink action="{!removeMapping}" value="Remove" rendered="{!mapping.id != null}">
+                            <apex:param name="id" value="{!mapping.Id}" />
+                            <apex:param name="type" value="{!NPSP_RECURRING_DONATION_TYPE}" />
+                        </apex:commandLink>
+                    </apex:column>
+                </apex:pageBlockTable>
+                <apex:commandLink action="{!addMapping}" value="Add NPSP Recurring Donation Mapping" reRender="npspRecurringDonationTable">
+                    <apex:param name="type" value="{!NPSP_RECURRING_DONATION_TYPE}" />
                 </apex:commandLink>
             </apex:pageBlockSection>
         </apex:pageBlock>

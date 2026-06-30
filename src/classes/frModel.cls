@@ -3,52 +3,52 @@ public with sharing abstract class frModel {
     public static final String MAPPING_NO_OVERWRITE = 'do_not_overwrite';
     public static final String MAPPING_OVERWRITE_NON_NULL = 'overwrite_non_null';
     public static final String MAPPING_OVERWRITE_RECENT = 'overwrite_more_recent';
-    
+
     protected Sync_Attempt__c syncRecord;
     protected Map<String, Object> requestBody;
     protected Boolean createLogRecord = false;
-    
+
     public frModel(Sync_Attempt__c attempt) {
         this.syncRecord = attempt;
         createLogRecord = attempt.Attempts__c >= frSyncRequestHandler.MAX_ATTEMPTS;
     }
-    
+
     protected Map<String, Object> getRequestBody() {
         if (requestBody == null) {
             requestBody = (Map<String, Object>)JSON.deserializeUntyped(syncRecord.Request_Body__c);
         }
         return requestBody;
     }
-    
+
     protected virtual String getFunraiseId() {
         return String.valueOf(getRequestBody().get('id'));
     }
-    
+
     protected virtual String getSalesforceId() {
         return null;
     }
-    
+
     protected virtual Boolean requireObjectDeletePermission() {
         return false;
     }
-    
+
     protected virtual String getUpdtimeJsonKey() {
         return 'updtime';
     }
-    
+
     private Datetime getUpdtime() {
         if(getRequestBody().containsKey(getUpdtimeJsonKey())) {
             return Datetime.newInstance((Long)getRequestBody().get(getUpdtimeJsonKey()));
         }
         return null;
     }
-    
+
     protected abstract Set<Schema.SObjectField> getFields();
     protected abstract Set<Schema.SObjectType> getObjects();
     protected abstract frUtil.Entity getFrType();
-    
+
     public boolean checkPermissions() {
-        Boolean success = true;        
+        Boolean success = true;
         String error = '';
         for(Schema.SObjectType objTypeRef : getObjects()) {
             DescribeSObjectResult objType = objTypeRef.getDescribe();
@@ -69,13 +69,17 @@ public with sharing abstract class frModel {
         }
         return success;
     }
-    
-    
+
+
     protected virtual List<frMapping__c> getMappings() {
         return new List<frMapping__c>();
     }
-    
+
     protected void applyMappings(SObject record, Map<String, Object> request) {
+        applyMappings(record, request, 'fr_ID__c');
+    }
+
+    protected void applyMappings(SObject record, Map<String, Object> request, String funraiseIdFieldName) {
         String sObjectName = record.getSObjectType().getDescribe().getName();
         Map<String, Schema.SObjectField> fields = frSchemaUtil.getFields(sObjectName);
         //a single funraise field might flow into multiple salesforce fields
@@ -96,7 +100,7 @@ public with sharing abstract class frModel {
                 mappings.add(mapping);
                 frFieldToMappings.put(mapping.fr_Name__c, mappings);
             }
-            
+
             if(mapping.Conflict_Resolution__c == MAPPING_NO_OVERWRITE) {
                 //We need to know the existing values of these fields
                 //if null, we can sync the incoming data.  Otherwise, we don't overwrite
@@ -105,34 +109,34 @@ public with sharing abstract class frModel {
             if(!needLastModifiedDate && mapping.Conflict_Resolution__c == MAPPING_OVERWRITE_RECENT) {
                 needLastModifiedDate = true;
             }
-        }        
-        if(needLastModifiedDate) {
-            fieldsToQueryFor.add('LastModifiedDate');    
         }
-        
+        if(needLastModifiedDate) {
+            fieldsToQueryFor.add('LastModifiedDate');
+        }
+
         String funraiseId = getFunraiseId();
         String salesforceId = getSalesforceId();
         SObject queriedFieldsRecord = null;
         if(!fieldsToQueryFor.isEmpty()) {
-            String query = 'SELECT ' + String.join(new List<String>(fieldsToQueryFor), ',') 
+            String query = 'SELECT ' + String.join(new List<String>(fieldsToQueryFor), ',')
                 + ' FROM ' + sObjectName + ' WHERE ';
             if(getSalesforceId() != null) {
                 query += 'Id = :salesforceId';
             } else {
-                query += 'fr_Id__c = :funraiseId';
+                query += funraiseIdFieldName + ' = :funraiseId';
             }
             List<SObject> results = Database.query(query);
             if(results.size() > 0) {
                 queriedFieldsRecord = results.get(0);
-            }    
+            }
         }
-        
+
         Boolean isMoreRecent = queriedFieldsRecord == null; //if we didn't get a queriedFieldsRecord returned, all fields from Funraise are more recent
         if(needLastModifiedDate && queriedFieldsRecord != null) {
             Datetime sfRecordUpdtime = (Datetime)queriedFieldsRecord.get('LastModifiedDate');
             isMoreRecent = getUpdtime() != null ? getUpdtime() > sfRecordUpdtime : false;
         }
-        
+
         for(String fieldName : frFieldToMappings.keySet()) {
             if(request.containsKey(fieldName)) {
                 for(frMapping__c mapping : frFieldToMappings.get(fieldName)) {
@@ -140,7 +144,7 @@ public with sharing abstract class frModel {
                     Object incomingValue = request.get(fieldName);
                     Boolean write = shouldWriteMapping(mapping, incomingValue, queriedFieldsRecord, isMoreRecent, field, sObjectName);
                     if(write) {
-                        write(record, field, mapping.sf_Name__c, incomingValue, funraiseId);    
+                        write(record, field, mapping.sf_Name__c, incomingValue, funraiseId);
                     }
                 }
             }
@@ -151,9 +155,11 @@ public with sharing abstract class frModel {
             if(write) {
                 write(record, field, constantMapping.sf_Name__c, constantMapping.Constant_Value__c, funraiseId);
             }        }
-        record.put('fr_ID__c', funraiseId);
+        if(String.isNotBlank(funraiseIdFieldName)) {
+            record.put(funraiseIdFieldName, funraiseId);
+        }
     }
-    
+
     private static Boolean shouldWriteMapping(frMapping__c mapping, Object incomingValue, SObject queriedFieldsRecord, Boolean isMoreRecent, Schema.SObjectField field, String sObjectName) {
         Boolean write = false;
         if(String.isBlank(mapping.Conflict_Resolution__c) || mapping.Conflict_Resolution__c == MAPPING_OVERWRITE) {
@@ -171,7 +177,7 @@ public with sharing abstract class frModel {
         }
         return write;
     }
-    
+
     public static void write(SObject record, Schema.SObjectField field, String fieldName, Object value, String funraiseId) {
         try {
             if (fieldName.toLowerCase() == 'id') {
@@ -186,12 +192,12 @@ public with sharing abstract class frModel {
                     List<Object> localDate = (List<Object>)value;
                     if(localDate.size() > 3) {
                         DateTime sfLocalDateTime = convertFromLocalDateTime(localDate);
-                        record.put(field, sfLocalDateTime);                        
+                        record.put(field, sfLocalDateTime);
                     } else if (localDate.size() == 3) {
                         Date sfLocalDate = convertFromLocalDate(localDate);
-                        record.put(field, sfLocalDate);                        
+                        record.put(field, sfLocalDate);
                     }
-                    
+
                 } else {
                     record.put(field, DateTime.newInstance((Long)value).date());
                 }
@@ -211,7 +217,7 @@ public with sharing abstract class frModel {
             write(record, field, value, funraiseId);
         }
     }
-    
+
     private static void write(SObject record, Schema.SObjectField field, Object value, String funraiseId) {
         try {
             if(value instanceof String) {
@@ -229,7 +235,7 @@ public with sharing abstract class frModel {
             }
         }
     }
-    
+
     public static DateTime convertFromLocalDateTime(List<Object> localDateTime) {
         return DateTime.newInstance(
             (Integer)localDateTime.get(0), //year
@@ -240,7 +246,7 @@ public with sharing abstract class frModel {
             0           //second
         );
     }
-    
+
     public static Date convertFromLocalDate(List<Object> localDate) {
         return Date.newInstance(
             (Integer)localDate.get(0), //year

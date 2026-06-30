@@ -39,13 +39,27 @@
 */
 
 public class frSubscription extends frModel implements frSyncable {
-    public static final Map<String, Schema.SObjectField> fields = 
+    public static final String NPSP_RECURRING_DONATION_TYPE = 'NPSP Recurring Donation';
+    private static final String NPSP_RD_AMOUNT_FIELD_NAME = 'npe03__Amount__c';
+    private static final String NPSP_RD_DATE_ESTABLISHED_FIELD_NAME = 'npe03__Date_Established__c';
+    private static final String NPSP_RD_DAY_OF_MONTH_FIELD_NAME = 'npe03__Day_of_Month__c';
+    private static final String NPSP_RD_INSTALLMENT_FREQUENCY_FIELD_NAME = 'npe03__InstallmentFrequency__c';
+    private static final String NPSP_RD_INSTALLMENT_PERIOD_FIELD_NAME = 'npe03__Installment_Period__c';
+    private static final String NPSP_RD_NEXT_PAYMENT_DATE_FIELD_NAME = 'npe03__Next_Payment_Date__c';
+    private static final String NPSP_RD_OPEN_ENDED_STATUS_FIELD_NAME = 'npe03__Open_Ended_Status__c';
+    private static final String NPSP_RD_PAYMENT_METHOD_FIELD_NAME = 'npe03__PaymentMethod__c';
+    private static final String NPSP_RD_RECURRING_TYPE_FIELD_NAME = 'npe03__RecurringType__c';
+    private static final String NPSP_RD_SCHEDULE_TYPE_FIELD_NAME = 'npe03__Schedule_Type__c';
+    private static final String NPSP_RD_START_DATE_FIELD_NAME = 'npe03__StartDate__c';
+    private static final String NPSP_RD_STATUS_FIELD_NAME = 'npe03__Status__c';
+
+    public static final Map<String, Schema.SObjectField> fields =
         frSchemaUtil.getFields(Subscription__c.getSObjectType().getDescribe().getName());
-        
+
     public frSubscription(Sync_Attempt__c syncRecord){
         super(syncRecord);
     }
-    
+
     public Boolean sync() {
         Boolean result = false;
         Map<String, Object> request = getRequestBody();
@@ -56,24 +70,30 @@ public class frSubscription extends frModel implements frSyncable {
         }
         return result;
     }
-    
+
     private Boolean deleteSubscription(String funraiseId) {
         Boolean result = false;
         try {
-            if(!frUtil.hasNPCobjects()) {
-                delete [SELECT id FROM Subscription__c WHERE fr_ID__c = :funraiseId];
-                result = true;
-            }
-            else {
+            if(frUtil.hasNPCobjects()) {
                 delete Database.query('SELECT Id FROM GiftCommitment WHERE fr_ID__c = :funraiseId');
                 result = true;
             }
-        } catch (DMLException e) {
+            else if(frUtil.usesNPSPRecurringDonations()) {
+                String query = 'SELECT Id FROM ' + frUtil.NPSP_RECURRING_DONATION_OBJ_NAME
+                    + ' WHERE ' + frUtil.NPSP_RECURRING_DONATION_ID_FIELD_NAME + ' = :funraiseId';
+                delete Database.query(query);
+                result = true;
+            }
+            else {
+                delete [SELECT id FROM Subscription__c WHERE fr_ID__c = :funraiseId];
+                result = true;
+            }
+        } catch (Exception e) {
             if(createLogRecord) frUtil.logException(getFrType(), funraiseId, e);
         }
         return result;
     }
-    
+
     private Boolean create(Map<String, Object> request) {
         Boolean result = false;
         String funraiseId = getFunraiseId();
@@ -82,13 +102,13 @@ public class frSubscription extends frModel implements frSyncable {
         String goalId = String.valueOf(request.get('campaignGoalId'));
         String strPledgeAmount = String.valueOf(request.get('pledgeAmount'));
         Decimal pledgeAmount = String.isNotBlank(strPledgeAmount) ? Decimal.valueOf(strPledgeAmount) : null;
-        List<Contact> contacts = [SELECT Id from Contact WHERE fr_Id__c = :funraiseSupporterId];
+        List<Contact> contacts = [SELECT Id, AccountId from Contact WHERE fr_Id__c = :funraiseSupporterId];
         List<Account> accounts = new List<Account>();
         if (frUtil.hasNPCobjects()) {
             accounts = Database.query('SELECT Id, PersonContactId FROM Account WHERE fr_ID__c = :funraiseSupporterId');
         }
         if(contacts.isEmpty() && accounts.isEmpty()) {
-            if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
+            if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId,
                                         frUtil.Entity.SUPPORTER, funraiseSupporterId);
             return result;
         }
@@ -98,13 +118,13 @@ public class frSubscription extends frModel implements frSyncable {
             List<SObject> gcList = Database.query('SELECT Id, Name FROM GiftCommitment WHERE fr_ID__c = :funraiseId');
             if(gcList.isEmpty()) {
                 gc = Schema.getGlobalDescribe().get('giftcommitment').newSObject();
-            } 
+            }
             else {
                 gc = gcList.get(0);
             }
             gc.put('fr_ID__c', funraiseId);
             gc.put('Name', frUtil.truncateToFieldLength(
-                Schema.getGlobalDescribe().get('GiftCommitment').getDescribe().fields.getMap().get('Name').getDescribe(), 
+                Schema.getGlobalDescribe().get('GiftCommitment').getDescribe().fields.getMap().get('Name').getDescribe(),
                 String.valueOf(request.get('name'))
             ));
             gc.put('DonorId', accounts.get(0).Id);
@@ -115,7 +135,7 @@ public class frSubscription extends frModel implements frSyncable {
                 if (campaigns.size() > 0) {
                     gc.put('CampaignId', campaigns.get(0).Id);
                 } else {
-                    if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
+                    if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId,
                                                 frUtil.Entity.CAMPAIGN, goalId);
                 }
             }
@@ -128,14 +148,22 @@ public class frSubscription extends frModel implements frSyncable {
                 if(createLogRecord) frUtil.logException(getFrType(), funraiseId, ex);
                 return result;
             }
-            
+
             if(pledgeAmount != null) {
                 frPledge.create(gc, pledgeAmount);
             }
             return result;
-        } 
+        }
+        else if(frUtil.usesNPSPRecurringDonations()) {
+            if(contacts.isEmpty()) {
+                if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId,
+                                            frUtil.Entity.SUPPORTER, funraiseSupporterId);
+                return result;
+            }
+            return createNPSPRecurringDonation(request, contacts.get(0));
+        }
         else if(contacts.isEmpty()) {
-            if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
+            if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId,
                                         frUtil.Entity.SUPPORTER, funraiseSupporterId);
             return result;
         }
@@ -143,9 +171,9 @@ public class frSubscription extends frModel implements frSyncable {
             subscription = new Subscription__c(
                 fr_ID__c = funraiseId,
                 Name = frUtil.truncateToFieldLength(
-                    Subscription__c.Name.getDescribe(), 
+                    Subscription__c.Name.getDescribe(),
                     String.valueOf(request.get('name'))
-                ), 
+                ),
                 Supporter__c = contacts.get(0).Id
             );
         }
@@ -155,11 +183,11 @@ public class frSubscription extends frModel implements frSyncable {
             if (campaigns.size() > 0) {
                 subscription.Campaign_Goal__c = campaigns.get(0).Id;
             } else {
-                if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
+                if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId,
                                             frUtil.Entity.CAMPAIGN, goalId);
             }
         }
-        
+
     //transform other request fields into SF custom fields, these are not applicable
         request.remove('id');
         request.remove('name');
@@ -167,7 +195,7 @@ public class frSubscription extends frModel implements frSyncable {
         request.remove('campaignGoalId');
         request.remove('deleted');
         request.remove('pledgeAmount');
-        
+
         String regex = '([a-z])([A-Z]+)';
         String replacement = '$1_$2';
         for(String funraiseFieldName : request.keySet()) {
@@ -185,13 +213,70 @@ public class frSubscription extends frModel implements frSyncable {
             if(createLogRecord) frUtil.logException(getFrType(), funraiseId, ex);
             return result;
         }
-        
+
         if(pledgeAmount != null) {
             frPledge.create(subscription, pledgeAmount);
         }
         return result;
     }
-    
+
+    private Boolean createNPSPRecurringDonation(Map<String, Object> request, Contact contact) {
+        Boolean result = false;
+        String funraiseId = getFunraiseId();
+        try {
+            String goalId = String.valueOf(request.get('campaignGoalId'));
+            String query = 'SELECT Id, Name FROM ' + frUtil.NPSP_RECURRING_DONATION_OBJ_NAME
+                + ' WHERE ' + frUtil.NPSP_RECURRING_DONATION_ID_FIELD_NAME + ' = :funraiseId';
+            List<SObject> records = Database.query(query);
+            SObject recurringDonation = records.isEmpty()
+                ? frUtil.getSObjectType(frUtil.NPSP_RECURRING_DONATION_OBJ_NAME).newSObject()
+                : records.get(0);
+            Map<String, Schema.SObjectField> npspFields = frUtil.getFields(frUtil.NPSP_RECURRING_DONATION_OBJ_NAME);
+
+            putFieldIfExists(recurringDonation, npspFields, frUtil.NPSP_RECURRING_DONATION_ID_FIELD_NAME, funraiseId);
+            putStringFieldIfExists(recurringDonation, npspFields, 'Name', String.valueOf(request.get('name')));
+            putFieldIfExists(recurringDonation, npspFields, frUtil.NPSP_RECURRING_DONATION_CONTACT_FIELD_NAME, contact.Id);
+
+            if (String.isNotBlank(goalId)) {
+                List<Campaign> campaigns = [SELECT Id FROM Campaign WHERE fr_ID__c = :goalId];
+                if (campaigns.size() > 0) {
+                    putFieldIfExists(recurringDonation, npspFields, frUtil.NPSP_RECURRING_DONATION_CAMPAIGN_FIELD_NAME, campaigns.get(0).Id);
+                } else {
+                    if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId,
+                                                frUtil.Entity.CAMPAIGN, goalId);
+                }
+            }
+
+            applyNPSPRecurringDonationDefaults(recurringDonation, npspFields, request, funraiseId);
+            applyMappings(recurringDonation, request, frUtil.NPSP_RECURRING_DONATION_ID_FIELD_NAME);
+            Database.upsert(recurringDonation, true);
+            result = true;
+        } catch (Exception ex) {
+            if(createLogRecord) frUtil.logException(getFrType(), funraiseId, ex);
+        }
+        return result;
+    }
+
+    private void applyNPSPRecurringDonationDefaults(
+        SObject recurringDonation,
+        Map<String, Schema.SObjectField> npspFields,
+        Map<String, Object> request,
+        String funraiseId
+    ) {
+        writeRequestFieldIfExists(recurringDonation, npspFields, NPSP_RD_AMOUNT_FIELD_NAME, request, 'amount', funraiseId);
+        writeRequestFieldIfExists(recurringDonation, npspFields, NPSP_RD_DATE_ESTABLISHED_FIELD_NAME, request, 'nextPaymentDate', funraiseId);
+        writeRequestFieldIfExists(recurringDonation, npspFields, NPSP_RD_NEXT_PAYMENT_DATE_FIELD_NAME, request, 'nextPaymentDate', funraiseId);
+        writeRequestFieldIfExists(recurringDonation, npspFields, NPSP_RD_START_DATE_FIELD_NAME, request, 'nextPaymentDate', funraiseId);
+        putFieldIfExists(recurringDonation, npspFields, NPSP_RD_PAYMENT_METHOD_FIELD_NAME, getNPSPPaymentMethod(request.get('paymentMethodType')));
+        putFieldIfExists(recurringDonation, npspFields, NPSP_RD_STATUS_FIELD_NAME, getNPSPStatus(request.get('status')));
+        putFieldIfExists(recurringDonation, npspFields, NPSP_RD_RECURRING_TYPE_FIELD_NAME, 'Open');
+        putFieldIfExists(recurringDonation, npspFields, NPSP_RD_INSTALLMENT_PERIOD_FIELD_NAME, getNPSPInstallmentPeriod(request.get('frequency')));
+        putFieldIfExists(recurringDonation, npspFields, NPSP_RD_INSTALLMENT_FREQUENCY_FIELD_NAME, 1);
+        putFieldIfExists(recurringDonation, npspFields, NPSP_RD_SCHEDULE_TYPE_FIELD_NAME, 'Multiply By');
+        putFieldIfExists(recurringDonation, npspFields, NPSP_RD_OPEN_ENDED_STATUS_FIELD_NAME, 'Open');
+        putFieldIfExists(recurringDonation, npspFields, NPSP_RD_DAY_OF_MONTH_FIELD_NAME, getNPSPDayOfMonth(request.get('nextPaymentDate')));
+    }
+
     protected override Boolean requireObjectDeletePermission() {
         return true;
     }
@@ -199,21 +284,26 @@ public class frSubscription extends frModel implements frSyncable {
     protected override List<frMapping__c> getMappings() {
         if (frUtil.hasNPCobjects()) {
             return [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = 'Commitment' ORDER BY CreatedDate];
+        } else if(frUtil.usesNPSPRecurringDonations()) {
+            return [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = :NPSP_RECURRING_DONATION_TYPE ORDER BY CreatedDate];
         } else {
             return new List<frMapping__c>(); // Subscription does not use mappings in non-NPC environments
         }
     }
-    
+
     protected override Set<Schema.SObjectField> getFields() {
         if(frUtil.hasNPCobjects()) {
             Map<String, Schema.SObjectField> fieldMap = Schema.getGlobalDescribe().get('giftcommitment').getDescribe().fields.getMap();
             Set<Schema.SObjectField> usedFields = new Set<Schema.SObjectField>();
             for(frMapping__c mapping : getMappings()) {
-                if(fields.containsKey(mapping.sf_Name__c)) {
-                    usedFields.add(fields.get(mapping.sf_Name__c));
+                if(fieldMap.containsKey(mapping.sf_Name__c)) {
+                    usedFields.add(fieldMap.get(mapping.sf_Name__c));
                 }
             }
             return usedFields;
+        }
+        else if(frUtil.usesNPSPRecurringDonations()) {
+            return getNPSPRecurringDonationFields();
         }
         else{
             return new Set<Schema.SObjectField> {
@@ -247,11 +337,16 @@ public class frSubscription extends frModel implements frSyncable {
             };
         }
     }
-    
+
     protected override Set<Schema.SObjectType> getObjects() {
         if(frUtil.hasNPCobjects()) {
             return new Set<Schema.SObjectType> {
                 Schema.getGlobalDescribe().get('giftcommitment')
+            };
+        }
+        else if(frUtil.usesNPSPRecurringDonations()) {
+            return new Set<Schema.SObjectType> {
+                frUtil.getSObjectType(frUtil.NPSP_RECURRING_DONATION_OBJ_NAME)
             };
         }
         else {
@@ -260,8 +355,137 @@ public class frSubscription extends frModel implements frSyncable {
             };
         }
     }
-    
+
     protected override frUtil.Entity getFrType() {
         return frUtil.Entity.SUBSCRIPTION;
+    }
+
+    private Set<Schema.SObjectField> getNPSPRecurringDonationFields() {
+        Map<String, Schema.SObjectField> npspFields = frUtil.getFields(frUtil.NPSP_RECURRING_DONATION_OBJ_NAME);
+        Set<Schema.SObjectField> usedFields = new Set<Schema.SObjectField>();
+        for(String fieldName : new Set<String>{
+            'Name',
+            frUtil.NPSP_RECURRING_DONATION_ID_FIELD_NAME,
+            frUtil.NPSP_RECURRING_DONATION_CONTACT_FIELD_NAME,
+            frUtil.NPSP_RECURRING_DONATION_CAMPAIGN_FIELD_NAME,
+            NPSP_RD_AMOUNT_FIELD_NAME,
+            NPSP_RD_DATE_ESTABLISHED_FIELD_NAME,
+            NPSP_RD_DAY_OF_MONTH_FIELD_NAME,
+            NPSP_RD_INSTALLMENT_FREQUENCY_FIELD_NAME,
+            NPSP_RD_INSTALLMENT_PERIOD_FIELD_NAME,
+            NPSP_RD_NEXT_PAYMENT_DATE_FIELD_NAME,
+            NPSP_RD_OPEN_ENDED_STATUS_FIELD_NAME,
+            NPSP_RD_PAYMENT_METHOD_FIELD_NAME,
+            NPSP_RD_RECURRING_TYPE_FIELD_NAME,
+            NPSP_RD_SCHEDULE_TYPE_FIELD_NAME,
+            NPSP_RD_START_DATE_FIELD_NAME,
+            NPSP_RD_STATUS_FIELD_NAME
+        }) {
+            Schema.SObjectField field = npspFields.get(fieldName);
+            if(field != null && field.getDescribe().isCreateable()) {
+                usedFields.add(field);
+            }
+        }
+        for(frMapping__c mapping : getMappings()) {
+            Schema.SObjectField field = npspFields.get(mapping.sf_Name__c);
+            if(field != null) {
+                usedFields.add(field);
+            }
+        }
+        return usedFields;
+    }
+
+    private static void writeRequestFieldIfExists(
+        SObject record,
+        Map<String, Schema.SObjectField> fieldMap,
+        String fieldName,
+        Map<String, Object> request,
+        String requestFieldName,
+        String funraiseId
+    ) {
+        Schema.SObjectField field = fieldMap.get(fieldName);
+        if(field != null && field.getDescribe().isCreateable() && request.containsKey(requestFieldName) && request.get(requestFieldName) != null) {
+            frModel.write(record, field, fieldName, request.get(requestFieldName), funraiseId);
+        }
+    }
+
+    private static void putStringFieldIfExists(
+        SObject record,
+        Map<String, Schema.SObjectField> fieldMap,
+        String fieldName,
+        String value
+    ) {
+        Schema.SObjectField field = fieldMap.get(fieldName);
+        if(field != null && field.getDescribe().isCreateable()) {
+            record.put(field, frUtil.truncateToFieldLength(field.getDescribe(), value));
+        }
+    }
+
+    private static void putFieldIfExists(
+        SObject record,
+        Map<String, Schema.SObjectField> fieldMap,
+        String fieldName,
+        Object value
+    ) {
+        Schema.SObjectField field = fieldMap.get(fieldName);
+        if(field != null && field.getDescribe().isCreateable() && value != null) {
+            record.put(field, value);
+        }
+    }
+
+    @TestVisible
+    private static String getNPSPInstallmentPeriod(Object frequency) {
+        String value = frequency != null ? String.valueOf(frequency).toLowerCase() : '';
+        if(value.contains('week')) {
+            return 'Weekly';
+        }
+        if(value.contains('year') || value.contains('annual')) {
+            return 'Yearly';
+        }
+        if(value.contains('quarter')) {
+            return 'Quarterly';
+        }
+        return 'Monthly';
+    }
+
+    @TestVisible
+    private static String getNPSPStatus(Object status) {
+        String value = status != null ? String.valueOf(status).toLowerCase() : '';
+        if(value.contains('pause')) {
+            return 'Lapsed';
+        }
+        if(value.contains('lapse')) {
+            return 'Lapsed';
+        }
+        if(value.contains('cancel') || value.contains('closed') || value.contains('inactive')) {
+            return 'Closed';
+        }
+        return 'Active';
+    }
+
+    @TestVisible
+    private static String getNPSPPaymentMethod(Object paymentMethod) {
+        String value = paymentMethod != null ? String.valueOf(paymentMethod).toLowerCase() : '';
+        if(String.isBlank(value)) {
+            return null;
+        }
+        if(value.contains('ach') || value.contains('bank')) {
+            return 'ACH';
+        }
+        if(value.contains('check')) {
+            return 'Check';
+        }
+        return 'Credit Card';
+    }
+
+    @TestVisible
+    private static String getNPSPDayOfMonth(Object localDate) {
+        if(localDate instanceof List<Object>) {
+            List<Object> values = (List<Object>) localDate;
+            if(values.size() >= 3 && values.get(2) != null) {
+                return String.valueOf(values.get(2));
+            }
+        }
+        return '15';
     }
 }

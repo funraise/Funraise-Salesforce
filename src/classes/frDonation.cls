@@ -48,13 +48,13 @@ public class frDonation extends frModel implements frSyncable {
         }
         set;
     }
-    
+
     protected override List<frMapping__c> getMappings() {
         return mappings;
     }
-    
+
     private SObject o;
-    
+
     public frDonation(Sync_Attempt__c syncRecord){
         super(syncRecord);
     }
@@ -72,7 +72,7 @@ public class frDonation extends frModel implements frSyncable {
             List<SObject> gtList = Database.query('SELECT Id, Funraise_GT_Pledge__c, DonorId, CheckDate FROM GiftTransaction WHERE fr_ID__c = :frId');
             if(gtList.isEmpty()) {
                 o = Schema.getGlobalDescribe().get('gifttransaction').newSObject();
-            } 
+            }
             else {
                 o = gtList.get(0);
             }
@@ -83,7 +83,7 @@ public class frDonation extends frModel implements frSyncable {
 
         String funraiseId = getFunraiseId();
         String supporterFunraiseId = String.valueOf(request.get('donorId'));
-        
+
         //connect supporter
         if (String.isNotBlank(supporterFunraiseId)) {
             List<SObject> supporters;
@@ -98,7 +98,7 @@ public class frDonation extends frModel implements frSyncable {
                     o.put('AccountId', supporter.get('AccountId'));
                 }
             } else {
-                if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId, 
+                if(createLogRecord) frUtil.logRelationshipError(getFrType(), funraiseId,
                                             frUtil.Entity.SUPPORTER, supporterFunraiseId);
             }
         }
@@ -112,7 +112,7 @@ public class frDonation extends frModel implements frSyncable {
                 if (campaigns.size() > 0) {
                     o.put('CampaignId', campaigns[0].Id);
                 } else {
-                    frUtil.logRelationshipError(getFrType(), funraiseId, 
+                    frUtil.logRelationshipError(getFrType(), funraiseId,
                                                 frUtil.Entity.CAMPAIGN, campaignId);
                 }
             }
@@ -120,9 +120,14 @@ public class frDonation extends frModel implements frSyncable {
         //connect subscription
         String subscriptionId = String.valueOf(request.get('subscriptionId'));
         if (String.isNotBlank(subscriptionId)) {
-            List<SObject> subscriptions = Database.query('SELECT Id FROM ' + SUBSCRIPTION_OBJ_NAME + ' WHERE fr_ID__c = :subscriptionId');
+            String subscriptionObjectName = getSubscriptionObjectName();
+            String subscriptionIdFieldName = getSubscriptionIdFieldName();
+            String subscriptionLookupFieldName = getSubscriptionLookupFieldName();
+            List<SObject> subscriptions = Database.query('SELECT Id FROM ' + subscriptionObjectName + ' WHERE ' + subscriptionIdFieldName + ' = :subscriptionId');
             if (subscriptions.size() > 0) {
-                o.put(SUBSCRIPTION_LOOKUP_FIELD_NAME, subscriptions.get(0).get('Id'));
+                if(String.isNotBlank(subscriptionLookupFieldName)) {
+                    o.put(subscriptionLookupFieldName, subscriptions.get(0).get('Id'));
+                }
             } else {
                 frUtil.logRelationshipError(getFrType(), funraiseId,
                                             frUtil.Entity.SUBSCRIPTION, subscriptionId);
@@ -175,14 +180,14 @@ public class frDonation extends frModel implements frSyncable {
             if(frUtil.hasNPCobjects()) frPledge.create(o);
             else frPledge.create((Opportunity) o);
         }
-        
+
         if(o.get('Id') != null && !frUtil.hasNPCobjects()) {
             createOpportunityMapping(request);
         }
 
         return result;
     }
-    
+
     @testVisible
     private Boolean shouldSetOpportunityStage() {
         for(frMapping__c mapping : getMappings()) {
@@ -192,15 +197,15 @@ public class frDonation extends frModel implements frSyncable {
         }
         return true;
     }
-    
+
     @testVisible
     private void setOpportunityStage(Opportunity o, String status) {
         if(shouldSetOpportunityStage()) {
-            List<OpportunityStage> stages = [SELECT Id, MasterLabel, IsWon, IsClosed 
-                                             FROM OpportunityStage 
-                                             WHERE IsActive = true 
+            List<OpportunityStage> stages = [SELECT Id, MasterLabel, IsWon, IsClosed
+                                             FROM OpportunityStage
+                                             WHERE IsActive = true
                                              ORDER BY SortOrder];
-            
+
             //if Closed Won & Closed Lost exist, we'll use those
             //else we'll try to find the best stage
             boolean useDefaultWon = false;
@@ -212,7 +217,7 @@ public class frDonation extends frModel implements frSyncable {
                     useDefaultLost = true;
                 }
             }
-            
+
             if (status == PENDING) {
                 for (OpportunityStage stage : stages) {
                     if(!stage.IsWon && !stage.isClosed) {
@@ -229,7 +234,7 @@ public class frDonation extends frModel implements frSyncable {
                             o.StageName = stage.MasterLabel;
                             break;
                         }
-                    }                    
+                    }
                 }
             } else {
                 if(useDefaultWon) {
@@ -245,24 +250,24 @@ public class frDonation extends frModel implements frSyncable {
             }
         }
     }
-    
+
     private boolean isContactRoleMappingDisabled() {
         return getRequestBody().containsKey(META_OPP_CONTACT_MAPPING_KEY) ?
             Boolean.valueOf(getRequestBody().get(META_OPP_CONTACT_MAPPING_KEY)): true;
     }
-   
-    
+
+
     private void createOpportunityMapping(Map<String, Object> request) {
         Boolean contactRoleMappingDisabled = isContactRoleMappingDisabled();
         if(contactRoleMappingDisabled) {
             return;
         }
-        
+
         String funraiseId = getFunraiseId();
         String supporterId = String.valueOf(request.get('donorId'));
-        
+
         Set<String> relatedSupporterFunraiseIds = new Set<String>{supporterId};
-            
+
         String fundraiserId = request.containsKey('fundraiserId') ? String.valueOf(request.get('fundraiserId')) : null;
         if(String.isNotBlank(fundraiserId)) {
             relatedSupporterFunraiseIds.add(fundraiserId);
@@ -275,21 +280,21 @@ public class frDonation extends frModel implements frSyncable {
         if(String.isNotBlank(softCreditSupporterId)) {
             relatedSupporterFunraiseIds.add(softCreditSupporterId);
         }
-        
+
         Map<String, Contact> relatedContacts = new Map<String, Contact>();
         Set<String> supportersWithContactRoles = new Set<String>();
-        for(Contact relatedContact : [SELECT Id, fr_Id__c, 
-                                      (SELECT Id, Role, ContactId FROM OpportunityContactRoles WHERE OpportunityId = :getSalesforceId()) 
+        for(Contact relatedContact : [SELECT Id, fr_Id__c,
+                                      (SELECT Id, Role, ContactId FROM OpportunityContactRoles WHERE OpportunityId = :getSalesforceId())
                                       from Contact WHERE fr_Id__c IN :relatedSupporterFunraiseIds]) {
                                           relatedContacts.put(relatedContact.fr_Id__c, relatedContact);
                                           if(relatedContact.OpportunityContactRoles.size() > 0) {
                                               supportersWithContactRoles.add(relatedContact.fr_Id__c);
                                           }
                                       }
-        
+
         List<OpportunityContactRole> newContactRoles = new List<OpportunityContactRole>();
 
-        
+
         if(!supportersWithContactRoles.contains(supporterId)) {
             OpportunityContactRole donorRole = createRole(OPP_ROLE_DONOR, supporterId, relatedContacts, funraiseId);
             if(donorRole != null) {
@@ -297,7 +302,7 @@ public class frDonation extends frModel implements frSyncable {
                 supportersWithContactRoles.add(supporterId);
             }
         }
-        
+
         if(!supportersWithContactRoles.contains(fundraiserId)) {
             OpportunityContactRole fundraiserRole = createRole(OPP_ROLE_FUNDRAISER, fundraiserId, relatedContacts, funraiseId);
             if(fundraiserRole != null) {
@@ -305,8 +310,8 @@ public class frDonation extends frModel implements frSyncable {
                 supportersWithContactRoles.add(fundraiserId);
             }
         }
-        
-        
+
+
         if(!supportersWithContactRoles.contains(softCreditSupporterId)) {
             OpportunityContactRole softCreditRole = createRole(OPP_ROLE_SOFT_CREDIT, softCreditSupporterId, relatedContacts, funraiseId);
             if(softCreditRole != null) {
@@ -314,32 +319,32 @@ public class frDonation extends frModel implements frSyncable {
                 supportersWithContactRoles.add(softCreditSupporterId);
             }
         }
-        
+
         if(!supportersWithContactRoles.contains(teamCaptainId)) {
             OpportunityContactRole teamCaptainRole = createRole(OPP_ROLE_TEAM_CAPTAIN, teamCaptainId, relatedContacts, funraiseId);
             if(teamCaptainRole != null) {
                 newContactRoles.add(teamCaptainRole);
             }
         }
-        
+
         try {
             insert newContactRoles;
         } catch (Exception ex) {
             frUtil.logException(getFrType(), funraiseId, ex);
         }
     }
-    
+
     private OpportunityContactRole createRole(String role, String funraiseSupporterId, Map<String, Contact> contactsByFunraiseId, String funraiseDonationId) {
         if(String.isBlank(funraiseSupporterId)) {
             return null;
         }
         if(!contactsByFunraiseId.containsKey(funraiseSupporterId)) {
-            frUtil.logRelationshipError(getFrType(), funraiseDonationId, 
+            frUtil.logRelationshipError(getFrType(), funraiseDonationId,
                                         frUtil.Entity.SUPPORTER, funraiseSupporterId,
                                         'Opportunity Contact Role: '+ role);
             return null;
         }
-        
+
         Contact supporter = contactsByFunraiseId.get(funraiseSupporterId);
         OpportunityContactRole newRole = new OpportunityContactRole();
         newRole.ContactId = supporter.Id;
@@ -347,16 +352,16 @@ public class frDonation extends frModel implements frSyncable {
         newRole.Role = role;
         return newRole;
     }
-    
+
     protected override String getSalesforceId(){
         if(frUtil.hasNPCobjects()) {
-            return this.o != null ? (String) this.o.get('Id') : null; 
+            return this.o != null ? (String) this.o.get('Id') : null;
         }
         else {
             return this.o != null ? this.o.Id : null;
         }
     }
-    
+
     protected override Set<Schema.SObjectField> getFields() {
         Map<String, Schema.SObjectField> fields = frSchemaUtil.getFields(Opportunity.sObjectType.getDescribe().getName());
         Set<Schema.SObjectField> usedFields = new Set<Schema.SObjectField>();
@@ -368,7 +373,11 @@ public class frDonation extends frModel implements frSyncable {
         usedFields.add(Opportunity.StageName);
         usedFields.add(Opportunity.AccountId);
         usedFields.add(Opportunity.fr_Donor__c);
-        usedFields.add(Opportunity.Subscription__c);
+        if(frUtil.usesNPSPRecurringDonations() && fields.containsKey(frUtil.NPSP_RECURRING_DONATION_OPPORTUNITY_LOOKUP_FIELD_NAME)) {
+            usedFields.add(fields.get(frUtil.NPSP_RECURRING_DONATION_OPPORTUNITY_LOOKUP_FIELD_NAME));
+        } else {
+            usedFields.add(Opportunity.Subscription__c);
+        }
         usedFields.add(Opportunity.Funraise_Pledge__c);
         if(!isContactRoleMappingDisabled()) {
             usedFields.add(OpportunityContactRole.ContactId);
@@ -389,7 +398,7 @@ public class frDonation extends frModel implements frSyncable {
         }
         return usedFields;
     }
-    
+
     protected override Set<Schema.SObjectType> getObjects() {
         Set<Schema.SObjectType> usedObjects = new Set<Schema.SObjectType>();
         if(!frUtil.hasNPCobjects()) {
@@ -403,21 +412,50 @@ public class frDonation extends frModel implements frSyncable {
         }
         return usedObjects;
     }
-    
+
     protected override frUtil.Entity getFrType() {
         return frUtil.Entity.DONATION;
     }
-    
+
     protected override String getUpdtimeJsonKey() {
         return 'donation_updtime';
+    }
+
+    private String getSubscriptionObjectName() {
+        if(frUtil.hasNPCobjects()) {
+            return 'GiftCommitment';
+        }
+        if(frUtil.usesNPSPRecurringDonations()) {
+            return frUtil.NPSP_RECURRING_DONATION_OBJ_NAME;
+        }
+        return 'Subscription__c';
+    }
+
+    private String getSubscriptionIdFieldName() {
+        if(frUtil.usesNPSPRecurringDonations() && !frUtil.hasNPCobjects()) {
+            return frUtil.NPSP_RECURRING_DONATION_ID_FIELD_NAME;
+        }
+        return 'fr_ID__c';
+    }
+
+    private String getSubscriptionLookupFieldName() {
+        if(frUtil.hasNPCobjects()) {
+            return 'GiftCommitmentId';
+        }
+        if(frUtil.usesNPSPRecurringDonations()) {
+            Map<String, Schema.SObjectField> fields = frSchemaUtil.getFields(Opportunity.sObjectType.getDescribe().getName());
+            if(fields.containsKey(frUtil.NPSP_RECURRING_DONATION_OPPORTUNITY_LOOKUP_FIELD_NAME)) {
+                return frUtil.NPSP_RECURRING_DONATION_OPPORTUNITY_LOOKUP_FIELD_NAME;
+            }
+            return null;
+        }
+        return 'Subscription__c';
     }
 
     ///CONSTANTS///
 
     public static final String TYPE = 'Donation';
     public static final String SUPPORTER_OBJ_NAME = frUtil.hasNPCobjects() ? 'Account' : 'Contact';
-    public static final String SUBSCRIPTION_OBJ_NAME = frUtil.hasNPCobjects() ? 'GiftCommitment' : 'Subscription__c';
-    public static final String SUBSCRIPTION_LOOKUP_FIELD_NAME = frUtil.hasNPCobjects() ? 'GiftCommitmentId' : 'Subscription__c';
     public static final String PLEDGE_LOOKUP_FIELD_NAME = frUtil.hasNPCobjects() ? 'Funraise_GT_Pledge__c' : 'Funraise_Pledge__c';
 
     //Donation statuses
@@ -425,17 +463,17 @@ public class frDonation extends frModel implements frSyncable {
     private static final String PENDING = 'Pending';
     private static final String REFUNDED = 'Refunded';
     private static final String FAILED = 'Failed';
-    
+
     //Default Opportunity Stages
     private static final String CLOSED_WON = 'Closed Won';
     private static final String CLOSED_LOST = 'Closed Lost';
-    
+
     //Opportunity Contact Role types
     @TestVisible private static final String OPP_ROLE_DONOR = 'Donor';
     @TestVisible private static final String OPP_ROLE_FUNDRAISER = 'Fundraiser';
     @TestVisible private static final String OPP_ROLE_TEAM_CAPTAIN = 'Team Captain';
     @TestVisible private static final String OPP_ROLE_SOFT_CREDIT = 'Soft Credit';
-    
+
     private static final String META_OPP_CONTACT_MAPPING_KEY = 'opportunityContactMappingDisabled';
     private static final String META_CAMPAIGN_MAPPING_KEY = 'campaignMappingDisabled';
 }

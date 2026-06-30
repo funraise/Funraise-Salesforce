@@ -47,6 +47,42 @@ public class frSetupControllerTest {
 	}
 
 	@IsTest
+	static void test_subscriptionTargetDefaultsToFunraise() {
+		if (frUtil.hasNPCobjects()) return;
+
+		Test.startTest();
+		frSetupController controller = new frSetupController();
+		Test.stopTest();
+
+		System.assertEquals(frUtil.SUBSCRIPTION_TARGET_FUNRAISE, controller.subscriptionTarget, 'The default subscription target should remain the Funraise Subscription object');
+		assertOptionPresent(controller.subscriptionTargetOptions, frUtil.SUBSCRIPTION_TARGET_FUNRAISE);
+		if(frUtil.hasNPSPRecurringDonations()) {
+			assertOptionPresent(controller.subscriptionTargetOptions, frUtil.SUBSCRIPTION_TARGET_NPSP_RECURRING_DONATION);
+		} else {
+			assertOptionNotPresent(controller.subscriptionTargetOptions, frUtil.SUBSCRIPTION_TARGET_NPSP_RECURRING_DONATION);
+		}
+	}
+
+	@IsTest
+	static void test_saveSubscriptionTarget() {
+		if (frUtil.hasNPCobjects()) return;
+
+		frSetupController controller = new frSetupController();
+		controller.subscriptionTarget = frUtil.SUBSCRIPTION_TARGET_FUNRAISE;
+
+		Test.startTest();
+		controller.save();
+		Test.stopTest();
+
+		frSetting__c setting = [
+			SELECT Value__c
+			FROM frSetting__c
+			WHERE Name = :frUtil.SETTING_SUBSCRIPTION_TARGET
+		];
+		System.assertEquals(frUtil.SUBSCRIPTION_TARGET_FUNRAISE, setting.Value__c, 'The selected subscription target should be saved');
+	}
+
+	@IsTest
 	static void test_addMapping() {
 		Test.startTest();
 		frSetupController controller = new frSetupController();
@@ -72,6 +108,26 @@ public class frSetupControllerTest {
 		System.assertEquals(2, [SELECT COUNT() FROM frMapping__c], 'Only one mapping was added, so only one mapping should exist');
 		System.assertEquals(frSetupController.DONATION_TYPE, donationMapping.Type__c, 'The mapping added first should have a donation type');
 		System.assertEquals(frSetupController.DONOR_TYPE, donorMapping.Type__c, 'The mapping added second should have a donor type');
+	}
+
+	@IsTest
+	static void test_addMapping_NPSPRecurringDonation() {
+		if (!frUtil.hasNPSPRecurringDonations() || frUtil.hasNPCobjects()) return;
+
+		Test.startTest();
+		frSetupController controller = new frSetupController();
+		ApexPages.currentPage().getParameters().put('type', frSetupController.NPSP_RECURRING_DONATION_TYPE);
+		controller.addMapping();
+		Integer actualMappingCountAfterAdd = controller.npspRecurringDonationMappings.size();
+		frMapping__c mapping = controller.npspRecurringDonationMappings.get(0);
+		mapping.fr_Name__c = 'amount';
+		mapping.sf_Name__c = 'npe03__Amount__c';
+		controller.save();
+		Test.stopTest();
+
+		System.assertEquals(1, actualMappingCountAfterAdd, 'Only one NPSP Recurring Donation mapping should have been added');
+		System.assertEquals(1, [SELECT COUNT() FROM frMapping__c WHERE Type__c = :frSetupController.NPSP_RECURRING_DONATION_TYPE]);
+		System.assertEquals(frSetupController.NPSP_RECURRING_DONATION_TYPE, mapping.Type__c, 'The mapping should have the NPSP Recurring Donation type');
 	}
 
 	@IsTest
@@ -211,6 +267,40 @@ public class frSetupControllerTest {
 		assertMappingsEqual(frSetupController.getDonationDefaults(), actualDonationMappings);
 	}
 
+	@IsTest
+	static void test_npspRecurringDonationMappingsUnavailableWithoutNPSP() {
+		if (frUtil.hasNPSPRecurringDonations() || frUtil.hasNPCobjects()) return;
+
+		Test.startTest();
+		frSetupController controller = new frSetupController();
+		Test.stopTest();
+
+		System.assertEquals(false, controller.npspRecurringDonationsEnabled, 'The NPSP mapping section should not render without NPSP Recurring Donations');
+		System.assertEquals(frUtil.SUBSCRIPTION_TARGET_FUNRAISE, controller.subscriptionTarget, 'The setup page should fall back to the Funraise Subscription target');
+		assertOptionNotPresent(controller.subscriptionTargetOptions, frUtil.SUBSCRIPTION_TARGET_NPSP_RECURRING_DONATION);
+		System.assertEquals(0, controller.npspRecurringDonationMappings.size(), 'There should not be NPSP mappings in non-NPSP orgs');
+		System.assertEquals(0, frSetupController.getNPSPRecurringDonationDefaults().size(), 'NPSP defaults should not be generated without the NPSP target object');
+	}
+
+	@IsTest
+	static void test_defaults_NPSPRecurringDonationOnly() {
+		if (!frUtil.hasNPSPRecurringDonations() || frUtil.hasNPCobjects()) return;
+
+		insert new frMapping__c(Type__c = frSetupController.NPSP_RECURRING_DONATION_TYPE, fr_Name__c = 'testfr', sf_Name__c = 'testsf', Name = 'Test Mapping');
+		Integer beforeTestMappingCount = [SELECT COUNT() FROM frMapping__c];
+
+		frSetupController controller = new frSetupController();
+		Test.startTest();
+		controller.npspRecurringDonationDefaults();
+		Integer afterDefaultMappingCount = [SELECT COUNT() FROM frMapping__c WHERE fr_Name__c = 'testfr'];
+		List<frMapping__c> actualMappings = [SELECT Name FROM frMapping__c WHERE Type__c = :frSetupController.NPSP_RECURRING_DONATION_TYPE];
+		Test.stopTest();
+
+		System.assertEquals(1, beforeTestMappingCount, 'There should have been 1 mapping record before the test started');
+		System.assertEquals(0, afterDefaultMappingCount, 'There should not be test data mappings after using NPSP defaults');
+		assertMappingsEqual(frSetupController.getNPSPRecurringDonationDefaults(), actualMappings);
+	}
+
 	private static void assertMappingsEqual(List<frMapping__c> expected, List<frMapping__c> actual) {
 		Set<String> expectedMappingNames = new Set<String>();
 		for(frMapping__c mapping : expected) {
@@ -231,5 +321,22 @@ public class frSetupControllerTest {
 		//remove empty string from controller values since we don't care about the --None-- option
 		actualValues.remove('');
 		System.assertEquals(expectedValues, actualValues, 'The fields in the metadata setting and the fields available in the controller do not match');
+	}
+
+	private static void assertOptionPresent(List<SelectOption> options, String expectedValue) {
+		System.assertEquals(true, optionValuesContain(options, expectedValue), 'Expected option was not present: ' + expectedValue);
+	}
+
+	private static void assertOptionNotPresent(List<SelectOption> options, String expectedValue) {
+		System.assertEquals(false, optionValuesContain(options, expectedValue), 'Unexpected option was present: ' + expectedValue);
+	}
+
+	private static Boolean optionValuesContain(List<SelectOption> options, String expectedValue) {
+		for(SelectOption option : options) {
+			if(expectedValue.equals(option.getValue())) {
+				return true;
+			}
+		}
+		return false;
 	}
 }
