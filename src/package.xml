@@ -93,6 +93,7 @@
         <members>Sync_Attempt__c</members>
         <members>frField__mdt</members>
         <members>frMapping__c</members>
+        <members>frSetting__c</members>
         <name>CustomObject</name>
     </types>
     <types>

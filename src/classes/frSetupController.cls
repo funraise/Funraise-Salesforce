@@ -11,13 +11,19 @@ public with sharing class frSetupController {
 		}
 		private set;
 	}
+	public static String NPSP_RECURRING_DONATION_TYPE {
+		get {
+			return frSubscription.NPSP_RECURRING_DONATION_TYPE;
+		}
+		private set;
+	}
 	public static String DONOR_TYPE {
 		get {
 			return frDonor.TYPE;
 		}
 		private set;
 	}
-    
+
     public static Set<String> RESTRICTED_DONOR_FIELDS {
         get {
             if(RESTRICTED_DONOR_FIELDS == null) {
@@ -29,12 +35,12 @@ public with sharing class frSetupController {
         }
         private set;
     }
-    
+
     public static Set<String> RESTRICTED_DONATION_FIELDS {
         get {
             if(RESTRICTED_DONATION_FIELDS == null) {
                 RESTRICTED_DONATION_FIELDS = new Set<String>{
-                    'funraise__fr_ID__c', 
+                    'funraise__fr_ID__c',
                     'funraise__fr_Donor__c'
                 };
             }
@@ -42,7 +48,21 @@ public with sharing class frSetupController {
         }
         private set;
     }
-    
+
+    public static Set<String> RESTRICTED_NPSP_RECURRING_DONATION_FIELDS {
+        get {
+            if(RESTRICTED_NPSP_RECURRING_DONATION_FIELDS == null) {
+                RESTRICTED_NPSP_RECURRING_DONATION_FIELDS = new Set<String>{
+                    frUtil.NPSP_RECURRING_DONATION_ID_FIELD_NAME.toLowerCase(),
+                    frUtil.NPSP_RECURRING_DONATION_CONTACT_FIELD_NAME.toLowerCase(),
+                    frUtil.NPSP_RECURRING_DONATION_ACCOUNT_FIELD_NAME.toLowerCase()
+                };
+            }
+            return RESTRICTED_NPSP_RECURRING_DONATION_FIELDS;
+        }
+        private set;
+    }
+
     public static String MAPPING_OVERWRITE {
         get {
             return frModel.MAPPING_OVERWRITE;
@@ -80,9 +100,17 @@ public with sharing class frSetupController {
 	public List<SelectOption> giftCommitmentFROptions {get; set;}
 	public List<frMapping__c> giftCommitmentMappings {get; set;}
 
+	public List<SelectOption> npspRecurringDonationSFOptions {get; set;}
+	public List<SelectOption> npspRecurringDonationFROptions {get; set;}
+	public List<frMapping__c> npspRecurringDonationMappings {get; set;}
+
+	public List<SelectOption> subscriptionTargetOptions {get; set;}
+	public String subscriptionTarget {get; set;}
+
 	public Boolean personAccountsEnabled { get; set; }
 	public Boolean isNonProfitOrg { get; set; }
-	
+	public Boolean npspRecurringDonationsEnabled { get; set; }
+
 	public frSetupController() {
 		SelectOption noneOption = new SelectOption('', '--None--');
 		donationSFOptions = new List<SelectOption>();
@@ -97,8 +125,15 @@ public with sharing class frSetupController {
 		giftCommitmentSFOptions.add(noneOption);
 		giftCommitmentFROptions = new List<SelectOption>();
 		giftCommitmentFROptions.add(noneOption);
+		npspRecurringDonationSFOptions = new List<SelectOption>();
+		npspRecurringDonationSFOptions.add(noneOption);
+		npspRecurringDonationFROptions = new List<SelectOption>();
+		npspRecurringDonationFROptions.add(noneOption);
+		subscriptionTargetOptions = new List<SelectOption>();
+		subscriptionTarget = frUtil.getSubscriptionTarget();
 		personAccountsEnabled = false;
 		isNonProfitOrg = false;
+		npspRecurringDonationsEnabled = false;
 
 		//Check for personaccount field on account
         SObjectType accountType = Account.SObjectType;
@@ -141,6 +176,7 @@ public with sharing class frSetupController {
 		}
 
 		if (!frUtil.hasNPCobjects()) {
+			initializeSubscriptionTargetOptions();
 			Map<String, Schema.SObjectField> oppFields = Opportunity.sObjectType.getDescribe().fields.getMap();
 			for(String fieldName : oppFields.keySet()) {
 				if(RESTRICTED_DONATION_FIELDS.contains(fieldName)) continue; //skip any fields that are part of the managed package
@@ -150,6 +186,21 @@ public with sharing class frSetupController {
 				}
 			}
 			donationSFOptions.sort();
+		}
+		if (!frUtil.hasNPCobjects() && frUtil.hasNPSPRecurringDonations()) {
+			npspRecurringDonationsEnabled = true;
+			Map<String, Schema.SObjectField> recurringDonationFields = frUtil.getFields(frUtil.NPSP_RECURRING_DONATION_OBJ_NAME);
+			for(String fieldName : recurringDonationFields.keySet()) {
+				if(RESTRICTED_NPSP_RECURRING_DONATION_FIELDS.contains(fieldName.toLowerCase())) continue;
+				Schema.DescribeFieldResult describe = recurringDonationFields.get(fieldName).getDescribe();
+				if(describe.isUpdateable()) {
+					npspRecurringDonationSFOptions.add(new SelectOption(fieldName, describe.getLabel()));
+				}
+			}
+			npspRecurringDonationSFOptions.sort();
+			for(frField__mdt field : [SELECT DeveloperName, MasterLabel FROM frField__mdt WHERE Type__c = :GIFT_COMMITMENT_TYPE ORDER BY MasterLabel]) {
+				npspRecurringDonationFROptions.add(new SelectOption(field.DeveloperName.removeEnd('_GC'), field.MasterLabel));
+			}
 		}
 		for(frField__mdt field : [SELECT DeveloperName, MasterLabel FROM frField__mdt WHERE Type__c = 'Donation' ORDER BY MasterLabel]) {
 			donationFROptions.add(new SelectOption(field.DeveloperName, field.MasterLabel));
@@ -166,14 +217,25 @@ public with sharing class frSetupController {
 			}
 			donorSFOptions.sort();
 		}
-		
+
 		for(frField__mdt field : [SELECT DeveloperName, MasterLabel FROM frField__mdt WHERE Type__c = 'Donor' ORDER BY MasterLabel]) {
 			donorFROptions.add(new SelectOption(field.DeveloperName, field.MasterLabel));
 		}
-        
+
 		donationMappings = frDonation.mappings;
 		donorMappings = frDonor.mappings;
 		giftCommitmentMappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = :GIFT_COMMITMENT_TYPE ORDER BY CreatedDate];
+		npspRecurringDonationMappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = :NPSP_RECURRING_DONATION_TYPE ORDER BY CreatedDate];
+	}
+
+	private void initializeSubscriptionTargetOptions() {
+		subscriptionTargetOptions.add(new SelectOption(frUtil.SUBSCRIPTION_TARGET_FUNRAISE, 'Funraise Subscription'));
+		if(frUtil.hasNPSPRecurringDonations()) {
+			subscriptionTargetOptions.add(new SelectOption(frUtil.SUBSCRIPTION_TARGET_NPSP_RECURRING_DONATION, 'NPSP Recurring Donation'));
+		}
+		if(frUtil.SUBSCRIPTION_TARGET_NPSP_RECURRING_DONATION.equals(subscriptionTarget) && !frUtil.hasNPSPRecurringDonations()) {
+			subscriptionTarget = frUtil.SUBSCRIPTION_TARGET_FUNRAISE;
+		}
 	}
 
 	public void addMapping() {
@@ -181,8 +243,11 @@ public with sharing class frSetupController {
 		if(String.isBlank(type)) {
 			return;
 		}
-		if(GIFT_COMMITMENT_TYPE.equals(type)) {			
+		if(GIFT_COMMITMENT_TYPE.equals(type)) {
 			giftCommitmentMappings.add(new frMapping__c(Type__c = GIFT_COMMITMENT_TYPE));
+		}
+		else if(NPSP_RECURRING_DONATION_TYPE.equals(type)) {
+			npspRecurringDonationMappings.add(new frMapping__c(Type__c = NPSP_RECURRING_DONATION_TYPE));
 		}
 		else if(DONATION_TYPE.equals(type)) {
 			donationMappings.add(new frMapping__c(Type__c = DONATION_TYPE));
@@ -207,6 +272,9 @@ public with sharing class frSetupController {
 		if (GIFT_COMMITMENT_TYPE.equals(type)) {
 			mappings = giftCommitmentMappings;
 		}
+		if (NPSP_RECURRING_DONATION_TYPE.equals(type)) {
+			mappings = npspRecurringDonationMappings;
+		}
 		for(Integer i = 0; i < mappings.size(); i++) {
 			frMapping__c mapping = mappings.get(i);
 			if(recordId.equals(mapping.id)) {
@@ -217,23 +285,27 @@ public with sharing class frSetupController {
 			}
 		}
 	}
-    
+
 	public void save() {
+		saveSubscriptionTarget();
+
         if (!Schema.sObjectType.frMapping__c.fields.Name.isUpdateable() ||
            !Schema.sObjectType.frMapping__c.fields.Name.isCreateable()) {
             return;
         }
-        
+
 		Integer customSettingNameLength = frMapping__c.Name.getDescribe().getLength();
 		List<frMapping__c> upsertList = new List<frMapping__c>();
 		List<frMapping__c> allMappings = new List<frMapping__c>(donationMappings);
 		allMappings.addAll(donorMappings);
 		allMappings.addAll(giftCommitmentMappings);
+		allMappings.addAll(npspRecurringDonationMappings);
 		for(frMapping__c mapping : allMappings) {
 			if(String.isNotBlank(mapping.sf_Name__c)) {
 				if(mapping.Type__c == DONATION_TYPE) mapping.Name = 'o.' + mapping.sf_Name__c;
 				if(mapping.Type__c == DONOR_TYPE) mapping.Name = 'c.' + mapping.sf_Name__c;
 				if(mapping.Type__c == GIFT_COMMITMENT_TYPE) mapping.Name = 's.' + mapping.sf_Name__c;
+				if(mapping.Type__c == NPSP_RECURRING_DONATION_TYPE) mapping.Name = 'npsp_rd.' + mapping.sf_Name__c;
 				if(mapping.Name.length() > customSettingNameLength) {
 					mapping.Name = mapping.Name.subString(0, customSettingNameLength);
 				}
@@ -248,6 +320,36 @@ public with sharing class frSetupController {
 		}
 	}
 
+	private void saveSubscriptionTarget() {
+		if(frUtil.hasNPCobjects() || String.isBlank(subscriptionTarget)) {
+			return;
+		}
+		if(!frUtil.SUBSCRIPTION_TARGET_FUNRAISE.equals(subscriptionTarget)
+			&& !frUtil.SUBSCRIPTION_TARGET_NPSP_RECURRING_DONATION.equals(subscriptionTarget)) {
+			return;
+		}
+		if(frUtil.SUBSCRIPTION_TARGET_NPSP_RECURRING_DONATION.equals(subscriptionTarget)
+			&& !frUtil.hasNPSPRecurringDonations()) {
+			subscriptionTarget = frUtil.SUBSCRIPTION_TARGET_FUNRAISE;
+		}
+		try {
+			List<frSetting__c> settings = [
+				SELECT Id, Value__c
+				FROM frSetting__c
+				WHERE Name = :frUtil.SETTING_SUBSCRIPTION_TARGET
+				LIMIT 1
+			];
+			frSetting__c setting = settings.isEmpty()
+				? new frSetting__c(Name = frUtil.SETTING_SUBSCRIPTION_TARGET)
+				: settings.get(0);
+			setting.Value__c = subscriptionTarget;
+			upsert setting;
+			addConfirm('Settings saved successfully');
+		} catch (Exception ex) {
+			addError('Settings not saved. ' + ex.getMessage());
+		}
+	}
+
 	public PageReference cancel() {
 		PageReference redirect = Page.frSetup;
         redirect.setRedirect(true);
@@ -259,7 +361,7 @@ public with sharing class frSetupController {
 	}
 
 	private static void addError(String message) {
-		ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.ERROR, message));	
+		ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.ERROR, message));
 	}
 
 	public void defaults() {
@@ -271,7 +373,8 @@ public with sharing class frSetupController {
 		if(!frUtil.hasNPCobjects()) {
 			defaults = getDonorDefaults();
 			defaults.addAll(getDonationDefaults());
-		} 
+			defaults.addAll(getNPSPRecurringDonationDefaults());
+		}
 		else {
 			defaults = getGiftTransactionDefaults();
 			defaults.addAll(getPersonAccountDefaults());
@@ -280,6 +383,7 @@ public with sharing class frSetupController {
 		addConfirm('All Defaults Applied');
 		donationMappings = frDonation.mappings;
 		donorMappings = frDonor.mappings;
+		npspRecurringDonationMappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = :NPSP_RECURRING_DONATION_TYPE ORDER BY CreatedDate];
 	}
 
 	public void donorDefaults() {
@@ -302,6 +406,17 @@ public with sharing class frSetupController {
 		insert defaults;
 		addConfirm('Donation Defaults Applied');
 		donationMappings = frDonation.mappings;
+	}
+
+	public void npspRecurringDonationDefaults() {
+		if(!checkCD()) {
+			return;
+		}
+		delete [SELECT Id FROM frMapping__c WHERE Type__c = :NPSP_RECURRING_DONATION_TYPE];
+		List<frMapping__c> defaults = getNPSPRecurringDonationDefaults();
+		insert defaults;
+		addConfirm('NPSP Recurring Donation Defaults Applied');
+		npspRecurringDonationMappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = :NPSP_RECURRING_DONATION_TYPE ORDER BY CreatedDate];
 	}
 
 	private Boolean checkCD() {
@@ -360,5 +475,23 @@ public with sharing class frSetupController {
 			new frMapping__c(Name = 'Postal Code Default', fr_Name__c = 'postalCode', sf_Name__c = 'personmailingpostalcode', Type__c = DONOR_TYPE),
 			new frMapping__c(Name = 'Country Default', fr_Name__c = 'country', sf_Name__c = 'personmailingcountry', Type__c = DONOR_TYPE)
 		};
+	}
+
+	@testVisible
+	private static List<frMapping__c> getNPSPRecurringDonationDefaults() {
+		List<frMapping__c> defaults = new List<frMapping__c>();
+		addNPSPRecurringDonationDefault(defaults, 'Subscription Name Default', 'name', 'Name');
+		addNPSPRecurringDonationDefault(defaults, 'Amount Default', 'amount', 'npe03__Amount__c');
+		addNPSPRecurringDonationDefault(defaults, 'Date Established Default', 'nextPaymentDate', 'npe03__Date_Established__c');
+		addNPSPRecurringDonationDefault(defaults, 'Next Payment Date Default', 'nextPaymentDate', 'npe03__Next_Payment_Date__c');
+		addNPSPRecurringDonationDefault(defaults, 'Start Date Default', 'nextPaymentDate', 'npe03__StartDate__c');
+		return defaults;
+	}
+
+	private static void addNPSPRecurringDonationDefault(List<frMapping__c> defaults, String name, String frName, String sfName) {
+		Schema.SObjectField field = frUtil.getField(frUtil.NPSP_RECURRING_DONATION_OBJ_NAME, sfName);
+		if(frUtil.hasNPSPRecurringDonations() && field != null && field.getDescribe().isCreateable()) {
+			defaults.add(new frMapping__c(Name = name, fr_Name__c = frName, sf_Name__c = sfName, Type__c = NPSP_RECURRING_DONATION_TYPE));
+		}
 	}
 }

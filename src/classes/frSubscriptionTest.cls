@@ -44,32 +44,32 @@ public class frSubscriptionTest {
     // 1) createSubscription_noCampaign
     //
     static testMethod void createSubscription_noCampaign() {
-        if (frUtil.hasNPCobjects()) {
+        if (frUtil.hasNPCobjects() || frUtil.usesNPSPRecurringDonations()) {
             return;
         }
 
         Contact testSupporter = frDonorTest.getTestContact();
-                
+
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
         request.put('supporterId', testSupporter.fr_ID__c);
         request.put('id', funraiseId);
 
         frTestUtil.createTestPost(request);
-        
+
         Test.startTest();
         frWSSubscriptionController.syncEntity();
         Test.stopTest();
-        
-        Subscription__c subscription = [SELECT Id, fr_ID__c, 
-                                        Name, Allocation_Name__c, 
-                                        Amount__c, Campaign_Page_Name__c, Comment__c, 
-                                        Company_Match__c, Company_Match_Company_Name__c, 
-                                        Company_Match_Employee_Email__c, Currency__c, Dedication__c, 
-                                        Dedication_Email__c, Dedication_Message__c, Dedication_Name__c, 
-                                        Dedication_Type__c, Form_Name__c, Frequency__c, 
-                                        Campaign_Goal__c, Imported__c, Next_Payment_Date__c, 
-                                        Note__c, Operations_Tip__c, Payment_Method_Expiration_Date__c, Payment_Method_Last_Four__c, 
+
+        Subscription__c subscription = [SELECT Id, fr_ID__c,
+                                        Name, Allocation_Name__c,
+                                        Amount__c, Campaign_Page_Name__c, Comment__c,
+                                        Company_Match__c, Company_Match_Company_Name__c,
+                                        Company_Match_Employee_Email__c, Currency__c, Dedication__c,
+                                        Dedication_Email__c, Dedication_Message__c, Dedication_Name__c,
+                                        Dedication_Type__c, Form_Name__c, Frequency__c,
+                                        Campaign_Goal__c, Imported__c, Next_Payment_Date__c,
+                                        Note__c, Operations_Tip__c, Payment_Method_Expiration_Date__c, Payment_Method_Last_Four__c,
                                         Payment_Method_Type__c, Status__c, Supporter__c
         FROM Subscription__c WHERE fr_ID__c = :funraiseId];
         System.assertEquals(String.valueOf(request.get('name')), subscription.Name, 'The subscription name should be the property included in the request');
@@ -97,9 +97,78 @@ public class frSubscriptionTest {
         System.assertEquals(String.valueOf(request.get('status')), subscription.Status__c, 'The property should be what was provided in the request');
         List<Object> requestPaymentDate = (List<Object>)request.get('nextPaymentDate');
         System.assertEquals(frModel.convertFromLocalDate(requestPaymentDate), subscription.Next_Payment_Date__c, 'The property for next payment date should be what was provided in the request');
-        
+
         System.assertEquals(testSupporter.Id, subscription.Supporter__c, 'The lookup for supporter should have been populated with the contact that has the funraise id referenced in the request');
         System.assertEquals(0, [SELECT COUNT() FROM Error__c], 'No errors were expected');
+    }
+
+    static testMethod void createSubscription_noCampaign_NPSP() {
+        if (frUtil.hasNPCobjects() || !frUtil.hasNPSPRecurringDonations()) {
+            return;
+        }
+        enableNPSPRecurringDonationTarget();
+
+        Contact testSupporter = frDonorTest.getTestContact();
+
+        String funraiseId = '25';
+        Map<String, Object> request = getTestRequest();
+        request.put('supporterId', testSupporter.fr_ID__c);
+        request.put('id', funraiseId);
+
+        frTestUtil.createTestPost(request);
+
+        Test.startTest();
+        frWSSubscriptionController.syncEntity();
+        Test.stopTest();
+
+        List<String> fields = new List<String>{
+            'Id',
+            'Name',
+            frUtil.NPSP_RECURRING_DONATION_ID_FIELD_NAME,
+            frUtil.NPSP_RECURRING_DONATION_CONTACT_FIELD_NAME
+        };
+        addFieldIfPresent(fields, 'npe03__Amount__c');
+        addFieldIfPresent(fields, 'npe03__Installment_Period__c');
+        addFieldIfPresent(fields, 'npe03__Status__c');
+        String query = 'SELECT ' + String.join(fields, ',') + ' FROM ' + frUtil.NPSP_RECURRING_DONATION_OBJ_NAME
+            + ' WHERE ' + frUtil.NPSP_RECURRING_DONATION_ID_FIELD_NAME + ' = :funraiseId';
+        List<SObject> recurringDonations = Database.query(query);
+
+        System.assertEquals(1, recurringDonations.size(), 'NPSP Recurring Donation should have been created');
+        SObject recurringDonation = recurringDonations.get(0);
+        System.assertEquals(String.valueOf(request.get('name')), recurringDonation.get('Name'), 'The recurring donation name should come from the request');
+        System.assertEquals(funraiseId, recurringDonation.get(frUtil.NPSP_RECURRING_DONATION_ID_FIELD_NAME), 'The NPSP external id should use the Funraise subscription id');
+        System.assertEquals(testSupporter.Id, recurringDonation.get(frUtil.NPSP_RECURRING_DONATION_CONTACT_FIELD_NAME), 'The NPSP contact lookup should be populated from the Funraise supporter');
+        if(fields.contains('npe03__Amount__c') && recurringDonation.get('npe03__Amount__c') != null) {
+            System.assertEquals(Decimal.valueOf(String.valueOf(request.get('amount'))), recurringDonation.get('npe03__Amount__c'), 'The NPSP amount should come from the request');
+        }
+        if(fields.contains('npe03__Installment_Period__c') && recurringDonation.get('npe03__Installment_Period__c') != null) {
+            System.assertEquals('Monthly', recurringDonation.get('npe03__Installment_Period__c'), 'The NPSP installment period should be normalized from the request frequency');
+        }
+        if(fields.contains('npe03__Status__c') && recurringDonation.get('npe03__Status__c') != null) {
+            System.assertEquals('Active', recurringDonation.get('npe03__Status__c'), 'The NPSP status should be normalized from the request status');
+        }
+        System.assertEquals(0, [SELECT COUNT() FROM Error__c], 'No errors were expected');
+    }
+
+    static testMethod void npspNormalizationHelpers() {
+        System.assertEquals('Monthly', frSubscription.getNPSPInstallmentPeriod(null), 'Blank frequencies should default to monthly');
+        System.assertEquals('Weekly', frSubscription.getNPSPInstallmentPeriod('Every week'), 'Weekly frequencies should be normalized');
+        System.assertEquals('Quarterly', frSubscription.getNPSPInstallmentPeriod('Quarterly'), 'Quarterly frequencies should be normalized');
+        System.assertEquals('Yearly', frSubscription.getNPSPInstallmentPeriod('Annual'), 'Annual frequencies should be normalized');
+
+        System.assertEquals('Active', frSubscription.getNPSPStatus(null), 'Blank statuses should default to active');
+        System.assertEquals('Lapsed', frSubscription.getNPSPStatus('Paused'), 'Paused subscriptions should map to a legacy NPSP status value');
+        System.assertEquals('Lapsed', frSubscription.getNPSPStatus('Lapsed'), 'Lapsed statuses should be normalized');
+        System.assertEquals('Closed', frSubscription.getNPSPStatus('Cancelled'), 'Cancelled statuses should be closed');
+
+        System.assertEquals(null, frSubscription.getNPSPPaymentMethod(null), 'Blank payment methods should stay blank');
+        System.assertEquals('ACH', frSubscription.getNPSPPaymentMethod('Bank Account'), 'Bank payments should be ACH');
+        System.assertEquals('Check', frSubscription.getNPSPPaymentMethod('Check'), 'Check payments should be normalized');
+        System.assertEquals('Credit Card', frSubscription.getNPSPPaymentMethod('Visa'), 'Other payment methods should default to Credit Card');
+
+        System.assertEquals('15', frSubscription.getNPSPDayOfMonth(null), 'Blank dates should default to the 15th day');
+        System.assertEquals('20', frSubscription.getNPSPDayOfMonth(new List<Object>{2019, 6, 20}), 'Local dates should use their day value');
     }
 
     static testMethod void createSubscription_noCampaign_NPC() {
@@ -108,7 +177,7 @@ public class frSubscriptionTest {
         }
         Contact testSupporter = frDonorTest.getTestContact();
         Account testAccount = frDonorTest.getTestAccount(true);
-                
+
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
         request.put('supporterId', testSupporter.fr_ID__c);
@@ -117,7 +186,7 @@ public class frSubscriptionTest {
         if(frUtil.hasNPCobjects()) request.put('supporterId', testAccount.fr_ID__c);
 
         frTestUtil.createTestPost(request);
-        
+
         Test.startTest();
         frWSSubscriptionController.syncEntity();
         Test.stopTest();
@@ -136,22 +205,22 @@ public class frSubscriptionTest {
     //
     // 2) createSubscription_withCampaignGoal
     //
-    static testMethod void createSubscription_withCampaignGoal() {  
-        if (frUtil.hasNPCobjects()) {
+    static testMethod void createSubscription_withCampaignGoal() {
+        if (frUtil.hasNPCobjects() || frUtil.usesNPSPRecurringDonations()) {
             return;
-        }    
+        }
         Contact testSupporter = frDonorTest.getTestContact();
-        
-        Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
+
+        Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign',
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
         insert testCampaign;
-        
+
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
         request.put('supporterId', testSupporter.fr_ID__c);
         request.put('id', funraiseId);
         request.put('campaignGoalId', testCampaign.fr_ID__c);
-        
+
         frTestUtil.createTestPost(request);
 
         Test.startTest();
@@ -168,11 +237,11 @@ public class frSubscriptionTest {
             return;
         }
         Account testAccount = frDonorTest.getTestAccount(true);
-        
-        Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
+
+        Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign',
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
         insert testCampaign;
-        
+
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
         request.put('id', funraiseId);
@@ -196,16 +265,16 @@ public class frSubscriptionTest {
     //
     // 3) createSubscription_missingSupporter
     //
-    static testMethod void createSubscription_missingSupporter() {  
+    static testMethod void createSubscription_missingSupporter() {
         Contact testSupporter = frDonorTest.getTestContact();
-        
+
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
         request.put('supporterId', testSupporter.fr_ID__c+'1');
         request.put('id', funraiseId);
 
         frTestUtil.createTestPost(request);
-        
+
         Test.startTest();
         frWSSubscriptionController.syncEntity();
         Test.stopTest();
@@ -243,15 +312,15 @@ public class frSubscriptionTest {
     //
     // 4) createSubscription_missingCampaignGoal
     //
-    static testMethod void createSubscription_missingCampaignGoal() {   
-        if (frUtil.hasNPCobjects()) return;
-        
+    static testMethod void createSubscription_missingCampaignGoal() {
+        if (frUtil.hasNPCobjects() || frUtil.usesNPSPRecurringDonations()) return;
+
         Contact testSupporter = frDonorTest.getTestContact();
-        
-        Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
+
+        Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign',
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
         insert testCampaign;
-        
+
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
         request.put('supporterId', testSupporter.fr_ID__c);
@@ -259,7 +328,7 @@ public class frSubscriptionTest {
         request.put('campaignGoalId', testCampaign.fr_ID__c+'1');
 
         frTestUtil.createTestPost(request);
-        
+
         Test.startTest();
         frWSSubscriptionController.syncEntity();
         Test.stopTest();
@@ -274,11 +343,11 @@ public class frSubscriptionTest {
         }
         Contact testSupporter = frDonorTest.getTestContact();
         Account testAccount = frDonorTest.getTestAccount(true);
-        
-        Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
+
+        Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign',
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
         insert testCampaign;
-        
+
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
         request.put('supporterId', testSupporter.fr_ID__c);
@@ -287,7 +356,7 @@ public class frSubscriptionTest {
         if(frUtil.hasNPCobjects()) request.put('supporterId', testAccount.fr_ID__c);
 
         frTestUtil.createTestPost(request);
-        
+
         Test.startTest();
         frWSSubscriptionController.syncEntity();
         Test.stopTest();
@@ -301,14 +370,14 @@ public class frSubscriptionTest {
     //
     // 5) deleteSubscription
     //
-    static testMethod void deleteSubscription() {    
-        if (frUtil.hasNPCobjects()) {
+    static testMethod void deleteSubscription() {
+        if (frUtil.hasNPCobjects() || frUtil.usesNPSPRecurringDonations()) {
             return;
-        }         
+        }
         Contact testSupporter = frDonorTest.getTestContact();
-        
+
         insert new Subscription__c(Name = 'Test Sub', fr_ID__c = '25', Supporter__c = testSupporter.Id);
-        
+
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
         request.put('supporterId', testSupporter.fr_ID__c);
@@ -323,6 +392,34 @@ public class frSubscriptionTest {
 
         Integer matchingRecords = [SELECT COUNT() FROM Subscription__c WHERE fr_ID__c = :funraiseId];
         System.assertEquals(0, matchingRecords, 'subscription should have been deleted and therefore not returned');
+        System.assertEquals(0, [SELECT COUNT() FROM Error__c], 'No errors were expected');
+    }
+
+    static testMethod void deleteSubscription_NPSP() {
+        if (frUtil.hasNPCobjects() || !frUtil.hasNPSPRecurringDonations()) {
+            return;
+        }
+        enableNPSPRecurringDonationTarget();
+
+        Contact testSupporter = frDonorTest.getTestContact();
+        String funraiseId = '25';
+        Map<String, Object> request = getTestRequest();
+        request.put('supporterId', testSupporter.fr_ID__c);
+        request.put('id', funraiseId);
+        frTestUtil.createTestPost(request);
+        frWSSubscriptionController.syncEntity();
+
+        request.put('deleted', true);
+        frTestUtil.createTestPost(request);
+
+        Test.startTest();
+        frWSSubscriptionController.syncEntity();
+        Test.stopTest();
+
+        String query = 'SELECT Id FROM ' + frUtil.NPSP_RECURRING_DONATION_OBJ_NAME
+            + ' WHERE ' + frUtil.NPSP_RECURRING_DONATION_ID_FIELD_NAME + ' = :funraiseId';
+        List<SObject> matchingRecords = Database.query(query);
+        System.assertEquals(0, matchingRecords.size(), 'NPSP Recurring Donation should have been deleted');
         System.assertEquals(0, [SELECT COUNT() FROM Error__c], 'No errors were expected');
     }
 
@@ -362,23 +459,23 @@ public class frSubscriptionTest {
     // 6) createSubscription_createPledge
     //
     static testMethod void createSubscription_createPledge() {
-        if (frUtil.hasNPCobjects()) {
+        if (frUtil.hasNPCobjects() || frUtil.usesNPSPRecurringDonations()) {
             return;
-        }    
+        }
         Contact testSupporter = frDonorTest.getTestContact();
-                
+
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
         request.put('supporterId', testSupporter.fr_ID__c);
         request.put('id', funraiseId);
         request.put('pledgeAmount', 500);
-        
+
         frTestUtil.createTestPost(request);
 
         Test.startTest();
         frWSSubscriptionController.syncEntity();
         Test.stopTest();
-        
+
         Subscription__c subscription = [SELECT Id, Supporter__c FROM Subscription__c WHERE fr_ID__c = :funraiseId];
         System.assertEquals(testSupporter.Id, subscription.Supporter__c, 'The lookup for supporter should have been populated with the contact that has the funraise id referenced in the request');
         System.assertEquals(0, [SELECT COUNT() FROM Error__c], 'No errors were expected');
@@ -393,11 +490,11 @@ public class frSubscriptionTest {
         }
         Contact testSupporter = frDonorTest.getTestContact();
         Account testAccount = frDonorTest.getTestAccount(true);
-        
-        Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign', 
+
+        Campaign testCampaign = new Campaign(fr_ID__c = '10', Name = 'Test Campaign',
                                              ExpectedRevenue = 123, Description = 'Test', Status = 'Published');
         insert testCampaign;
-        
+
         String funraiseId = '25';
         Map<String, Object> request = getTestRequest();
         request.put('supporterId', testSupporter.fr_ID__c);
@@ -409,9 +506,9 @@ public class frSubscriptionTest {
         Test.startTest();
         frWSSubscriptionController.syncEntity();
         Test.stopTest();
-        
+
         List<SObject> gcList = Database.query(
-            'SELECT Id, Name, DonorId ' + 
+            'SELECT Id, Name, DonorId ' +
             'FROM GiftCommitment ' +
             'WHERE fr_ID__c = :funraiseId'
         );
@@ -450,5 +547,25 @@ public class frSubscriptionTest {
         request.put('deleted', false);
         request.put('pledgeAmount', null);
         return request;
+    }
+
+    private static void addFieldIfPresent(List<String> fieldNames, String fieldName) {
+        if(frUtil.getField(frUtil.NPSP_RECURRING_DONATION_OBJ_NAME, fieldName) != null) {
+            fieldNames.add(fieldName);
+        }
+    }
+
+    public static void enableNPSPRecurringDonationTarget() {
+        List<frSetting__c> settings = [
+            SELECT Id, Value__c
+            FROM frSetting__c
+            WHERE Name = :frUtil.SETTING_SUBSCRIPTION_TARGET
+            LIMIT 1
+        ];
+        frSetting__c setting = settings.isEmpty()
+            ? new frSetting__c(Name = frUtil.SETTING_SUBSCRIPTION_TARGET)
+            : settings.get(0);
+        setting.Value__c = frUtil.SUBSCRIPTION_TARGET_NPSP_RECURRING_DONATION;
+        upsert setting;
     }
 }
