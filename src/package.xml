@@ -18,6 +18,9 @@
         <members>frFundraisingEventRegistration</members>
         <members>frFundraisingEventRegistrationTest</members>
         <members>frFundraisingEventTest</members>
+        <members>frInboundSupporterSync</members>
+        <members>frInboundSupporterSyncJob</members>
+        <members>frInboundSupporterSyncTest</members>
         <members>frModel</members>
         <members>frOpportunityPledgeCalculatorTriggerTest</members>
         <members>frPledge</members>
@@ -58,6 +61,8 @@
         <name>ApexPage</name>
     </types>
     <types>
+        <members>frAccountInboundSync</members>
+        <members>frContactInboundSync</members>
         <members>frOpportunityPledgeCalculator</members>
         <name>ApexTrigger</name>
     </types>
@@ -82,6 +87,10 @@
         <name>CustomMetadata</name>
     </types>
     <types>
+        <members>Funraise_Platform</members>
+        <name>NamedCredential</name>
+    </types>
+    <types>
         <members>Answer__c</members>
         <members>Error__c</members>
         <members>Fundraising_Event_Registration__c</members>
@@ -92,6 +101,7 @@
         <members>Sync_Attempt__c</members>
         <members>Sync_Attempt__c</members>
         <members>frField__mdt</members>
+        <members>frInboundSettings__c</members>
         <members>frMapping__c</members>
         <name>CustomObject</name>
     </types>

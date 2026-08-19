@@ -82,6 +82,8 @@ public with sharing class frSetupController {
 
 	public Boolean personAccountsEnabled { get; set; }
 	public Boolean isNonProfitOrg { get; set; }
+	public frInboundSettings__c inboundSettings { get; set; }
+	private String existingInboundSecret;
 	
 	public frSetupController() {
 		SelectOption noneOption = new SelectOption('', '--None--');
@@ -174,6 +176,17 @@ public with sharing class frSetupController {
 		donationMappings = frDonation.mappings;
 		donorMappings = frDonor.mappings;
 		giftCommitmentMappings = [SELECT fr_Name__c, sf_Name__c, Is_Constant__c, Constant_Value__c, Conflict_Resolution__c, Type__c FROM frMapping__c WHERE Type__c = :GIFT_COMMITMENT_TYPE ORDER BY CreatedDate];
+		inboundSettings = frInboundSettings__c.getInstance(frInboundSupporterSync.SETTINGS_NAME);
+		if(inboundSettings == null) {
+			inboundSettings = new frInboundSettings__c(Name = frInboundSupporterSync.SETTINGS_NAME);
+		}
+		if(String.isBlank(inboundSettings.Name)) {
+			inboundSettings.Name = frInboundSupporterSync.SETTINGS_NAME;
+		}
+		if(String.isBlank(inboundSettings.Named_Credential__c)) {
+			inboundSettings.Named_Credential__c = frInboundSupporterSync.DEFAULT_NAMED_CREDENTIAL;
+		}
+		existingInboundSecret = inboundSettings.Secret__c;
 	}
 
 	public void addMapping() {
@@ -246,6 +259,30 @@ public with sharing class frSetupController {
 			upsert upsertList;
 			addConfirm('Mappings saved successfully');
 		}
+	}
+
+	public void saveInboundSettings() {
+		if(inboundSettings == null) {
+			return;
+		}
+
+		if(String.isBlank(inboundSettings.Name)) {
+			inboundSettings.Name = frInboundSupporterSync.SETTINGS_NAME;
+		}
+
+		Schema.DescribeSObjectResult describe = frInboundSettings__c.sObjectType.getDescribe();
+		if(!describe.isCreateable() || !describe.isUpdateable()) {
+			addError('Inbound sync settings not saved. You do not have permission to update inbound sync settings');
+			return;
+		}
+
+		if(String.isBlank(inboundSettings.Secret__c) && String.isNotBlank(existingInboundSecret)) {
+			inboundSettings.Secret__c = existingInboundSecret;
+		}
+
+		upsert inboundSettings;
+		existingInboundSecret = inboundSettings.Secret__c;
+		addConfirm('Inbound sync settings saved successfully');
 	}
 
 	public PageReference cancel() {

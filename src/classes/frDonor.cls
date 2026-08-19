@@ -168,6 +168,8 @@ public class frDonor extends frModel implements frSyncable{
             supporter.put('LastName', String.valueOf(request.get('institutionName')));
         }
         // Perform upsert operation
+        Boolean inboundSyncWasDisabled = frInboundSupporterSync.disabled;
+        frInboundSupporterSync.disabled = true;
         try {
             if (supporter.Id != null) {
                 Database.update(supporter, true);
@@ -180,6 +182,8 @@ public class frDonor extends frModel implements frSyncable{
             if (createLogRecord) {
                 frUtil.logException(getFrType(), frId, ex);
             }
+        } finally {
+            frInboundSupporterSync.disabled = inboundSyncWasDisabled;
         }
     
         return result;
