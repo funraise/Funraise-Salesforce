@@ -96,7 +96,7 @@ public class frSetupControllerTest {
 	static void test_saveInboundSettings() {
 		frSetupController controller = new frSetupController();
 		controller.inboundSettings.Enabled__c = true;
-		controller.inboundSettings.Named_Credential__c = 'Funraise_Platform';
+		controller.inboundSettings.Named_Credential__c = frInboundSupporterSync.DEFAULT_NAMED_CREDENTIAL;
 		controller.inboundSettings.Organization_UUID__c = '00000000-0000-0000-0000-000000000001';
 		controller.inboundSettings.Secret__c = 'shared-secret';
 
@@ -106,7 +106,7 @@ public class frSetupControllerTest {
 
 		frInboundSettings__c actual = frInboundSettings__c.getInstance(frInboundSupporterSync.SETTINGS_NAME);
 		System.assertEquals(true, actual.Enabled__c, 'Inbound sync should be enabled');
-		System.assertEquals('Funraise_Platform', actual.Named_Credential__c, 'Named Credential should be saved');
+		System.assertEquals(frInboundSupporterSync.DEFAULT_NAMED_CREDENTIAL, actual.Named_Credential__c, 'Named Credential should be saved');
 		System.assertEquals('00000000-0000-0000-0000-000000000001', actual.Organization_UUID__c, 'Organization UUID should be saved');
 		System.assertEquals('shared-secret', actual.Secret__c, 'Inbound secret should be saved');
 	}
@@ -116,7 +116,7 @@ public class frSetupControllerTest {
 		insert new frInboundSettings__c(
 			Name = frInboundSupporterSync.SETTINGS_NAME,
 			Enabled__c = true,
-			Named_Credential__c = 'Funraise_Platform',
+			Named_Credential__c = frInboundSupporterSync.DEFAULT_NAMED_CREDENTIAL,
 			Organization_UUID__c = '00000000-0000-0000-0000-000000000001',
 			Secret__c = 'existing-secret'
 		);

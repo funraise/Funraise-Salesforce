@@ -117,7 +117,7 @@ public class frInboundSupporterSyncTest {
         return new frInboundSettings__c(
             Name = frInboundSupporterSync.SETTINGS_NAME,
             Enabled__c = enabled,
-            Named_Credential__c = 'Funraise_Platform',
+            Named_Credential__c = frInboundSupporterSync.DEFAULT_NAMED_CREDENTIAL,
             Organization_UUID__c = '00000000-0000-0000-0000-000000000001',
             Secret__c = 'shared-secret'
         );

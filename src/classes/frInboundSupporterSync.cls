@@ -1,5 +1,6 @@
 public class frInboundSupporterSync {
     public static final String SETTINGS_NAME = 'Default';
+    public static final String DEFAULT_NAMED_CREDENTIAL = 'Funraise_Platform';
     public static final Integer MAX_CALLOUTS_PER_JOB = 25;
     public static Boolean disabled = false;
 

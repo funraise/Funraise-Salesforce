@@ -184,7 +184,7 @@ public with sharing class frSetupController {
 			inboundSettings.Name = frInboundSupporterSync.SETTINGS_NAME;
 		}
 		if(String.isBlank(inboundSettings.Named_Credential__c)) {
-			inboundSettings.Named_Credential__c = 'Funraise_Platform';
+			inboundSettings.Named_Credential__c = frInboundSupporterSync.DEFAULT_NAMED_CREDENTIAL;
 		}
 		existingInboundSecret = inboundSettings.Secret__c;
 	}
