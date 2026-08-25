@@ -7,13 +7,22 @@ To install the package, you can either deploy the contents of this repository or
 
 
 ## Setup
-### Create a Connected App in Salesforce to setup OAuth
-Note: Before doing the steps below, be sure you have installed the package in the link provided above in the [Installation section](#Installation)
-1. In your Salesforce organization, navigate to Setup -> Build -> Create -> Apps and select "New" under **Connected Apps**
-2. Fill out the new Connected App form and check the box for *Enable OAuth Settings*
-3. Set the *Callback URL* field to **https://platform.funraise.io/salesforce/access/token** 
-4. Add the OAuth Scopes **Access and manage your data (api)** and **Perform requests on your behalf at any time (refresh_token, offline_access)** and **Save** the record
-5. When viewing the Connected App record under Setup -> Build -> Create -> Apps, the **Consumer Key** and **Consumer Secret** should be visible, these values will be used to integrate with Funraise
+### Package the External Client App
+
+Salesforce now recommends an External Client App for new integrations. The app should be distributed as part of the
+managed package with:
+
+1. OAuth enabled and callback URL **https://platform.funraise.io/salesforce/access/token**.
+2. OAuth scopes **Access and manage your data (api)** and **Perform requests at any time (refresh_token, offline_access)**.
+3. Authorization Code / Web Server Flow enabled.
+4. **Require Proof Key for Code Exchange (PKCE) extension for Supported Authorization Flows** enabled.
+5. **Require Secret for Web Server Flow** and **Require Secret for Refresh Token Flow** enabled.
+
+Copy the packaged app's consumer key and secret into the Platform deployment configuration as
+`SALESFORCE_OAUTH_CLIENT_ID` and `SALESFORCE_OAUTH_CLIENT_SECRET`. These are deployment secrets and must not be committed.
+
+Organizations no longer enter client credentials. Saving Salesforce settings migrates the integration to the packaged app
+and starts a new PKCE authorization flow.
 
 ### Give the Salesforce user that will perform the OAuth flow in Funraise the permission set
 1. Apply "Funraise Permission Set" to your user that performs the OAuth flow so that the REST endpoints are available for Funraise to call
