@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExternalClientApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+    <contactEmail>support@funraise.org</contactEmail>
+    <description>Funraise Salesforce Integration</description>
+    <distributionState>Packaged</distributionState>
+    <infoUrl>https://funraise.org</infoUrl>
+    <isProtected>false</isProtected>
+    <label>Funraise Platform</label>
+    <orgScopedExternalApp>00D15000000NkoV:Funraise_Platform</orgScopedExternalApp>
+</ExternalClientApplication>
