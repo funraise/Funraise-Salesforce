@@ -9,7 +9,7 @@ http://localhost:9000/salesforce/access/token</callbackUrl>
     <isClientCredentialsFlowEnabled>false</isClientCredentialsFlowEnabled>
     <isCodeCredFlowEnabled>true</isCodeCredFlowEnabled>
     <isCodeCredPostOnly>false</isCodeCredPostOnly>
-    <isConsumerSecretOptional>true</isConsumerSecretOptional>
+    <isConsumerSecretOptional>false</isConsumerSecretOptional>
     <isDPopEnabled>false</isDPopEnabled>
     <isDeviceFlowEnabled>false</isDeviceFlowEnabled>
     <isEnforceRefreshTokenTTL>true</isEnforceRefreshTokenTTL>
@@ -18,7 +18,7 @@ http://localhost:9000/salesforce/access/token</callbackUrl>
     <isNamedUserJwtEnabled>false</isNamedUserJwtEnabled>
     <isPkceRequired>true</isPkceRequired>
     <isRefreshTokenRotationEnabled>true</isRefreshTokenRotationEnabled>
-    <isSecretRequiredForRefreshToken>false</isSecretRequiredForRefreshToken>
+    <isSecretRequiredForRefreshToken>true</isSecretRequiredForRefreshToken>
     <isSecretRequiredForTokenExchange>true</isSecretRequiredForTokenExchange>
     <isTokenExchangeEnabled>false</isTokenExchangeEnabled>
     <label>Funraise_Platform_glbloauth</label>
