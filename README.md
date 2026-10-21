@@ -56,11 +56,10 @@ managed package with:
 2. OAuth scopes **Access and manage your data (api)** and **Perform requests at any time (refresh_token, offline_access)**.
 3. Authorization Code / Web Server Flow enabled.
 4. **Require Proof Key for Code Exchange (PKCE) extension for Supported Authorization Flows** enabled.
-5. Client secret optional for the authorization-code and refresh-token flows; PKCE is the required proof mechanism.
+5. **Require Secret for Web Server Flow** and **Require Secret for Refresh Token Flow** enabled, alongside PKCE.
 
-Configure the packaged app's consumer key in the Platform deployment configuration as
-`SALESFORCE_OAUTH_CLIENT_ID`. If the deployment uses a client secret, configure it as
-`SALESFORCE_OAUTH_CLIENT_SECRET`; these are deployment secrets and must not be committed.
+Configure the packaged app's consumer key and secret in the Platform deployment configuration as
+`SALESFORCE_OAUTH_CLIENT_ID` and `SALESFORCE_OAUTH_CLIENT_SECRET`; these are deployment secrets and must not be committed.
 
 Organizations no longer enter client credentials. Saving Salesforce settings migrates the integration to the packaged app
 and starts a new PKCE authorization flow.
