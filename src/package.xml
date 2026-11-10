@@ -66,6 +66,18 @@
         <name>CustomApplication</name>
     </types>
     <types>
+        <members>Funraise_Platform</members>
+        <name>ExternalClientApplication</name>
+    </types>
+    <types>
+        <members>Funraise_Platform_glbloauth</members>
+        <name>ExtlClntAppGlobalOauthSettings</name>
+    </types>
+    <types>
+        <members>Funraise_Platform_oauth</members>
+        <name>ExtlClntAppOauthSettings</name>
+    </types>
+    <types>
         <members>Account.fr_ID__c</members>
         <members>Activity.fr_Task_ID__c</members>
         <members>Campaign.fr_ID__c</members>
@@ -114,5 +126,5 @@
         <members>Pledge__c</members>
         <name>Workflow</name>
     </types>
-    <version>43.0</version>
+    <version>68.0</version>
 </Package>
